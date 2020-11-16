@@ -17,6 +17,8 @@ class FixedPointEncoder:
         if tensor.dtype.is_floating_point:
             raise ValueError(f"{tensor} should be converted to long format")
 
+        if self._precision == 0:
+            return tensor
         correction = (tensor < 0).long()
         dividend = tensor // self._scale - correction
         remainder = tensor % self._scale
@@ -36,3 +38,18 @@ class FixedPointEncoder:
     @property
     def scale(self):
         return self._scale
+
+    @precision.setter
+    def precision(self, precision):
+        self._precision = precision
+        self._scale = self._base ** precision
+
+    @base.setter
+    def base(self, base):
+        self._base = base
+        self._scale = base ** self._precision
+
+    def __str__(self):
+        type_name = type(self).__name__
+        out = f"[{type_name}]: precision: {self._precision}, base: {self._base}"
+        return out
