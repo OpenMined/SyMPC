@@ -2,6 +2,7 @@ import torch
 
 from .utils import modulo
 from ..encoder import FixedPointEncoder
+from copy import deepcopy
 import operator
 
 
@@ -38,7 +39,7 @@ class AdditiveSharingTensor:
 
         random_shares = []
         for _ in range(nr_parties - 1):
-            rand_long = torch.randint(0, 1, shape).long()
+            rand_long = torch.randint(min_value, max_value, shape).long()
             random_shares.append(rand_long)
 
         shares = []
@@ -79,19 +80,22 @@ class AdditiveSharingTensor:
         return self.__apply_op(y, "div")
 
     def __apply_private_op(self, y, op_str):
+        # TODO: Move this at the first level when we call a function
         if y.session.uuid != self.session.uuid:
             raise ValueError(f"Need same session {self.session.uuid} and {y.session.uuid}")
 
         if op_str == "mul":
             from ..protocol import spdz
             shares = spdz.mul_master(self, y)
+            self_precision = self.fp_encoder.precision
+            y_precision = y.fp_encoder.precision
+            result = AdditiveSharingTensor.__apply_encoding(self.session, self_precision, y_precision, shares)
+
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
-            shares = [op(*share_tuple) for share_tuple in zip(self.shares, y.shares)]
-
-        self_precision = self.fp_encoder.precision
-        y_precision = y.fp_encoder.precision
-        result = AdditiveSharingTensor.__apply_encoding(self.session, self_precision, y_precision, shares)
+            result = AdditiveSharingTensor(session=self.session)
+            result.encoder = deepcopy(self.fp_encoder)
+            result.shares = shares = [op(*share_tuple) for share_tuple in zip(self.shares, y.shares)]
 
         return result
 
@@ -123,7 +127,6 @@ class AdditiveSharingTensor:
         if op_str == "mul":
             shares = [modulo(op(share, y) // self.fp_encoder.scale, self.session) for share in self.shares]
         else:
-            import pdb; pdb.set_trace()
             operands_shares = [y] + [0 for _ in range(len(self.shares)-1)]
             shares = [modulo(op(*tuple_shares), self.session) for tuple_shares in zip(self.shares, operands_shares)]
 
@@ -145,8 +148,10 @@ class AdditiveSharingTensor:
     def __str__(self):
         type_name = type(self).__name__
         out = f"[{type_name}]"
+        out = f"{out}\n\t{self.fp_encoder}"
+
         for share in self.shares:
-            out = f"{out}\n\t{share.client} -> {share}"
+            out = f"{out}\n\t{share.client} -> {share.__name__}"
 
         return out
 
