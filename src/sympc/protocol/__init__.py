@@ -1,8 +1,8 @@
-from .beaver import Beaver
-from .spdz import SPDZ
+from .beaver import beaver
+from .spdz import spdz
 
 
 __all__ = [
-    "Beaver",
-    "SPDZ"
+    "beaver",
+    "spdz"
 ]

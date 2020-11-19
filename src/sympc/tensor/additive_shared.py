@@ -1,6 +1,6 @@
 import torch
 
-from .utils import modular_to_real
+from .utils import modulo
 from ..encoder import FixedPointEncoder
 import operator
 
@@ -18,20 +18,14 @@ class AdditiveSharingTensor:
 
         if secret is not None:
             parties = session.parties
-            self.shape = secret.shape
             secret = self.fp_encoder.encode(secret)
+            self.shape = secret.shape
             shares = AdditiveSharingTensor.generate_shares(secret, session)
             self.shares = []
             for share, party in zip(shares, parties):
                 self.shares.append(share.send(party))
         elif shares is not None:
             self.shares = shares
-        else:
-            raise ValueError("Shares or Secret should not be None")
-
-    @staticmethod
-    def from_shares(shares, session):
-        return AdditiveSharingTensor(shares=shares, session=session)
 
     @staticmethod
     def generate_shares(secret, session):
@@ -44,7 +38,7 @@ class AdditiveSharingTensor:
 
         random_shares = []
         for _ in range(nr_parties - 1):
-            rand_long = torch.randint(min_value, max_value, shape).long()
+            rand_long = torch.randint(0, 1, shape).long()
             random_shares.append(rand_long)
 
         shares = []
@@ -56,21 +50,21 @@ class AdditiveSharingTensor:
             else:
                 share = secret - random_shares[i-1]
 
-            share = modular_to_real(share, session)
+            share = modulo(share, session)
             shares.append(share)
 
         return shares
 
-    def reconstruct(self):
+    def reconstruct(self, decode=True):
         plaintext = self.shares[0].get()
 
         for share in self.shares[1:]:
             plaintext += share.get()
 
-        plaintext = modular_to_real(plaintext, self.session)
-        plaintext = self.fp_encoder.decode(plaintext)
+        plaintext = modulo(plaintext, self.session)
+        if decode:
+            plaintext = self.fp_encoder.decode(plaintext)
         return plaintext
-
 
     def add(self, y):
         return self.__apply_op(y, "add")
@@ -85,16 +79,34 @@ class AdditiveSharingTensor:
         return self.__apply_op(y, "div")
 
     def __apply_private_op(self, y, op_str):
-        from ..protocol import SPDZ
         if y.session.uuid != self.session.uuid:
             raise ValueError(f"Need same session {self.session.uuid} and {y.session.uuid}")
+
         if op_str == "mul":
-            result = SPDZ.mul_master(self, y)
-            result.shares = [modular_to_real(share, self.session) for share in result.shares]
+            from ..protocol import spdz
+            shares = spdz.mul_master(self, y)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
-            shares = [modular_to_real(op(*share_tuple), self.session) for share_tuple in zip(self.shares, y.shares)]
-            result = AdditiveSharingTensor.from_shares(shares=shares, session=self.session)
+            shares = [op(*share_tuple) for share_tuple in zip(self.shares, y.shares)]
+
+        self_precision = self.fp_encoder.precision
+        y_precision = y.fp_encoder.precision
+        result = AdditiveSharingTensor.__apply_encoding(self.session, self_precision, y_precision, shares)
+
+        return result
+
+    @staticmethod
+    def __apply_encoding(session, x_precision, y_precision, shares):
+        max_prec = max(x_precision, y_precision)
+        fp_encoder = FixedPointEncoder(precision=max_prec)
+
+        if x_precision and y_precision:
+            shares = [share // fp_encoder.scale for share in shares]
+
+        shares = [modulo(share, session) for share in shares]
+
+        result = AdditiveSharingTensor(shares=shares, session=session)
+        result.fp_encoder = fp_encoder
 
         return result
 
@@ -105,26 +117,30 @@ class AdditiveSharingTensor:
         y = self.fp_encoder.encode(y)
 
         op = getattr(operator, op_str)
-        # Here are two sens: one for modular_to_real and one for op
+        # Here are two sens: one for modulo and one for op
         # TODO: Make only one operation
 
         if op_str == "mul":
-            shares = [modular_to_real(op(share, y) // self.fp_encoder.scale, self.session) for share in self.shares]
+            shares = [modulo(op(share, y) // self.fp_encoder.scale, self.session) for share in self.shares]
         else:
-            operands_shares = [y, 0, 0]
-            shares = [modular_to_real(op(*tuple_shares), self.session) for tuple_shares in zip(self.shares, operands_shares)]
+            import pdb; pdb.set_trace()
+            operands_shares = [y] + [0 for _ in range(len(self.shares)-1)]
+            shares = [modulo(op(*tuple_shares), self.session) for tuple_shares in zip(self.shares, operands_shares)]
 
 
-        result = AdditiveSharingTensor.from_shares(shares=shares, session=self.session)
+        result = AdditiveSharingTensor(shares=shares, session=self.session)
         return result
 
     def __apply_op(self, y, op):
         is_private = isinstance(y, AdditiveSharingTensor)
 
         if is_private:
-            return self.__apply_private_op(y, op)
+            result = self.__apply_private_op(y, op)
+        else:
+            result = self.__apply_public_op(y, op)
 
-        return self.__apply_public_op(y, op)
+        return result
+
 
     def __str__(self):
         type_name = type(self).__name__

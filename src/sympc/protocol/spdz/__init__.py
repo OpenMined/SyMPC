@@ -1,6 +1,6 @@
-from .spdz import SPDZ
+from . import spdz
 
 
 __all__ = [
-    "SPDZ"
+    "spdz",
 ]

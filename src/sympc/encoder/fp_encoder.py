@@ -2,6 +2,10 @@
 #
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
+#
+# Part of the code is from the CrypTen Facebook Project
+
+import torch
 
 
 class FixedPointEncoder:
@@ -11,6 +15,9 @@ class FixedPointEncoder:
         self._scale = base ** precision
 
     def encode(self, value):
+        if not isinstance(value, torch.Tensor):
+            value = torch.tensor(value)
+
         return (value * self._scale).long()
 
     def decode(self, tensor):

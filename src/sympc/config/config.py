@@ -1,11 +1,12 @@
 from dataclasses import dataclass, field
 
-@dataclass(order=True, frozen=True)
+@dataclass
 class Config:
-    ring_size: int = field(default=2 ** 32)
-    min_value: int = field(init=False)
-    max_value: int = field(init=False)
+    min_value: int = field()
+    max_value: int = field()
+    ring_size: int = field()
 
-    def __post_init__(self):
-        super().__setattr__("min_value", -(self.ring_size // 2))
-        super().__setattr__("max_value", (self.ring_size - 1) // 2)
+    def __init__(self, ring_size: int = 2**62):
+        self.ring_size = ring_size
+        self.min_value = -(self.ring_size // 2)
+        self.max_value = (self.ring_size - 1) // 2

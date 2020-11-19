@@ -1,6 +1,6 @@
-from .beaver import Beaver
+from . import beaver
 
 __all__ = [
-    "Beaver"
+    "beaver"
 ]
 

@@ -1,34 +1,47 @@
-from .. import Beaver
+from .. import beaver
+from ...tensor import modulo
+from concurrent.futures import ThreadPoolExecutor, wait
+import sympc
 
-class SPDZ:
-    @staticmethod
-    def mul_master(x, y):
+""" Functions that the master run """
+def mul_master(x, y):
 
-        """
-        [c] = [a * b]
-        [eps] = [x] - [a]
-        [delta] = [y] - [b]
+    """
+    [c] = [a * b]
+    [eps] = [x] - [a]
+    [delta] = [y] - [b]
 
-        Open eps and delta
-        [result] = [c] + eps * [b] + delta * [a] + eps * delta
-        """
-        a_sh, b_sh, c_sh = Beaver.build_triples("mul", x, y)
-        eps = x - a_sh
-        delta = y - b_sh
-        import pdb; pdb.set_trace()
+    Open eps and delta
+    [result] = [c] + eps * [b] + delta * [a] + eps * delta
+    """
+    a_sh, b_sh, c_sh = beaver.build_triples("mul", x, y)
+    eps = x - a_sh
+    delta = y - b_sh
+    nr_parties = len(x.shares)
+    session = x.session
 
-        eps_plaintext = eps.reconstruct()
-        delta_plaintext = delta.reconstruct()
-        print("EPS", eps_plaintext)
-        print("DELTA", delta_plaintext)
+    eps_plaintext = eps.reconstruct(decode=False)
+    delta_plaintext = delta.reconstruct(decode=False)
 
-        res = eps_plaintext * b_sh
-        print((res + 0).reconstruct())
-        res = res + delta_plaintext * a_sh
-        print((res + 0).reconstruct())
-        res = res + eps_plaintext * delta_plaintext
-        print((res + 0).reconstruct())
-        res = res + c_sh
-        print((res + 0).reconstruct())
+    with ThreadPoolExecutor(max_workers=nr_parties) as executor:
+        args = list(zip(session.session_ptr, a_sh.shares, b_sh.shares, c_sh.shares))
+        futures = [
+            executor.submit(session.parties[i].sympc.protocol.spdz.mul_parties, *args[i], eps_plaintext, delta_plaintext)
+            for i in range(nr_parties)
+        ]
 
-        return res
+    shares = [f.result() for f in futures]
+    return shares
+
+
+""" Functions that run at a party """
+def mul_parties(session, a_share, b_share, c_share, eps, delta):
+    eps_b = modulo(eps * b_share, session)
+    delta_a = modulo(delta * a_share, session)
+
+    share = modulo(modulo(c_share + eps_b, session) + delta_a, session)
+    if session.rank == 0:
+        delta_eps = delta * eps
+        share = modulo(share + delta_eps, session)
+
+    return modulo(share, session)
