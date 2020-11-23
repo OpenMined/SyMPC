@@ -1,10 +1,17 @@
+import operator
+import sympc
+from concurrent.futures import ThreadPoolExecutor, wait
+
 from .. import beaver
 from ...tensor import modulo
-from concurrent.futures import ThreadPoolExecutor, wait
-import sympc
 
-""" Functions that the master run """
-def mul_master(x, y):
+
+EXPECTED_OPS = {"mul", "matmul"}
+
+
+""" Functions that are executed at the orchestrator """
+
+def mul_master(x, y, op_str):
 
     """
     [c] = [a * b]
@@ -14,11 +21,15 @@ def mul_master(x, y):
     Open eps and delta
     [result] = [c] + eps * [b] + delta * [a] + eps * delta
     """
-    a_sh, b_sh, c_sh = beaver.build_triples("mul", x, y)
+
+    if op_str not in EXPECTED_OPS:
+        raise ValueError(f"{op_str} should be in {EXPECTED_OPS}")
+
+    a_sh, b_sh, c_sh = beaver.build_triples(x, y, op_str)
     eps = x - a_sh
     delta = y - b_sh
-    nr_parties = len(x.shares)
     session = x.session
+    nr_parties = len(session.session_ptr)
 
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
@@ -26,7 +37,7 @@ def mul_master(x, y):
     with ThreadPoolExecutor(max_workers=nr_parties) as executor:
         args = list(zip(session.session_ptr, a_sh.shares, b_sh.shares, c_sh.shares))
         futures = [
-            executor.submit(session.parties[i].sympc.protocol.spdz.mul_parties, *args[i], eps_plaintext, delta_plaintext)
+            executor.submit(session.parties[i].sympc.protocol.spdz.mul_parties, *args[i], eps_plaintext, delta_plaintext, op_str)
             for i in range(nr_parties)
         ]
 
@@ -34,14 +45,17 @@ def mul_master(x, y):
     return shares
 
 
-""" Functions that run at a party """
-def mul_parties(session, a_share, b_share, c_share, eps, delta):
-    eps_b = modulo(eps * b_share, session)
-    delta_a = modulo(delta * a_share, session)
+""" Functions that are executed at a party """
 
-    share = modulo(modulo(c_share + eps_b, session) + delta_a, session)
+def mul_parties(session, a_share, b_share, c_share, eps, delta, op_str):
+    op = getattr(operator, op_str)
+
+    eps_b = modulo(op(eps, b_share), session)
+    delta_a = modulo(op(delta, a_share), session)
+
+    share = modulo(c_share + eps_b + delta_a, session)
     if session.rank == 0:
-        delta_eps = delta * eps
-        share = modulo(share + delta_eps, session)
+        delta_eps = modulo(op(delta, eps), session)
+        share = share + delta_eps
 
     return modulo(share, session)

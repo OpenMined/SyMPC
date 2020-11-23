@@ -2,6 +2,8 @@
 from pkg_resources import get_distribution, DistributionNotFound
 
 from . import protocol
+from . import session
+from . import tensor
 
 
 try:

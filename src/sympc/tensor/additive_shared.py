@@ -8,7 +8,7 @@ import operator
 
 class AdditiveSharingTensor:
 
-    def __init__(self, secret=None, shares=None, encoder_base=10, encoder_precision=4, session=None):
+    def __init__(self, secret=None, shares=None, session=None):
         if not session:
             raise ValueError("Session should not be None")
 
@@ -18,7 +18,8 @@ class AdditiveSharingTensor:
         self.session = session
         self.shape = None
 
-        self.fp_encoder = FixedPointEncoder(base=encoder_base, precision=encoder_precision)
+        conf = session.config
+        self.fp_encoder = FixedPointEncoder(base=conf.enc_base, precision=conf.enc_precision)
 
         if secret is not None:
             parties = session.parties
@@ -37,8 +38,8 @@ class AdditiveSharingTensor:
         nr_parties = len(parties)
 
         shape = secret.shape
-        min_value = session.conf.min_value
-        max_value = session.conf.max_value
+        min_value = session.config.min_value
+        max_value = session.config.max_value
 
         random_shares = []
         for _ in range(nr_parties - 1):
