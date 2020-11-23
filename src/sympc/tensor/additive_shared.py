@@ -12,6 +12,9 @@ class AdditiveSharingTensor:
         if not session:
             raise ValueError("Session should not be None")
 
+        if len(session.session_ptr) == 0:
+            raise ValueError("setup_mpc was not called on the session")
+
         self.session = session
         self.shape = None
 
@@ -60,9 +63,8 @@ class AdditiveSharingTensor:
         plaintext = self.shares[0].get()
 
         for share in self.shares[1:]:
-            plaintext += share.get()
+            plaintext = modulo(plaintext + share.get(), self.session)
 
-        plaintext = modulo(plaintext, self.session)
         if decode:
             plaintext = self.fp_encoder.decode(plaintext)
         return plaintext
@@ -80,32 +82,34 @@ class AdditiveSharingTensor:
         return self.__apply_op(y, "div")
 
     def __apply_private_op(self, y, op_str):
-        # TODO: Move this at the first level when we call a function
         if y.session.uuid != self.session.uuid:
             raise ValueError(f"Need same session {self.session.uuid} and {y.session.uuid}")
 
-        if op_str == "mul":
+        if op_str in {"mul"}:
             from ..protocol import spdz
-            shares = spdz.mul_master(self, y)
+
+            shares = spdz.mul_master(self, y, op_str)
             self_precision = self.fp_encoder.precision
             y_precision = y.fp_encoder.precision
-            result = AdditiveSharingTensor.__apply_encoding(self.session, self_precision, y_precision, shares)
-
+            result = AdditiveSharingTensor.__apply_encoding(self_precision, y_precision, shares, self.session, op_str)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             result = AdditiveSharingTensor(session=self.session)
             result.encoder = deepcopy(self.fp_encoder)
-            result.shares = shares = [op(*share_tuple) for share_tuple in zip(self.shares, y.shares)]
+            result.shares = [
+                    modulo(op(*share_tuple), self.session)
+                    for share_tuple in zip(self.shares, y.shares)
+            ]
 
         return result
 
     @staticmethod
-    def __apply_encoding(session, x_precision, y_precision, shares):
+    def __apply_encoding(x_precision, y_precision, shares, session, op_str):
         max_prec = max(x_precision, y_precision)
         fp_encoder = FixedPointEncoder(precision=max_prec)
 
         if x_precision and y_precision:
-            shares = [share // fp_encoder.scale for share in shares]
+                shares = [share // fp_encoder.scale for share in shares]
 
         shares = [modulo(share, session) for share in shares]
 
@@ -124,12 +128,17 @@ class AdditiveSharingTensor:
         # Here are two sens: one for modulo and one for op
         # TODO: Make only one operation
 
-        if op_str == "mul":
-            shares = [modulo(op(share, y) // self.fp_encoder.scale, self.session) for share in self.shares]
+        if op_str in {"mul"}:
+            shares = [
+                modulo(op(share, y), self.session) // self.fp_encoder.scale
+                for share in self.shares
+            ]
         else:
             operands_shares = [y] + [0 for _ in range(len(self.shares)-1)]
-            shares = [modulo(op(*tuple_shares), self.session) for tuple_shares in zip(self.shares, operands_shares)]
-
+            shares = [
+                modulo(op(*tuple_shares), self.session)
+                for tuple_shares in zip(self.shares, operands_shares)
+            ]
 
         result = AdditiveSharingTensor(shares=shares, session=self.session)
         return result
