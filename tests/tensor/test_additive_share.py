@@ -144,18 +144,3 @@ def test_sub(clients):
 
     with pytest.raises(ValueError):
         result = x_session - x_session_alternate
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
