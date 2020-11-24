@@ -50,7 +50,7 @@ class MPCTensor:
 
     def __init__(
         self,
-        session: Session,
+        session: Optional[Session] = None,
         secret: Optional[Union[ShareTensor, torch.Tensor, float, int]] = None,
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
         shares: Optional[List[ShareTensor]] = None,
@@ -61,15 +61,24 @@ class MPCTensor:
         - secret is not known by the orchestrator (PRZS is employed)
         """
 
-        if len(session.session_ptrs) == 0:
+        if session is None and secret.session is None:
+            raise ValueError(
+                "Need to provide a session, as argument or in the ShareTensor"
+            )
+
+        self.session = session if session is not None else secret.session
+
+        if len(self.session.session_ptrs) == 0:
             raise ValueError("setup_mpc was not called on the session")
 
-        self.session = session
         if secret is not None:
-            secret_share, self.shape, is_remote_secret = MPCTensor.sanity_checks(
-                secret, shape, session
+            """In the case the secret is hold by a remote party then we use the PRZS
+            to generate the shares and then the pointer tensor is added to share specific
+            to the holder of the secret
+            """
+            secret, self.shape, is_remote_secret = MPCTensor.sanity_checks(
+                secret, shape, self.session
             )
-            parties = session.parties
 
             if is_remote_secret:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
@@ -80,13 +89,20 @@ class MPCTensor:
                         self.share_ptrs[i] = self.share_ptrs[i] + secret_share
                         break
             else:
-                self.share_ptrs = []
-                shares = MPCTensor.generate_shares(secret_share, self.session)
-                for share, party in zip(shares, self.session.parties):
-                    self.share_ptrs.append(share.send(party))
+                nr_parties = len(self.session.parties)
+                tensor_type = self.session.tensor_type
+                shares_local = MPCTensor.generate_shares(secret, nr_parties, tensor_type)
+                shares = MPCTensor.distribute_shares(shares_local, self.session.parties)
 
-        elif shares is not None:
-            self.share_ptrs = shares
+        self.share_ptrs = shares
+
+    @staticmethod
+    def distribute_shares(shares, parties):
+        share_ptrs = []
+        for share, party in zip(shares, parties):
+            share_ptrs.append(share.send(party))
+
+        return share_ptrs
 
     @staticmethod
     def sanity_checks(
@@ -148,40 +164,35 @@ class MPCTensor:
         return shares
 
     @staticmethod
-    def generate_shares(secret, session: Session) -> List[ShareTensor]:
-        """Given a secret generate, split it into a number of shares such that
+    def generate_shares(
+        secret: Union[ShareTensor, int, float],
+        nr_parties: int,
+        tensor_type: Optional[torch.dtype] = None,
+    ) -> List[ShareTensor]:
+        """Given a secret, split it into a number of shares such that
         each party would get one
 
         :return: list of shares
-        :rtype: List of Zero Shares
+        :rtype: list of ShareTensor
         """
+
         if not isinstance(secret, ShareTensor):
             raise ValueError("Secret should be a ShareTensor")
 
-        parties: List[Any] = session.parties
-        nr_parties = len(parties)
-
-        min_value = session.min_value
-        max_value = session.max_value
-
         shape = secret.shape
-        tensor_type = session.tensor_type
 
         random_shares = []
         generator = csprng.create_random_device_generator()
 
         for _ in range(nr_parties - 1):
-            rand_value = torch.empty(size=shape, dtype=torch.long).random_(
+            rand_value = torch.empty(size=shape, dtype=tensor_type).random_(
                 generator=generator
             )
-            share = ShareTensor(session=session)
-
-            # Add the share after such that we do not encode it
-            share.tensor = rand_value
+            share = ShareTensor(data=rand_value, encoder_precision=0)
             random_shares.append(share)
 
         shares = []
-        for i in range(len(parties)):
+        for i in range(nr_parties):
             if i == 0:
                 share = random_shares[i]
             elif i < nr_parties - 1:
@@ -192,7 +203,9 @@ class MPCTensor:
             shares.append(share)
         return shares
 
-    def reconstruct(self, decode: bool = True) -> torch.Tensor:
+    def reconstruct(
+        self, decode: bool = True, get_shares: bool = False
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Request and get the shares from all the parties and reconstruct the secret.
         Depending on the value of "decode", the secret would be decoded or not using
         the FixedPrecision Encoder specific for the session
@@ -221,7 +234,12 @@ class MPCTensor:
 
         tensor_type = self.session.tensor_type
 
-        plaintext = sum(share.tensor for share in local_shares)
+        shares = [share.tensor for share in local_shares]
+
+        if get_shares:
+            return shares
+
+        plaintext = sum(shares)
 
         if decode:
             fp_encoder = FixedPointEncoder(
@@ -232,6 +250,10 @@ class MPCTensor:
             plaintext = fp_encoder.decode(plaintext)
 
         return plaintext
+
+    def get_shares(self):
+        res = self.reconstruct(get_shares=True)
+        return res
 
     def add(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "add" operation between "self" and "y".
@@ -299,7 +321,7 @@ class MPCTensor:
         :return: self // y
         :rtype: MPCTensor
         """
-        return self.__apply_op(y, "div")
+        raise NotImplementedError("Not implemented, YET!")
 
     def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
@@ -316,13 +338,13 @@ class MPCTensor:
             from sympc.protocol.spdz import spdz
 
             shares = spdz.mul_master(self, y, op_str)
-            result = MPCTensor(shares=shares, session=self.session)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
-            result = MPCTensor(session=self.session)
-            result.share_ptrs = [
+            shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
             ]
+
+        result = MPCTensor(shares=shares, session=self.session)
 
         return result
 

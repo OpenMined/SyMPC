@@ -10,11 +10,21 @@ from pkg_resources import DistributionNotFound
 from pkg_resources import get_distribution
 import syft
 
+try:
+    import syft
+except ImportError as e:
+    print("PySyft is needed to be able to use SyMPC")
+    raise e
+
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
-from . import protocol  # noqa: 401
-from . import session  # noqa: 401
+from . import store  # noqa: 401
 from . import tensor  # noqa: 401
+from . import session  # noqa: 401
+from . import protocol  # noqa: 401
+
+syft.load_lib("sympc")
+
 
 syft.load_lib("sympc")
 

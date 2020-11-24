@@ -51,7 +51,7 @@ class ShareTensor:
 
     def __init__(
         self,
-        data: Optional[Any] = None,
+        data: Optional[Union[float, int, torch.Tensor]] = None,
         session: Optional[Session] = None,
         encoder_base: int = 2,
         encoder_precision: int = 16,
@@ -77,6 +77,7 @@ class ShareTensor:
         )
 
         self.tensor: Optional[torch.Tensor] = None
+
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self.fp_encoder.encode(data).type(tensor_type)
@@ -190,11 +191,25 @@ class ShareTensor:
         """Apply the "div" operation between "self" and "y".
         Currently, NotImplemented
 
-        :return: self // y
+        :return: self / y
         :rtype: ShareTensor
         """
+        if not isinstance(y, int):
+            raise ValueError("Div works (for the moment) only with integers!")
 
-        raise NotImplementedError("Not implemented, YET!")
+        res = ShareTensor(session=self.session)
+        res.tensor = self.tensor / y
+
+        return res
+
+    def div_(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> None:
+        # TODO: This needs to be moved in framework specific functions
+        if not isinstance(y, int):
+            raise ValueError("Supported only Integer division")
+
+        self.tensor //= y
+
+        return self
 
     def __getattr__(self, attr_name: str) -> Any:
         """Get the attribute from the ShareTensor.
@@ -265,3 +280,4 @@ class ShareTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __div__ = div
+    __floordiv__ = div_

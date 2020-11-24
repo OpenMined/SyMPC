@@ -1,6 +1,5 @@
 """
-Beaver Triple Generation Mechanism
+Beaver Generators Mechanism
 """
-from . import beaver
 
-__all__ = ["beaver"]
+from .beaver import *
