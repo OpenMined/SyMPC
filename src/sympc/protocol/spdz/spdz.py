@@ -1,7 +1,14 @@
+from typing import List
+
+import torch
 import operator
-from concurrent.futures import ThreadPoolExecutor
-from .. import beaver
-from ...tensor import modulo
+from sympc.tensor import ShareTensor
+from concurrent.futures import ThreadPoolExecutor, wait
+
+from sympc.session import Session
+from sympc.protocol import beaver
+from sympc.tensor import ShareTensor
+from sympc.tensor import ShareTensorCC
 
 
 EXPECTED_OPS = {"mul", "matmul"}
@@ -10,7 +17,7 @@ EXPECTED_OPS = {"mul", "matmul"}
 """ Functions that are executed at the orchestrator """
 
 
-def mul_master(x, y, op_str):
+def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTensor]:
 
     """
     [c] = [a * b]
@@ -33,8 +40,12 @@ def mul_master(x, y, op_str):
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
 
-    with ThreadPoolExecutor(max_workers=nr_parties) as executor:
-        args = list(zip(session.session_ptr, a_sh.shares, b_sh.shares, c_sh.shares))
+    with ThreadPoolExecutor(
+        max_workers=nr_parties, thread_name_prefix="spdz_mul_master"
+    ) as executor:
+        args = list(
+            zip(session.session_ptr, a_sh.share_ptr, b_sh.share_ptr, c_sh.share_ptr)
+        )
         futures = [
             executor.submit(
                 session.parties[i].sympc.protocol.spdz.mul_parties,
@@ -50,18 +61,33 @@ def mul_master(x, y, op_str):
     return shares
 
 
-""" Functions that are executed at a party """
+""" Functions that are executed at each party that holds shares """
 
 
-def mul_parties(session, a_share, b_share, c_share, eps, delta, op_str):
+def mul_parties(
+    session: Session,
+    a_share: ShareTensor,
+    b_share: ShareTensor,
+    c_share: ShareTensor,
+    eps: torch.Tensor,
+    delta: torch.Tensor,
+    op_str: str,
+) -> ShareTensor:
+
     op = getattr(operator, op_str)
 
-    eps_b = modulo(op(eps, b_share), session)
-    delta_a = modulo(op(delta, a_share), session)
+    eps_b = op(eps, b_share)
+    delta_a = op(delta, a_share)
 
-    share = modulo(c_share + eps_b + delta_a, session)
+    share = c_share + eps_b + delta_a
     if session.rank == 0:
-        delta_eps = modulo(op(delta, eps), session)
-        share = share + delta_eps
+        delta_eps = op(delta, eps)
+        share.tensor = share.tensor + delta_eps
 
-    return modulo(share, session)
+    scale = session.config.encoder_base ** session.config.encoder_precision
+    share.tensor //= scale
+
+    # Convert to our tensor type
+    share.tensor = share.tensor.type(session.tensor_type)
+
+    return share

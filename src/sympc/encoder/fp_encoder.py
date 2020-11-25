@@ -5,27 +5,34 @@
 #
 # Part of the code is from the CrypTen Facebook Project
 
+from typing import Union
+
 import torch
 
 
 class FixedPointEncoder:
-    def __init__(self, base=10, precision=4):
+    __slots__ = {"_precision", "_base", "_scale"}
+
+    def __init__(self, base: int = 10, precision: int = 4):
         self._precision = precision
         self._base = base
         self._scale = base ** precision
 
-    def encode(self, value):
+    def encode(self, value: Union[torch.Tensor, float, int]):
         if not isinstance(value, torch.Tensor):
-            value = torch.tensor(value)
+            value = torch.tensor(data=[value], dtype=torch.long)
 
-        return (value * self._scale).long()
+        # Use the largest type
+        long_value = (value * self._scale).long()
+        return long_value
 
-    def decode(self, tensor):
+    def decode(self, tensor: torch.Tensor):
         if tensor.dtype.is_floating_point:
             raise ValueError(f"{tensor} should be converted to long format")
 
         if self._precision == 0:
             return tensor
+
         correction = (tensor < 0).long()
         dividend = tensor // self._scale - correction
         remainder = tensor % self._scale

@@ -1,14 +1,7 @@
-def modulo(x, session):
-    config = session.config
+from typing import Any
 
-    max_val = config.max_value
-    min_val = config.min_value
-    ring_size = config.ring_size
 
-    mask_pos = x > max_val
-    mask_neg = x < min_val
-    mask = -mask_pos.long() + mask_neg.long()
-
-    result = (x + mask * ring_size).long()
-
-    return result
+def ispointer(obj: Any) -> bool:
+    if type(obj).__name__.endswith("Pointer") and hasattr(obj, "id_at_location"):
+        return True
+    return False

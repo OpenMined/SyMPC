@@ -1,12 +1,18 @@
+from typing import Tuple
+
 import torch
 import operator
 
-from ...tensor import modulo
+from sympc.tensor.share_control import ShareTensorCC
+from sympc.tensor.share import ShareTensor
 
 EXPECTED_OPS = {"matmul", "mul"}
 
 
-def build_triples(x, y, op_str):
+def build_triples(
+    x: ShareTensorCC, y: ShareTensorCC, op_str: str
+) -> Tuple[ShareTensorCC, ShareTensorCC, ShareTensorCC]:
+
     """
     The Trusted Third Party (TTP) or Crypto Provider should provide this triples
     Currently, the one that orchestrates the communication provides those
@@ -14,27 +20,28 @@ def build_triples(x, y, op_str):
     if op_str not in EXPECTED_OPS:
         raise ValueError(f"{op_str} should be in {EXPECTED_OPS}")
 
-    session = x.session
     shape_x = x.shape
     shape_y = y.shape
-    conf = session.config
-    min_val = conf.min_value
-    max_val = conf.max_value
 
-    # TODO: Move this to a library specific file
-    a = torch.randint(min_val, max_val, shape_x).long()
-    b = torch.randint(min_val, max_val, shape_y).long()
+    session = x.session
+    min_val = session.min_value
+    max_val = session.max_value
+
+    a = ShareTensor(session=session)
+    a.tensor = torch.randint(min_val, max_val, shape_x, dtype=torch.long)
+
+    b = ShareTensor(session=session)
+    b.tensor = torch.randint(min_val, max_val, shape_y, dtype=torch.long)
 
     cmd = getattr(operator, op_str)
-    c = modulo(cmd(a, b).long(), session)
 
-    from sympc.tensor import AdditiveSharingTensor
+    # Manually place the tensor and use the same session such that we do
+    # not encode the result
+    c = ShareTensor(session=session)
+    c.tensor = cmd(a.tensor, b.tensor)
 
-    session_copy = session.get_copy()
-    session_copy.config.enc_precision = 0
-
-    a_sh = AdditiveSharingTensor(secret=a, session=session_copy)
-    b_sh = AdditiveSharingTensor(secret=b, session=session_copy)
-    c_sh = AdditiveSharingTensor(secret=c, session=session_copy)
+    a_sh = ShareTensorCC(secret=a, session=session)
+    b_sh = ShareTensorCC(secret=b, session=session)
+    c_sh = ShareTensorCC(secret=c, session=session)
 
     return a_sh, b_sh, c_sh
