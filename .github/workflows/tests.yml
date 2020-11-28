@@ -54,6 +54,7 @@ jobs:
           #- pip3 install flake8-docstrings
           pip3 install flake8-comprehensions
           pip3 install pep8-naming
+          pip3 install interrogate
       - name: Lint, format, and type-check
         run: |
           # stop the build if there are Python syntax errors or undefined names
@@ -61,11 +62,11 @@ jobs:
           black --check .
           # Run type checker in CI such that type errors can be identified and gradually addressed.
           # Once all existing type errors are addressed, the `|| echo` after the mypy call can be removed.
-          mypy sympc || echo "Type errors found, continuing build..."
+          mypy src || echo "Type errors found, continuing build..."
       - name: Check docstring coverage
         run: |
-          interrogate -mvp syft/ -f 52.5
+          interrogate -mvp src/ -f 52.5
       - name: Scan for security issues
         run: |
           pip install bandit
-          bandit -r syft -ll
+          bandit -r src -ll
