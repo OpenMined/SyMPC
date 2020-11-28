@@ -154,7 +154,6 @@ class AdditiveSharingTensor:
 
         return result
 
-
     def __str__(self):
         type_name = type(self).__name__
         out = f"[{type_name}]"
