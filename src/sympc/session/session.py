@@ -1,5 +1,4 @@
 from uuid import uuid1
-
 from ..config import Config
 from copy import deepcopy
 
@@ -25,13 +24,13 @@ class Session:
     def get_copy(self):
         session_copy = Session()
         session_copy.uuid = deepcopy(self.uuid)
-        session_copy.parties = [party for party in self.parties]
+        session_copy.parties = list(self.parties)
         session_copy.trusted_third_party = self.trusted_third_party
         session_copy.crypto_store = {}
         session_copy.protocol = self.protocol
         session_copy.config = deepcopy(self.config)
         session_copy.rank = self.rank
-        session_copy.session_ptr = [s_ptr for s_ptr in self.session_ptr]
+        session_copy.session_ptr = list(self.session_ptr)
 
         return session_copy
 
