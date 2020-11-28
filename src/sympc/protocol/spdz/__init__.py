@@ -1,6 +1,4 @@
 from . import spdz
 
 
-__all__ = [
-    "spdz"
-]
+__all__ = ["spdz"]

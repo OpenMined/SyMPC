@@ -6,6 +6,7 @@ from ...tensor import modulo
 
 EXPECTED_OPS = {"matmul", "mul"}
 
+
 def build_triples(x, y, op_str):
     """
     The Trusted Third Party (TTP) or Crypto Provider should provide this triples

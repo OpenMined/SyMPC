@@ -1,6 +1,3 @@
 from . import beaver
 
-__all__ = [
-    "beaver"
-]
-
+__all__ = ["beaver"]

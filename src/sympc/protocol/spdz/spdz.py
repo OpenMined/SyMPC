@@ -11,6 +11,7 @@ EXPECTED_OPS = {"mul", "matmul"}
 
 """ Functions that are executed at the orchestrator """
 
+
 def mul_master(x, y, op_str):
 
     """
@@ -37,7 +38,13 @@ def mul_master(x, y, op_str):
     with ThreadPoolExecutor(max_workers=nr_parties) as executor:
         args = list(zip(session.session_ptr, a_sh.shares, b_sh.shares, c_sh.shares))
         futures = [
-            executor.submit(session.parties[i].sympc.protocol.spdz.mul_parties, *args[i], eps_plaintext, delta_plaintext, op_str)
+            executor.submit(
+                session.parties[i].sympc.protocol.spdz.mul_parties,
+                *args[i],
+                eps_plaintext,
+                delta_plaintext,
+                op_str,
+            )
             for i in range(nr_parties)
         ]
 
@@ -46,6 +53,7 @@ def mul_master(x, y, op_str):
 
 
 """ Functions that are executed at a party """
+
 
 def mul_parties(session, a_share, b_share, c_share, eps, delta, op_str):
     op = getattr(operator, op_str)

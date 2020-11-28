@@ -3,6 +3,7 @@ from uuid import uuid1
 from ..config import Config
 from copy import deepcopy
 
+
 class Session:
     def __init__(self, config=None, parties=None, ttp=None, uuid=None):
         self.uuid = uuid1() if uuid is None else uuid
@@ -35,4 +36,6 @@ class Session:
         return session_copy
 
     def setup_mpc(self):
-        raise NotImplementedError("Need to be able to send the session to other parties")
+        raise NotImplementedError(
+            "Need to be able to send the session to other parties"
+        )
