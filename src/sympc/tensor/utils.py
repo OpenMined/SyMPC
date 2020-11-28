@@ -1,6 +1,3 @@
-import torch
-
-
 def modulo(x, session):
     config = session.config
 

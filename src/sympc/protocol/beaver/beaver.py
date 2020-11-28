@@ -1,6 +1,5 @@
 import torch
 import operator
-from copy import deepcopy
 
 from ...tensor import modulo
 

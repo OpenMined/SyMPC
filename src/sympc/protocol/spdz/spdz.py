@@ -1,7 +1,5 @@
 import operator
-import sympc
-from concurrent.futures import ThreadPoolExecutor, wait
-
+from concurrent.futures import ThreadPoolExecutor
 from .. import beaver
 from ...tensor import modulo
 
