@@ -55,6 +55,7 @@ jobs:
           pip3 install flake8-comprehensions
           pip3 install pep8-naming
           pip3 install interrogate
+          pip3 install black
       - name: Lint, format, and type-check
         run: |
           # stop the build if there are Python syntax errors or undefined names
