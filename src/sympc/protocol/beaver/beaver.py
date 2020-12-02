@@ -1,10 +1,10 @@
 import torch
 import operator
-from copy import deepcopy
 
 from ...tensor import modulo
 
 EXPECTED_OPS = {"matmul", "mul"}
+
 
 def build_triples(x, y, op_str):
     """
