@@ -5,8 +5,9 @@ from typing import Any
 
 from sympc.config import Config
 from sympc.session.utils import get_type_from_ring
+from sympc.session.utils import generate_random_element
 
-import random
+import secrets
 
 
 # TODO: This should not be here
@@ -117,17 +118,14 @@ class Session:
             party.python.List([None, None]) for party in session.parties
         ]
 
-        for rank in range(nr_parties):
+        parties = session.parties
 
-            # TODO: Need to change this with something secure - see CSPRNG
-            seed = random.randint(-(2 ** 31), 2 ** 31)
+        for rank in range(nr_parties):
+            seed = secrets.randbits(32)
             next_rank = (rank + 1) % nr_parties
 
-            gen_current = session.parties[rank].torch.Generator()
-            gen_current.manual_seed(seed)
-
-            gen_next = session.parties[next_rank].torch.Generator()
-            gen_next.manual_seed(seed)
+            gen_current = session.parties[rank].sympc.session.get_generator(seed)
+            gen_next = parties[next_rank].sympc.session.get_generator(seed)
 
             session.przs_generators[rank][1] = gen_current
             session.przs_generators[next_rank][0] = gen_next

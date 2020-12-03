@@ -44,7 +44,7 @@ def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTen
         max_workers=nr_parties, thread_name_prefix="spdz_mul_master"
     ) as executor:
         args = list(
-            zip(session.session_ptr, a_sh.share_ptr, b_sh.share_ptr, c_sh.share_ptr)
+            zip(session.session_ptr, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs)
         )
         futures = [
             executor.submit(

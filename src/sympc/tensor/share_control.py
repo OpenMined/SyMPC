@@ -20,7 +20,7 @@ class ShareTensorCC:
     This class is used by a party that wants to do some SMPC
     """
 
-    __slots__ = {"share_ptr", "session", "shape"}
+    __slots__ = {"share_ptrs", "session", "shape"}
 
     def __init__(
         self,
@@ -46,20 +46,20 @@ class ShareTensorCC:
             if is_remote_secret:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
                 # party that holds the secret will add it to it's share
-                self.share_ptr = ShareTensorCC.generate_przs(self.shape, self.session)
-                for i, share in enumerate(self.share_ptr):
+                self.share_ptrs = ShareTensorCC.generate_przs(self.shape, self.session)
+                for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:
-                        self.share_ptr[i] = self.share_ptr[i] + secret
+                        self.share_ptrs[i] = self.share_ptr[i] + secret
                         break
             else:
-                self.share_ptr = []
+                self.share_ptrs = []
 
                 shares = ShareTensorCC.generate_shares(secret, self.session)
                 for share, party in zip(shares, self.session.parties):
-                    self.share_ptr.append(share.send(party))
+                    self.share_ptrs.append(share.send(party))
 
         elif shares is not None:
-            self.share_ptr = shares
+            self.share_ptrs = shares
 
     @staticmethod
     def sanity_checks(
@@ -159,7 +159,7 @@ class ShareTensorCC:
         with ThreadPoolExecutor(
             max_workers=nr_parties, thread_name_prefix="ast_request_and_get"
         ) as executor:
-            futures = [executor.submit(request, share) for share in self.share_ptr]
+            futures = [executor.submit(request, share) for share in self.share_ptrs]
 
         local_shares = [f.result() for f in futures]
 
@@ -204,8 +204,8 @@ class ShareTensorCC:
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             result = ShareTensorCC(session=self.session)
-            result.share_ptr = [
-                op(*share_tuple) for share_tuple in zip(self.share_ptr, y.share_ptr)
+            result.share_ptrs = [
+                op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
             ]
 
         return result
@@ -213,13 +213,13 @@ class ShareTensorCC:
     def __apply_public_op(self, y, op_str):
         op = getattr(operator, op_str)
         if op_str in {"mul"}:
-            shares = [op(share, y) for share in self.share_ptr]
+            shares = [op(share, y) for share in self.share_ptrs]
+        elif op_str in {"add", "sub"}:
+            shares = self.share_ptrs
+            # Only the rank 0 party has to add the element
+            shares[0] = op(shares[0], y)
         else:
-            operands_shares = [y] + [0 for _ in range(len(self.share_ptr) - 1)]
-            shares = [
-                op(*tuple_shares)
-                for tuple_shares in zip(self.share_ptr, operands_shares)
-            ]
+            raise ValueError(f"{op_str} not supported")
 
         result = ShareTensorCC(shares=shares, session=self.session)
         return result
@@ -238,7 +238,7 @@ class ShareTensorCC:
         type_name = type(self).__name__
         out = f"[{type_name}]"
 
-        for share in self.share_ptr:
+        for share in self.share_ptrs:
             out = f"{out}\n\t| {share.client} -> {share.__name__}"
         return out
 
