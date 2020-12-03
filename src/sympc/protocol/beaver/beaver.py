@@ -1,12 +1,15 @@
 from typing import Tuple
 
 import torch
+import torchcsprng as csprng
 import operator
 
 from sympc.tensor.share_control import ShareTensorCC
 from sympc.tensor.share import ShareTensor
 
 EXPECTED_OPS = {"matmul", "mul"}
+
+ttp_generator = csprng.create_random_device_generator()
 
 
 def build_triples(
@@ -24,14 +27,16 @@ def build_triples(
     shape_y = y.shape
 
     session = x.session
-    min_val = session.min_value
-    max_val = session.max_value
 
     a = ShareTensor(session=session)
-    a.tensor = torch.randint(min_val, max_val, shape_x, dtype=torch.long)
+    a.tensor = torch.empty(size=shape_x, dtype=torch.long).random_(
+        generator=ttp_generator
+    )
 
     b = ShareTensor(session=session)
-    b.tensor = torch.randint(min_val, max_val, shape_y, dtype=torch.long)
+    b.tensor = torch.empty(size=shape_x, dtype=torch.long).random_(
+        generator=ttp_generator
+    )
 
     cmd = getattr(operator, op_str)
 

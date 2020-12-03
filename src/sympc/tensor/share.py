@@ -25,8 +25,8 @@ class ShareTensor:
         self,
         data=None,
         session=None,
-        encoder_base=10,
-        encoder_precision=4,
+        encoder_base=2,
+        encoder_precision=16,
         ring_size=2 ** 64,
     ):
 
@@ -49,7 +49,7 @@ class ShareTensor:
 
         self.tensor = None
         if data is not None:
-            tensor_type = session.tensor_type
+            tensor_type = self.session.tensor_type
             self.tensor = self.fp_encoder.encode(data).type(tensor_type)
 
     @staticmethod

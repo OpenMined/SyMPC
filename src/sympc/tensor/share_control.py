@@ -1,15 +1,17 @@
 import torch
+import torchcsprng as csprng
+
 from typing import Union
 from typing import List
 from typing import Tuple
 from typing import Any
 
-from concurrent.futures import ThreadPoolExecutor, wait
-
 from sympc.session import Session
 from sympc.tensor.share import ShareTensor
 from sympc.encoder import FixedPointEncoder
-from sympc.tensor.utils import ispointer
+from sympc.utils import ispointer
+from sympc.utils import isvm
+from sympc.utils import parallel_execution
 
 from copy import deepcopy
 import operator
@@ -117,8 +119,12 @@ class ShareTensorCC:
         tensor_type = session.tensor_type
 
         random_shares = []
+        generator = csprng.create_random_device_generator()
+
         for _ in range(nr_parties - 1):
-            rand_value = torch.randint(min_value, max_value, shape, dtype=tensor_type)
+            rand_value = torch.empty(size=shape, dtype=torch.long).random_(
+                generator=generator
+            )
             share = ShareTensor(session=session)
 
             # Add the share after such that we do not encode it
@@ -138,11 +144,7 @@ class ShareTensorCC:
         return shares
 
     def reconstruct(self, decode=True):
-        client_type = self.session.parties[0].class_name
-
         def _request_and_get(share_ptr):
-            # If not VirtualMachine, we are in Duet and we need to request
-            # the data
             share_ptr.request(block=True)
             return share_ptr.get()
 
@@ -150,18 +152,17 @@ class ShareTensorCC:
             return share_ptr.get()
 
         request = None
-        if "VirtualMachine" in client_type:
+        if isvm(self.session.parties[0]):
             request = _get
         else:
+            # If not VirtualMachine, we are in Duet and we need to request
+            # the data
             request = _request_and_get
 
-        nr_parties = len(self.session.parties)
-        with ThreadPoolExecutor(
-            max_workers=nr_parties, thread_name_prefix="ast_request_and_get"
-        ) as executor:
-            futures = [executor.submit(request, share) for share in self.share_ptrs]
+        request = parallel_execution(request)
 
-        local_shares = [f.result() for f in futures]
+        args = [[share] for share in self.share_ptrs]
+        local_shares = request(args)
 
         tensor_type = self.session.tensor_type
         plaintext = sum(local_shares)

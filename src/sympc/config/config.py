@@ -11,6 +11,6 @@ class Config:
     encoder_precision: int = field()
     encoder_base: int = field()
 
-    def __init__(self, encoder_precision: int = 4, encoder_base: int = 10) -> None:
+    def __init__(self, encoder_precision: int = 16, encoder_base: int = 2) -> None:
         self.encoder_precision = encoder_precision
         self.encoder_base = encoder_base

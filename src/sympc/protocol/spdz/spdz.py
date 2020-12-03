@@ -1,5 +1,7 @@
 from typing import List
 
+from itertools import repeat
+
 import torch
 import operator
 from sympc.tensor import ShareTensor
@@ -9,6 +11,7 @@ from sympc.session import Session
 from sympc.protocol import beaver
 from sympc.tensor import ShareTensor
 from sympc.tensor import ShareTensorCC
+from sympc.utils import parallel_execution
 
 
 EXPECTED_OPS = {"mul", "matmul"}
@@ -40,24 +43,17 @@ def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTen
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
 
-    with ThreadPoolExecutor(
-        max_workers=nr_parties, thread_name_prefix="spdz_mul_master"
-    ) as executor:
-        args = list(
-            zip(session.session_ptr, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs)
+    args = list(
+        map(
+            list,
+            zip(session.session_ptr, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs),
         )
-        futures = [
-            executor.submit(
-                session.parties[i].sympc.protocol.spdz.mul_parties,
-                *args[i],
-                eps_plaintext,
-                delta_plaintext,
-                op_str,
-            )
-            for i in range(nr_parties)
-        ]
+    )
 
-    shares = [f.result() for f in futures]
+    for i in range(nr_parties):
+        args[i].extend([eps_plaintext, delta_plaintext, op_str])
+
+    shares = parallel_execution(mul_parties, session.parties)(args)
     return shares
 
 

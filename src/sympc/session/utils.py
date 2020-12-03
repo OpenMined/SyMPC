@@ -34,6 +34,6 @@ def generate_random_element(
     device: str = "cpu",
 ) -> torch.Tensor:
 
-    return torch.empty(
-        shape=shape, dtype=tensor_type, device=device, generator=generator
+    return torch.empty(size=shape, dtype=tensor_type, device=device).random_(
+        generator=generator
     )

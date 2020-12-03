@@ -13,7 +13,7 @@ import torch
 class FixedPointEncoder:
     __slots__ = {"_precision", "_base", "_scale"}
 
-    def __init__(self, base: int = 10, precision: int = 4):
+    def __init__(self, base: int = 2, precision: int = 16):
         self._precision = precision
         self._base = base
         self._scale = base ** precision

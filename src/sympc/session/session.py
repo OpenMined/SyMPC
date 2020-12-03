@@ -1,3 +1,5 @@
+import operator
+
 from uuid import uuid1
 from typing import Union
 from typing import List
@@ -15,6 +17,7 @@ import torch
 
 
 class Session:
+    NOT_COMPARE = {"id", "description", "tags"}
     __slots__ = {
         # Populated in Syft
         "id",
@@ -62,7 +65,7 @@ class Session:
         self.przs_generators = None
 
         # Those will be populated in the setup_mpc
-        self.rank = None
+        self.rank = -1
         self.session_ptr = []
 
         # Ring size
@@ -79,20 +82,16 @@ class Session:
 
         gen0, gen1 = generators
 
-        current_share = torch.randint(
-            low=self.min_value,
-            high=self.max_value,
-            size=shape,
-            dtype=self.tensor_type,
+        current_share = generate_random_element(
+            tensor_type=self.tensor_type,
             generator=gen0,
+            shape=shape,
         )
 
-        next_share = torch.randint(
-            low=self.min_value,
-            high=self.max_value,
-            size=shape,
-            dtype=self.tensor_type,
+        next_share = generate_random_element(
+            tensor_type=self.tensor_type,
             generator=gen1,
+            shape=shape,
         )
 
         share = ShareTensor(session=self)
@@ -129,3 +128,15 @@ class Session:
 
             session.przs_generators[rank][1] = gen_current
             session.przs_generators[next_rank][0] = gen_next
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+
+        if self.__slots__ != other.__slots__:
+            return False
+
+        attr_getters = [
+            operator.attrgetter(attr) for attr in self.__slots__ - Session.NOT_COMPARE
+        ]
+        return all(getter(self) == getter(other) for getter in attr_getters)
