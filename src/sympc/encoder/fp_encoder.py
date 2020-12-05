@@ -11,6 +11,14 @@ import torch
 
 
 class FixedPointEncoder:
+    """
+    Class for encoding/decoding a tensor to/from a fixed precision representation
+    This class was inspired from the Facebook Research - Crypten project
+
+    Arguments:
+
+    """
+
     __slots__ = {"_precision", "_base", "_scale"}
 
     def __init__(self, base: int = 2, precision: int = 16):
