@@ -1,3 +1,7 @@
+"""
+Configuration information used for FixedPrecisionEncoder and ShareTensor
+"""
+
 from dataclasses import dataclass, field
 
 
@@ -8,13 +12,14 @@ class Config:
     diffenret options that can be used for the Fixed Precision Encoder
 
     Arguments:
-        encoder_precision (int): the precision for the encoder
         encoder_base (int): the base for the encoder
+        encoder_precision (int): the precision for the encoder
     """
 
     encoder_precision: int = field()
     encoder_base: int = field()
 
-    def __init__(self, encoder_precision: int = 16, encoder_base: int = 2) -> None:
-        self.encoder_precision = encoder_precision
+    def __init__(self, encoder_base: int = 2, encoder_precision: int = 16) -> None:
+        """ Initializer for the Config """
         self.encoder_base = encoder_base
+        self.encoder_precision = encoder_precision

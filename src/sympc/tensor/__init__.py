@@ -1,7 +1,11 @@
-from sympc.tensor.share_control import ShareTensorCC
-from sympc.tensor.share import ShareTensor
+"""
+Custom MPC Tensors
+"""
+
+from .share import ShareTensor
+from .share_control import ShareTensorCC
 
 __all__ = [
-    "ShareTensorCC",
     "ShareTensor",
+    "ShareTensorCC",
 ]

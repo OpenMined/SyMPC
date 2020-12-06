@@ -1,5 +1,9 @@
-from sympc.protocol.beaver import beaver
-from sympc.protocol.spdz import spdz
+"""
+Implemented Protocols
+"""
+
+from . import beaver
+from . import spdz
 
 
 __all__ = ["beaver", "spdz"]

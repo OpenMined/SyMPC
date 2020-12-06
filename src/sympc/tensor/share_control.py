@@ -1,25 +1,47 @@
+"""
+Class used to have orchestrate the computation on shared values
+"""
+
 import torch
 import torchcsprng as csprng
 
 from typing import Union
 from typing import List
 from typing import Tuple
-from typing import Any
+from typing import Optional
 
 from sympc.session import Session
-from sympc.tensor.share import ShareTensor
+from sympc.tensor import ShareTensor
 from sympc.encoder import FixedPointEncoder
 from sympc.utils import ispointer
 from sympc.utils import isvm
 from sympc.utils import parallel_execution
 
-from copy import deepcopy
 import operator
 
 
 class ShareTensorCC:
     """
-    This class is used by a party that wants to do some SMPC
+    This class is used by an orchestrator that wants to do computation
+    on data it does not see.
+
+    Arguments:
+        session (Session): the session
+        secret (Optional[Union[torch.Tensor, float, int]): in case the secret is
+            known by the orchestrator it is split in shares and given to multiple
+            parties
+        shape (Optional[Union[torch.Size, tuple]): the shape of the secret in case
+            the secret is not known by the orchestrator
+            this is needed when a multiplication is needed between two secret values
+            (need the shapes to be able to generate random elements in the proper way)
+        shares (Optional[List[ShareTensor]]): in case the shares are already at the
+             parties involved in the computation
+
+
+    Attributes:
+        share_ptrs (List[ShareTensor]): pointer to the shares (hold by the parties)
+        session (Sesssion): session used for the MPC
+        shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
     __slots__ = {"share_ptrs", "session", "shape"}
@@ -27,12 +49,17 @@ class ShareTensorCC:
     def __init__(
         self,
         session: Session,
-        secret: Union[None, torch.Tensor, float, int] = None,
-        shape: Union[None, torch.Size, tuple] = None,
-        shares: Union[None, List[ShareTensor]] = None,
+        secret: Optional[Union[torch.Tensor, float, int]] = None,
+        shape: Optional[Union[torch.Size, tuple]] = None,
+        shares: Optional[List[ShareTensor]] = None,
     ) -> None:
+        """Initializer for the ShareTensorCC (ShareTensorControlCenter
+        It can be used in two ways:
+        - secret is known by the orchestrator
+        - secret is not known by the orchestrator (PRZS is employed)
+        """
 
-        if len(session.session_ptr) == 0:
+        if len(session.session_ptrs) == 0:
             raise ValueError("setup_mpc was not called on the session")
 
         self.session = session
@@ -51,7 +78,7 @@ class ShareTensorCC:
                 self.share_ptrs = ShareTensorCC.generate_przs(self.shape, self.session)
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:
-                        self.share_ptrs[i] = self.share_ptr[i] + secret
+                        self.share_ptrs[i] = self.share_ptrs[i] + secret
                         break
             else:
                 self.share_ptrs = []
@@ -69,6 +96,13 @@ class ShareTensorCC:
         shape: Union[torch.Size, tuple],
         session: Session,
     ) -> Tuple[ShareTensor, Union[torch.Size, tuple], bool]:
+        """Sanity check to validate that a new instance for ShareTensorCC can be
+        created.
+
+        :return: tuple representing the ShareTensor, the shape, if the secret
+             is remote or local
+        :rtype: tuple representing the ShareTensor (it
+        """
         is_remote_secret = False
 
         if ispointer(secret):
@@ -92,12 +126,17 @@ class ShareTensorCC:
     def generate_przs(
         shape: Union[torch.Size, tuple], session: Session
     ) -> List[ShareTensor]:
+        """Generate Pseudo-Random-Zero Shares at the parties involved in the computation
+
+        :return: list of ShareTensor
+        :rtype: list of PRZS
+        """
 
         shape = tuple(shape)
 
         shares = []
         for session_ptr, generators_ptr in zip(
-            session.session_ptr, session.przs_generators
+            session.session_ptrs, session.przs_generators
         ):
             share_ptr = session_ptr.przs_generate_random_share(shape, generators_ptr)
             shares.append(share_ptr)
@@ -106,6 +145,12 @@ class ShareTensorCC:
 
     @staticmethod
     def generate_shares(secret, session: Session) -> List[ShareTensor]:
+        """Given a secret generate, split it into a number of shares such that
+        each party would get one
+
+        :return: list of shares
+        :rtype: List of Zero Shares
+        """
         if not isinstance(secret, ShareTensor):
             raise ValueError("Secret should be a ShareTensor")
 
@@ -143,12 +188,29 @@ class ShareTensorCC:
             shares.append(share)
         return shares
 
-    def reconstruct(self, decode=True):
+    def reconstruct(self, decode: bool = True) -> torch.Tensor:
+        """Request and get the shares from all the parties and reconstruct the secret.
+        Depending on the value of "decode", the secret would be decoded or not using
+        the FixedPrecision Encoder specific for the session
+
+        :return: the secret reconstructed
+        :rtype: tensor
+        """
+
         def _request_and_get(share_ptr):
-            share_ptr.request(block=True)
-            return share_ptr.get()
+            """Function used to request and get a share - Duet Setup
+            :return: the ShareTensor (local)
+            :rtype: ShareTensor
+            """
+            share_ptr.request(block=True, verbose=True)
+            res = share_ptr.get()
+            return res
 
         def _get(share_ptr):
+            """Function used to get a share - VM Setup
+            :return: the ShareTensor (local)
+            :rtype: ShareTensor
+            """
             return share_ptr.get()
 
         request = None
@@ -179,26 +241,59 @@ class ShareTensorCC:
 
         return plaintext
 
-    def add(self, y):
+    def add(
+        self, y: Union["ShareTensorCC", torch.Tensor, float, int]
+    ) -> "ShareTensorCC":
+        """Apply the "add" operation between "self" and "y".
+
+        :return: self + y
+        :rtype: ShareTensorCC
+        """
         return self.__apply_op(y, "add")
 
-    def sub(self, y):
+    def sub(
+        self, y: Union["ShareTensorCC", torch.Tensor, float, int]
+    ) -> "ShareTensorCC":
+        """Apply the "sub" operation between "self" and "y".
+
+        :return: self - y
+        :rtype: ShareTensorCC
+        """
         return self.__apply_op(y, "sub")
 
-    def mul(self, y):
+    def mul(
+        self, y: Union["ShareTensorCC", torch.Tensor, float, int]
+    ) -> "ShareTensorCC":
+        """Apply the "mul" operation between "self" and "y".
+
+        :return: self * y
+        :rtype: ShareTensorCC
+        """
         return self.__apply_op(y, "mul")
 
-    def div(self, y):
+    def div(
+        self, y: Union["ShareTensorCC", torch.Tensor, float, int]
+    ) -> "ShareTensorCC":
+        """Apply the "div" operation between "self" and "y".
+
+        :return: self // y
+        :rtype: ShareTensorCC
+        """
         return self.__apply_op(y, "div")
 
-    def __apply_private_op(self, y, op_str):
+    def __apply_private_op(self, y: "ShareTensorCC", op_str: str) -> "ShareTensorCC":
+        """Apply an operation on 2 ShareTensorCC (secret shared values)
+
+        :return: the operation "op_str" applied on "self" and "y"
+        :rtype: ShareTensorCC
+        """
         if y.session.uuid != self.session.uuid:
             raise ValueError(
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
             )
 
         if op_str in {"mul"}:
-            from ..protocol import spdz
+            from sympc.protocol.spdz import spdz
 
             shares = spdz.mul_master(self, y, op_str)
             result = ShareTensorCC(shares=shares, session=self.session)
@@ -211,7 +306,15 @@ class ShareTensorCC:
 
         return result
 
-    def __apply_public_op(self, y, op_str):
+    def __apply_public_op(
+        self, y: Union[torch.Tensor, float, int], op_str: str
+    ) -> "ShareTensorCC":
+        """Apply an operation on "self" which is a ShareTensorCC and a public value
+
+        :return: the operation "op_str" applied on "self" and "y"
+        :rtype: ShareTensorCC
+        """
+
         op = getattr(operator, op_str)
         if op_str in {"mul"}:
             shares = [op(share, y) for share in self.share_ptrs]
@@ -225,17 +328,26 @@ class ShareTensorCC:
         result = ShareTensorCC(shares=shares, session=self.session)
         return result
 
-    def __apply_op(self, y, op):
+    def __apply_op(
+        self, y: Union["ShareTensorCC", torch.Tensor, float, int], op_str: str
+    ) -> "ShareTensorCC":
+        """Apply an operation on "self" which is a ShareTensorCC "y"
+        This function checks if "y" is private or public value
+
+        :return: the operation "op_str" applied on "self" and "y"
+        :rtype: ShareTensorCC
+        """
         is_private = isinstance(y, ShareTensorCC)
 
         if is_private:
-            result = self.__apply_private_op(y, op)
+            result = self.__apply_private_op(y, op_str)
         else:
-            result = self.__apply_public_op(y, op)
+            result = self.__apply_public_op(y, op_str)
 
         return result
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """ Return the string representation of ShareTensorCC """
         type_name = type(self).__name__
         out = f"[{type_name}]"
 

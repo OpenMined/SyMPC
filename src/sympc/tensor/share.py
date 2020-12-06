@@ -1,3 +1,11 @@
+"""
+Class used to represent a share owned by a party
+"""
+
+from typing import Any
+from typing import Union
+from typing import Optional
+
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 import operator
@@ -7,8 +15,26 @@ import torch
 
 class ShareTensor:
     """
-    This class represents only 1 share  (from n) that a party
-    can generate when secretly sharing that a party holds
+    This class represents 1 share that a party holds when doing
+    secret sharing
+
+    Arguments:
+        data (Optional[Any]): the share a party holds
+        session (Optional[Any]): the session from which this shares belongs to
+        encoder_base (int): the base for the encoder
+        encoder_precision (int): the precision for the encoder
+        ring_size (int): field used for the operations applied on the shares
+
+    Attributes:
+        Syft Serializable Attributes
+
+        id (UID): the id to store the session
+        tags (Optional[List[str]): an optional list of strings that are tags used at search
+        description (Optional[str]): an optional string used to describe the session
+
+        tensor (Any): the value of the share
+        session (Session): keep track from which session  this share belongs to
+        fp_encoder (FixedPointEncoder): the encoder used to convert a share from/to fixed point
     """
 
     __slots__ = {
@@ -23,12 +49,13 @@ class ShareTensor:
 
     def __init__(
         self,
-        data=None,
-        session=None,
-        encoder_base=2,
-        encoder_precision=16,
-        ring_size=2 ** 64,
+        data: Optional[Any] = None,
+        session: Optional[Session] = None,
+        encoder_base: int = 2,
+        encoder_precision: int = 16,
+        ring_size: int = 2 ** 64,
     ):
+        """ Initializer for the ShareTensor """
 
         if session is None:
             self.session = Session(
@@ -53,7 +80,15 @@ class ShareTensor:
             self.tensor = self.fp_encoder.encode(data).type(tensor_type)
 
     @staticmethod
-    def sanity_checks(x, y, op_str):
+    def sanity_checks(
+        x: "ShareTensor", y: Union[int, float, torch.Tensor, "ShareTensor"], op_str: str
+    ) -> Union["ShareTensor", torch.Tensor, int]:
+        """
+        Check the type of "y" and convert it to a share if necessary
+
+        :return: the y value
+        :rtype: ShareTensor, int or Integer type Tensor
+        """
         if op_str == "mul" and isinstance(y, (float, torch.FloatTensor)):
             y = ShareTensor(data=y, session=x.session)
         elif op_str in {"add", "sub"} and not isinstance(y, ShareTensor):
@@ -61,7 +96,14 @@ class ShareTensor:
 
         return y
 
-    def apply_function(self, y, op_str):
+    def apply_function(
+        self, y: Union["ShareTensor", torch.Tensor, int], op_str: str
+    ) -> "ShareTensor":
+        """Apply a given operation
+
+        :return: the result of applying "op_str" on "self" and y
+        :rtype: ShareTensor
+        """
         op = getattr(operator, op_str)
 
         if isinstance(y, ShareTensor):
@@ -73,17 +115,32 @@ class ShareTensor:
         res.tensor = value
         return res
 
-    def add(self, y):
+    def add(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "add" operation between "self" and "y"
+
+        :return: self + y
+        :rtype: ShareTensor
+        """
         y = ShareTensor.sanity_checks(self, y, "add")
         res = self.apply_function(y, "add")
         return res
 
-    def sub(self, y):
+    def sub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "sub" operation between "self" and "y"
+
+        :return: self - y
+        :rtype: ShareTensor
+        """
         y = ShareTensor.sanity_checks(self, y, "sub")
         res = self.apply_function(y, "sub")
         return res
 
-    def mul(self, y):
+    def mul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "mul" operation between "self" and "y"
+
+        :return: self * y
+        :rtype: ShareTensor
+        """
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
 
@@ -92,27 +149,52 @@ class ShareTensor:
 
         return res
 
-    def div(self, y):
-        # TODO
-        pass
+    def div(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "div" operation between "self" and "y".
+        Currently, NotImplemented
 
-    def __getattr__(self, attr_name):
+        :return: self // y
+        :rtype: ShareTensor
+        """
+
+        raise NotImplementedError("Not implemented, YET!")
+
+    def __getattr__(self, attr_name: str) -> Any:
+        """Get the attribute from the ShareTensor.
+        If the attribute is not found at the ShareTensor level, the it would
+        look for in the the "tensor"
+
+        :return: the attribute value
+        :rtype: Anything
+        """
         # Default to some tensor specific attributes like
         # size, shape, etc.
         tensor = self.tensor
         return getattr(tensor, attr_name)
 
-    def __gt__(self, y):
+    def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
+        """Check if "self" is bigger than "y"
+
+        :return: self > y
+        :rtype: bool
+        """
         y = ShareTensor.sanity_checks(self, y, "gt")
         res = self.tensor < y.tensor
         return res
 
-    def __lt__(self, y):
+    def __lt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
+        """Check if "self" is less than "y"
+
+        :return: self < y
+        :rtype: bool
+        """
+
         y = ShareTensor.sanity_checks(self, y, "lt")
         res = self.tensor < y.tensor
         return res
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """ Return the string representation of ShareTensor """
         type_name = type(self).__name__
         out = f"[{type_name}]"
         out = f"{out}\n\t| {self.fp_encoder}"
@@ -120,7 +202,15 @@ class ShareTensor:
 
         return out
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
+        """
+        Check if "self" is equal with another object given a set of attributes
+        to compare.
+
+        :return: if self and other are equal
+        :rtype: bool
+        """
+
         if not (self.tensor == other.tensor).all():
             return False
 

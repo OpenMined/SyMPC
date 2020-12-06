@@ -1,14 +1,18 @@
-from typing import List
+"""
+SPDZ mechanism used for multiplication
+Contains functions that are run at:
+* the party that orchestrates the computation
+* the parties that hold the shares
+"""
 
-from itertools import repeat
+from typing import List
 
 import torch
 import operator
 from sympc.tensor import ShareTensor
-from concurrent.futures import ThreadPoolExecutor, wait
 
 from sympc.session import Session
-from sympc.protocol import beaver
+from sympc.protocol.beaver import beaver
 from sympc.tensor import ShareTensor
 from sympc.tensor import ShareTensorCC
 from sympc.utils import parallel_execution
@@ -21,14 +25,11 @@ EXPECTED_OPS = {"mul", "matmul"}
 
 
 def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTensor]:
+    """Function that is executed by the orchestrator to multiply two secret values
 
-    """
-    [c] = [a * b]
-    [eps] = [x] - [a]
-    [delta] = [y] - [b]
-
-    Open eps and delta
-    [result] = [c] + eps * [b] + delta * [a] + eps * delta
+    :return: a new set of shares that represents the multiplication
+           between two secret values
+    :rtype: ShareTensorCC
     """
 
     if op_str not in EXPECTED_OPS:
@@ -38,7 +39,7 @@ def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTen
     eps = x - a_sh
     delta = y - b_sh
     session = x.session
-    nr_parties = len(session.session_ptr)
+    nr_parties = len(session.session_ptrs)
 
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
@@ -46,7 +47,9 @@ def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTen
     args = list(
         map(
             list,
-            zip(session.session_ptr, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs),
+            zip(
+                session.session_ptrs, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs
+            ),
         )
     )
 
@@ -69,6 +72,17 @@ def mul_parties(
     delta: torch.Tensor,
     op_str: str,
 ) -> ShareTensor:
+    """
+    [c] = [a * b]
+    [eps] = [x] - [a]
+    [delta] = [y] - [b]
+
+    Open eps and delta
+    [result] = [c] + eps * [b] + delta * [a] + eps * delta
+
+    :return: the ShareTensor for the multiplication
+    :rtype: ShareTensor (in our case ShareTensorPointer)
+    """
 
     op = getattr(operator, op_str)
 

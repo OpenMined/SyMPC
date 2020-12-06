@@ -1,9 +1,27 @@
+"""
+The implementation for the Session
+It is used to identify a MPC computation done between multiple parties
+
+This would be used in case a party is involved in multipel MPC session,
+this one is used to identify in which one is used
+
+Example:
+    Alice Bob and John wants to do some computation
+    Alice John and Beatrice also wants to do some computation
+
+    The resources/config Alice uses for the first computation should be
+    isolated and should not disturb the second computation
+"""
+
+
 import operator
 
 from uuid import uuid1
 from typing import Union
 from typing import List
 from typing import Any
+from typing import Optional
+from typing import Dict
 
 from sympc.config import Config
 from sympc.session.utils import get_type_from_ring
@@ -52,7 +70,6 @@ class Session:
         max_value (int): the maximum value allowed for tensors' values
         tensor_type (Union[torch.dtype): tensor type used in the computation, this is used
             such that we get the "modulo" operation for free
-        min-v
     """
 
     # Those values are not used at comparison
@@ -86,6 +103,7 @@ class Session:
         ttp: Optional[Any] = None,
         uuid: Optional[uuid1] = None,
     ) -> None:
+        """ Initializer for the Session """
 
         self.uuid = uuid1() if uuid is None else uuid
 
@@ -116,7 +134,10 @@ class Session:
 
     def przs_generate_random_share(
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
-    ) -> "ShareTensor":
+    ) -> Any:
+        """Generate a random share using the two generators that are
+        hold by a party.
+        """
 
         from sympc.tensor import ShareTensor
 
@@ -141,16 +162,19 @@ class Session:
 
     @staticmethod
     def setup_mpc(session: "Session") -> None:
+        """Must be called to send the session to all other parties involved in the
+        computation.
+        """
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party
             session.rank = rank
-            session.session_ptr.append(session.send(party))
+            session.session_ptrs.append(session.send(party))
 
         Session._setup_przs(session)
 
     @staticmethod
     def _setup_przs(session: "Session") -> None:
-        """ Setup the Pseudo-Random-Zero-Share generators to the parties involved
+        """Setup the Pseudo-Random-Zero-Share generators to the parties involved
         in the communication.
 
         Assume there are 3 parties:
@@ -189,13 +213,13 @@ class Session:
             session.przs_generators[rank][1] = gen_current
             session.przs_generators[next_rank][0] = gen_next
 
-
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """
-            Check if two sessions are equal given a set of attributes
+        Check if "self" is equal with another object given a set of attributes
+        to compare.
 
-            :return: if self and other are equal
-            :rtype: bool
+        :return: if self and other are equal
+        :rtype: bool
         """
         if not isinstance(other, self.__class__):
             return False

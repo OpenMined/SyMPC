@@ -1,3 +1,7 @@
+"""
+The Beaver Triples
+"""
+
 from typing import Tuple
 
 import torch

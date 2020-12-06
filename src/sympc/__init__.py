@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+"""
+    This package represents the MPC component for Syft
+    For the moment it has some basic functionality, but more would come in the
+    following weeks
+"""
+
 from pkg_resources import get_distribution, DistributionNotFound
 
 from . import config  # noqa: 401
