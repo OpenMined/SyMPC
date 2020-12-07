@@ -16,7 +16,7 @@ Example:
 
 import operator
 
-from uuid import uuid1
+from uuid import UUID, uuid4
 from typing import Union
 from typing import List
 from typing import Any
@@ -44,7 +44,7 @@ class Session:
         config (Optional[Config]): configuration used for information needed
             by the Fixed Point Encoder
         ttp (Optional[Any]): trusted third party
-        uuid (Optional[uuid1]): used to identify a session
+        uuid (Optional[UUID]): used to identify a session
 
     Attributes:
         Syft Serializable Attributes
@@ -54,7 +54,7 @@ class Session:
         description (Optional[str]): an optional string used to describe the session
 
 
-        uuid (Optional[uuid1]): used to identify a session
+        uuid (Optional[UUID]): used to identify a session
         parties (Optional[List[Any]): used to send/receive messages
         trusted_third_party (Optional[Any]): the trusted third party
         crypto_store (Dict[Any, Any]): keep track of items needed in MPC (for the moment not used)
@@ -101,16 +101,21 @@ class Session:
         ring_size: int = 2 ** 64,
         config: Optional[Config] = None,
         ttp: Optional[Any] = None,
-        uuid: Optional[uuid1] = None,
+        uuid: Optional[UUID] = None,
     ) -> None:
         """ Initializer for the Session """
 
-        self.uuid = uuid1() if uuid is None else uuid
+        self.uuid = uuid4() if uuid is None else uuid
 
         # Each worker will have the rank as the index in the list
         # Only the party that is the CC (Control Center) will have access
         # to this
-        self.parties = parties
+
+        self.parties: List[Any]
+        if parties is None:
+            self.parties = []
+        else:
+            self.parties = parties
 
         # Some protocols require a trusted third party
         # Ex: SPDZ
@@ -120,7 +125,7 @@ class Session:
         self.protocol: Optional[str] = None
         self.config = config if config else Config()
 
-        self.przs_generators: Optional[torch.Generator] = None
+        self.przs_generators: List[List[torch.Generator]] = []
 
         # Those will be populated in the setup_mpc
         self.rank = -1
@@ -168,7 +173,7 @@ class Session:
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party
             session.rank = rank
-            session.session_ptrs.append(session.send(party))
+            session.session_ptrs.append(session.send(party))  # type: ignore
 
         Session._setup_przs(session)
 

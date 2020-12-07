@@ -2,10 +2,10 @@
 Custom MPC Tensors
 """
 
-from .share import ShareTensor
-from .share_control import ShareTensorCC
+from .share_tensor import ShareTensor
+from .mpc_tensor import MPCTensor
 
 __all__ = [
     "ShareTensor",
-    "ShareTensorCC",
+    "MPCTensor",
 ]

@@ -14,7 +14,7 @@ from sympc.tensor import ShareTensor
 from sympc.session import Session
 from sympc.protocol.beaver import beaver
 from sympc.tensor import ShareTensor
-from sympc.tensor import ShareTensorCC
+from sympc.tensor import MPCTensor
 from sympc.utils import parallel_execution
 
 
@@ -24,12 +24,12 @@ EXPECTED_OPS = {"mul", "matmul"}
 """ Functions that are executed at the orchestrator """
 
 
-def mul_master(x: ShareTensorCC, y: ShareTensorCC, op_str: str) -> List[ShareTensor]:
+def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> List[ShareTensor]:
     """Function that is executed by the orchestrator to multiply two secret values
 
     :return: a new set of shares that represents the multiplication
            between two secret values
-    :rtype: ShareTensorCC
+    :rtype: MPCTensor
     """
 
     if op_str not in EXPECTED_OPS:

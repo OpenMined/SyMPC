@@ -56,15 +56,20 @@ class FixedPointEncoder:
         long_value = (value * self._scale).long()
         return long_value
 
-    def decode(self, tensor: torch.Tensor) -> torch.FloatTensor:
+    def decode(self, value: Union[int, torch.Tensor]) -> torch.Tensor:
         """Decode a value using the FixedPoint Encoder
 
         :return: the decoded value for a tensor
         :rtype: a float tensor
         """
-        if tensor.dtype.is_floating_point:
-            raise ValueError(f"{tensor} should be converted to long format")
 
+        if isinstance(value, torch.Tensor) and value.dtype.is_floating_point:
+            raise ValueError(f"{value} should be converted to long format")
+
+        if isinstance(value, int):
+            value = torch.LongTensor([value])
+
+        tensor = value
         if self._precision == 0:
             return tensor
 
@@ -81,16 +86,6 @@ class FixedPointEncoder:
         """ Get the precision for the FixedPrecision Encoder """
         return self._precision
 
-    @property
-    def base(self) -> int:
-        """ Get the base for the FixedPrecision Encoder """
-        return self._base
-
-    @property
-    def scale(self) -> int:
-        """ Get the scale for the FixedPrecision Encoder """
-        return self._scale
-
     @precision.setter
     def precision(self, precision: int) -> None:
         """Set the precision for the FixedPoint Encoder
@@ -100,6 +95,11 @@ class FixedPointEncoder:
         self._precision = precision
         self._scale = self._base ** precision
 
+    @property
+    def base(self) -> int:
+        """ Get the base for the FixedPrecision Encoder """
+        return self._base
+
     @base.setter
     def base(self, base: int) -> None:
         """Set the base for the FixedPoint Encoder
@@ -108,6 +108,11 @@ class FixedPointEncoder:
         """
         self._base = base
         self._scale = base ** self._precision
+
+    @property
+    def scale(self) -> int:
+        """ Get the scale for the FixedPrecision Encoder """
+        return self._scale
 
     def __str__(self) -> str:
         """ Get the string representation """

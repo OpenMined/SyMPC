@@ -7,7 +7,7 @@ from typing import Union
 
 
 import torch
-import torchcsprng as csprng
+import torchcsprng as csprng  # type: ignore
 
 RING_SIZE_TO_TYPE = {
     2 ** 1: torch.bool,

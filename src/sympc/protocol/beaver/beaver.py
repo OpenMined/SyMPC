@@ -5,11 +5,11 @@ The Beaver Triples
 from typing import Tuple
 
 import torch
-import torchcsprng as csprng
+import torchcsprng as csprng  # type: ignore
 import operator
 
-from sympc.tensor.share_control import ShareTensorCC
-from sympc.tensor.share import ShareTensor
+from sympc.tensor import MPCTensor
+from sympc.tensor import ShareTensor
 
 EXPECTED_OPS = {"matmul", "mul"}
 
@@ -17,8 +17,8 @@ ttp_generator = csprng.create_random_device_generator()
 
 
 def build_triples(
-    x: ShareTensorCC, y: ShareTensorCC, op_str: str
-) -> Tuple[ShareTensorCC, ShareTensorCC, ShareTensorCC]:
+    x: MPCTensor, y: MPCTensor, op_str: str
+) -> Tuple[MPCTensor, MPCTensor, MPCTensor]:
 
     """
     The Trusted Third Party (TTP) or Crypto Provider should provide this triples
@@ -49,8 +49,8 @@ def build_triples(
     c = ShareTensor(session=session)
     c.tensor = cmd(a.tensor, b.tensor)
 
-    a_sh = ShareTensorCC(secret=a, session=session)
-    b_sh = ShareTensorCC(secret=b, session=session)
-    c_sh = ShareTensorCC(secret=c, session=session)
+    a_sh = MPCTensor(secret=a, session=session)
+    b_sh = MPCTensor(secret=b, session=session)
+    c_sh = MPCTensor(secret=c, session=session)
 
     return a_sh, b_sh, c_sh

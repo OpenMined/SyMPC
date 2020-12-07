@@ -54,7 +54,7 @@ class ShareTensor:
         encoder_base: int = 2,
         encoder_precision: int = 16,
         ring_size: int = 2 ** 64,
-    ):
+    ) -> None:
         """ Initializer for the ShareTensor """
 
         if session is None:
@@ -74,7 +74,7 @@ class ShareTensor:
             base=encoder_base, precision=encoder_precision
         )
 
-        self.tensor = None
+        self.tensor: Optional[torch.Tensor] = None
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self.fp_encoder.encode(data).type(tensor_type)
@@ -82,7 +82,7 @@ class ShareTensor:
     @staticmethod
     def sanity_checks(
         x: "ShareTensor", y: Union[int, float, torch.Tensor, "ShareTensor"], op_str: str
-    ) -> Union["ShareTensor", torch.Tensor, int]:
+    ) -> "ShareTensor":
         """
         Check the type of "y" and convert it to a share if necessary
 
@@ -91,13 +91,13 @@ class ShareTensor:
         """
         if op_str == "mul" and isinstance(y, (float, torch.FloatTensor)):
             y = ShareTensor(data=y, session=x.session)
-        elif op_str in {"add", "sub"} and not isinstance(y, ShareTensor):
+        elif op_str in {"add", "sub", "lt", "gt"} and not isinstance(y, ShareTensor):
             y = ShareTensor(data=y, session=x.session)
 
         return y
 
     def apply_function(
-        self, y: Union["ShareTensor", torch.Tensor, int], op_str: str
+        self, y: Union["ShareTensor", torch.Tensor, int, float], op_str: str
     ) -> "ShareTensor":
         """Apply a given operation
 
@@ -121,8 +121,8 @@ class ShareTensor:
         :return: self + y
         :rtype: ShareTensor
         """
-        y = ShareTensor.sanity_checks(self, y, "add")
-        res = self.apply_function(y, "add")
+        y_share = ShareTensor.sanity_checks(self, y, "add")
+        res = self.apply_function(y_share, "add")
         return res
 
     def sub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
@@ -131,8 +131,8 @@ class ShareTensor:
         :return: self - y
         :rtype: ShareTensor
         """
-        y = ShareTensor.sanity_checks(self, y, "sub")
-        res = self.apply_function(y, "sub")
+        y_share = ShareTensor.sanity_checks(self, y, "sub")
+        res = self.apply_function(y_share, "sub")
         return res
 
     def mul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
@@ -143,6 +143,9 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
+
+        if res.tensor is None:
+            raise ValueError("tensor attribute is None")
 
         if isinstance(y, ShareTensor):
             res.tensor = res.tensor // self.fp_encoder.scale
@@ -178,8 +181,10 @@ class ShareTensor:
         :return: self > y
         :rtype: bool
         """
-        y = ShareTensor.sanity_checks(self, y, "gt")
-        res = self.tensor < y.tensor
+        y_share = ShareTensor.sanity_checks(self, y, "gt")
+        if self.tensor is None or y_share.tensor is None:
+            raise ValueError("tensor attribute not present")
+        res = self.tensor < y_share.tensor
         return res
 
     def __lt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
@@ -189,8 +194,11 @@ class ShareTensor:
         :rtype: bool
         """
 
-        y = ShareTensor.sanity_checks(self, y, "lt")
-        res = self.tensor < y.tensor
+        y_share = ShareTensor.sanity_checks(self, y, "lt")
+        if self.tensor is None or y_share.tensor is None:
+            raise ValueError("tensor attribute not present")
+
+        res = self.tensor < y_share.tensor
         return res
 
     def __str__(self) -> str:

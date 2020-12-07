@@ -7,7 +7,9 @@ from typing import Any
 from typing import List
 from typing import Dict
 from typing import Union
+from typing import Optional
 from typing import Callable
+from typing import Type
 
 from itertools import repeat
 import functools
@@ -28,17 +30,14 @@ def ispointer(obj: Any) -> bool:
     return False
 
 
-def isvm(party: Any) -> bool:
-    """Check if a given party is a VirtualMachine client
+def islocal(obj: Any) -> bool:
+    """Check if the object is on the local machine (in Duet or VM)
 
-    :return: True (if vm) or False (if not)
+    :return: True if yes, else False
     :rtype: bool
     """
-
-    party_type = party.class_name
-    if "VirtualMachine" in party_type:
-        return True
-    return False
+    party_type = obj.client.class_name
+    return party_type in {"VirtualMachineClient", "DomainClient"}
 
 
 def parallel_execution(
@@ -77,12 +76,14 @@ def parallel_execution(
 
     @functools.wraps(fn)
     def wrapper(
-        args: Union[None, List[List[Any]]] = None,
-        kwargs: Union[None, Dict[Any, Dict[Any, Any]]] = None,
+        args: List[List[Any]],
+        kwargs: Optional[Dict[Any, Dict[Any, Any]]] = None,
     ) -> List[Any]:
         """The wrapper function that does sanity checks and checks
         what executor should be used
         """
+
+        Executor: Union[Type[ProcessPoolExecutor], Type[ThreadPoolExecutor]]
         if cpu_bound:
             Executor = ProcessPoolExecutor
         else:
