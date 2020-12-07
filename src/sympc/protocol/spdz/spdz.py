@@ -44,17 +44,12 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> List[ShareTensor]:
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
 
-    args = list(
-        map(
-            list,
-            zip(
-                session.session_ptrs, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs
-            ),
-        )
-    )
+    # Arguments that must be sent to all parties
+    common_args = [eps_plaintext, delta_plaintext, op_str]
 
-    for i in range(nr_parties):
-        args[i].extend([eps_plaintext, delta_plaintext, op_str])
+    # Specific arguments to each party
+    args = zip(session.session_ptrs, a_sh.share_ptrs, b_sh.share_ptrs, c_sh.share_ptrs)
+    args = [list(el) + common_args for el in args]
 
     shares = parallel_execution(mul_parties, session.parties)(args)
     return shares
