@@ -1,5 +1,9 @@
-from .beaver import beaver
-from .spdz import spdz
+"""
+Implemented Protocols
+"""
+
+from . import beaver
+from . import spdz
 
 
 __all__ = ["beaver", "spdz"]

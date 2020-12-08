@@ -1,4 +1,11 @@
-from .additive_shared import AdditiveSharingTensor
-from .utils import modulo
+"""
+Custom MPC Tensors
+"""
 
-__all__ = ["AdditiveSharingTensor", "modulo"]
+from .share_tensor import ShareTensor
+from .mpc_tensor import MPCTensor
+
+__all__ = [
+    "ShareTensor",
+    "MPCTensor",
+]

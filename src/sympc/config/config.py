@@ -1,21 +1,25 @@
+"""
+Configuration information used for FixedPrecisionEncoder and ShareTensor
+"""
+
 from dataclasses import dataclass, field
 
 
 @dataclass
 class Config:
-    ring_size: int = field()
-    min_value: int = field()
-    max_value: int = field()
+    """
+    Config is a class used inside a Session (see Session) that specifies
+    diffenret options that can be used for the Fixed Precision Encoder
 
-    enc_precision: int = field()
-    enc_base: int = field()
+    Arguments:
+        encoder_base (int): the base for the encoder
+        encoder_precision (int): the precision for the encoder
+    """
 
-    def __init__(
-        self, ring_size: int = 2 ** 62, enc_precision: int = 4, enc_base: int = 10
-    ):
-        self.ring_size = ring_size
-        self.min_value = -(ring_size // 2)
-        self.max_value = (ring_size - 1) // 2
+    encoder_precision: int = field()
+    encoder_base: int = field()
 
-        self.enc_precision = enc_precision
-        self.enc_base = enc_base
+    def __init__(self, encoder_base: int = 2, encoder_precision: int = 16) -> None:
+        """ Initializer for the Config """
+        self.encoder_base = encoder_base
+        self.encoder_precision = encoder_precision
