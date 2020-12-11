@@ -42,7 +42,7 @@ class MPCTensor:
 
     Attributes:
         share_ptrs (List[ShareTensor]): pointer to the shares (hold by the parties)
-        session (Sesssion): session used for the MPC
+        session (Session): session used for the MPC
         shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
