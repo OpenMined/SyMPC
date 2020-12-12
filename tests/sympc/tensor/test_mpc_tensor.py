@@ -208,8 +208,3 @@ def test_mul(clients):
 
     with pytest.raises(ValueError):
         result = x_session * x_session_alternate
-
-
-
-
-
