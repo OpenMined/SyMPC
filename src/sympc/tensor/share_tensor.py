@@ -159,8 +159,19 @@ class ShareTensor:
         :return: self // y
         :rtype: ShareTensor
         """
-
         raise NotImplementedError("Not implemented, YET!")
+
+    def div_(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> None:
+        # TODO: This needs to be moved in framework specific functions
+        if isinstance(y, (float, torch.FloatTensor)):
+            raise ValueError("Supported only Integer division")
+
+        nr_parties = len(self.share_ptrs)
+        if nr_parties > 2:
+        else:
+            self.shares = [share / y for
+        self.session("truncate")(
+
 
     def __getattr__(self, attr_name: str) -> Any:
         """Get the attribute from the ShareTensor.

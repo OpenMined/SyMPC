@@ -43,6 +43,8 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> List[ShareTensor]:
 
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
+    print(eps_plaintext // 2 ** 16)
+    print(delta_plaintext // 2 ** 16)
 
     # Arguments that must be sent to all parties
     common_args = [eps_plaintext, delta_plaintext, op_str]
@@ -90,7 +92,7 @@ def mul_parties(
         share.tensor = share.tensor + delta_eps
 
     scale = session.config.encoder_base ** session.config.encoder_precision
-    share.tensor //= scale
+    share.tensor.div_(scale)
 
     # Convert to our tensor type
     share.tensor = share.tensor.type(session.tensor_type)

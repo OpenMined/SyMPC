@@ -65,6 +65,10 @@ class MPCTensor:
 
         self.session = session
         if secret is not None:
+            """ In the case the secret is hold by a remote party then we use the PRZS
+            to generate the shares and then the pointer tensor is added to share specific
+            to the holder of the secret
+            """
             secret_share, self.shape, is_remote_secret = MPCTensor.sanity_checks(
                 secret, shape, session
             )
@@ -77,16 +81,22 @@ class MPCTensor:
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:  # type: ignore
                         self.share_ptrs[i] = self.share_ptrs[i] + secret_share
-                        break
-            else:
-                self.share_ptrs = []
-
-                shares = MPCTensor.generate_shares(secret_share, self.session)
-                for share, party in zip(shares, self.session.parties):
-                    self.share_ptrs.append(share.send(party))
+                        return
 
         elif shares is not None:
-            self.share_ptrs = shares
+            if not is_pointer(shares[0]):
+                shares = MPCTensor.distribute_shares(shares, session.parties)
+
+        self.share_ptrs = shares
+
+    @staticmethod
+    def distribute_shares(shares, parties):
+        share_ptrs = []
+        for share, party in zip(shares, parties):
+            share_ptrs.append(share.send(party))
+
+        return share_ptrs
+
 
     @staticmethod
     def sanity_checks(
@@ -149,7 +159,7 @@ class MPCTensor:
 
     @staticmethod
     def generate_shares(secret, session: Session) -> List[ShareTensor]:
-        """Given a secret generate, split it into a number of shares such that
+        """Given a secret, split it into a number of shares such that
         each party would get one
 
         :return: list of shares
@@ -263,7 +273,7 @@ class MPCTensor:
         :return: self // y
         :rtype: MPCTensor
         """
-        return self.__apply_op(y, "div")
+        raise NotImplementedError("Not implemented, YET!")
 
     def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)

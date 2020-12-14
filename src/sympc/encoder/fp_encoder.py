@@ -50,7 +50,7 @@ class FixedPointEncoder:
         """
 
         if not isinstance(value, torch.Tensor):
-            value = torch.tensor(data=[value], dtype=torch.long)
+            value = torch.tensor(data=[value])
 
         # Use the largest type
         long_value = (value * self._scale).long()

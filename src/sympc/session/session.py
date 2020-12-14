@@ -236,3 +236,8 @@ class Session:
             operator.attrgetter(attr) for attr in self.__slots__ - Session.NOT_COMPARE
         ]
         return all(getter(self) == getter(other) for getter in attr_getters)
+
+    def populate_crypto_store(prov: str, n_instances) -> None:
+
+    def register_provider(prov: str, constr: Callable[Any]) -> None:
+        crypto_store[
