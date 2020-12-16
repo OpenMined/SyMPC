@@ -6,19 +6,6 @@ from sympc.session import Session
 from sympc.tensor import ShareTensor
 
 
-@pytest.fixture
-def clients():
-    alice = sy.VirtualMachine(name="alice")
-    bob = sy.VirtualMachine(name="bob")
-    james = sy.VirtualMachine(name="james")
-
-    alice_client = alice.get_client()
-    bob_client = bob.get_client()
-    james_client = james.get_client()
-
-    return [alice_client, bob_client, james_client]
-
-
 def test_send_get(clients) -> None:
     alice_client, bob_client, james_client = clients
 
