@@ -56,6 +56,7 @@ jobs:
           pip3 install pep8-naming
           pip3 install interrogate
           pip3 install black
+          python3 -m pip install mypy
       - name: Lint, format, and type-check
         run: |
           # stop the build if there are Python syntax errors or undefined names
