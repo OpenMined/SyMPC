@@ -62,8 +62,6 @@ jobs:
           flake8 --config=.flake8 .
           black --check .
           # Run type checker in CI such that type errors can be identified and gradually addressed.
-          # Once all existing type errors are addressed, the `|| echo` after the mypy call can be removed.
-          mypy src || echo "Type errors found, continuing build..."
       - name: Check docstring coverage
         run: |
           interrogate -mvp src/ -f 52.5
