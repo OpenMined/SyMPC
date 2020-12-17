@@ -1,5 +1,4 @@
 import pytest
-import syft as sy
 import torch
 
 from sympc.session import Session
