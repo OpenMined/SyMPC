@@ -6,22 +6,10 @@ from sympc.session import Session
 from sympc.tensor import MPCTensor
 
 
-@pytest.fixture
-def clients():
-    alice = sy.VirtualMachine(name="alice")
-    bob = sy.VirtualMachine(name="bob")
-    james = sy.VirtualMachine(name="james")
-
-    alice_client = alice.get_client()
-    bob_client = bob.get_client()
-    james_client = james.get_client()
-
-    return [alice_client, bob_client, james_client]
-
-
 def test_mpc_tensor_exception(clients) -> None:
     alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
+    # TODO: for more than 2 parties
+    session = Session(parties=[alice_client, bob_client])
 
     with pytest.raises(ValueError):
         MPCTensor(secret=42, session=session)
@@ -29,7 +17,8 @@ def test_mpc_tensor_exception(clients) -> None:
 
 def test_reconstruct(clients):
     alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
+    # TODO: for more than 2 parties
+    session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([1, 2, 3, 4])
@@ -41,7 +30,8 @@ def test_reconstruct(clients):
 
 def test_add(clients):
     alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
+    # TODO: for more than 2 parties
+    session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([1, 2, 3])
@@ -99,7 +89,8 @@ def test_add(clients):
 
 def test_sub(clients):
     alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
+    # TODO: for more than 2 parties
+    session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([1, 2, 3])
@@ -157,7 +148,8 @@ def test_sub(clients):
 
 def test_mul(clients):
     alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
+    # TODO: for more than 2 parties
+    session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([1, 2, 3])
