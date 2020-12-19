@@ -1,4 +1,3 @@
-import pytest
 import torch
 
 from sympc.session import Session
