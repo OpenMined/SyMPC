@@ -50,18 +50,20 @@ jobs:
 
       - name: Install build tools
         run: |
-          pip3 install flake8
+          pip3 install flake8==3.8.4
+          pip3 install black==20.8b1
+          pip3 install isort==5.6.4
           #- pip3 install flake8-docstrings
           pip3 install flake8-comprehensions
           pip3 install pep8-naming
           pip3 install interrogate
-          pip3 install black
           python3 -m pip install mypy
       - name: Lint, format, and type-check
         run: |
           # stop the build if there are Python syntax errors or undefined names
           flake8 --config=.flake8 .
           black --check .
+          isort --check-only .
           # Run type checker in CI such that type errors can be identified and gradually addressed.
           # Once all existing type errors are addressed, the `|| echo` after the mypy call can be removed.
           mypy src || echo "Type errors found, continuing build..."
@@ -70,5 +72,5 @@ jobs:
           interrogate -mvp src/ -f 52.5
       - name: Scan for security issues
         run: |
-          pip install bandit
+          pip install bandit==1.7.0
           bandit -r src -ll
