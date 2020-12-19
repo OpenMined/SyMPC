@@ -91,7 +91,7 @@ class ShareTensor:
         """
         if op_str == "mul" and isinstance(y, (float, torch.FloatTensor)):
             y = ShareTensor(data=y, session=x.session)
-        elif op_str in {"add", "sub", "lt", "gt"} and not isinstance(y, ShareTensor):
+        elif op_str in {"add", "sub", "lt", "gt", "matmul"} and not isinstance(y, ShareTensor):
             y = ShareTensor(data=y, session=x.session)
 
         return y
@@ -151,6 +151,32 @@ class ShareTensor:
             res.tensor = res.tensor // self.fp_encoder.scale
 
         return res
+
+    def matmul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "matmul" operation between "self" and "y"
+
+        :return: self @ y
+        :rtype: ShareTensor
+        """
+        y = ShareTensor.sanity_checks(self, y, "matmul")
+        res = self.apply_function(y, "matmul")
+
+        if res.tensor is None:
+            raise ValueError("tensor attribute is None")
+
+        if isinstance(y, ShareTensor):
+            res.tensor = res.tensor // self.fp_encoder.scale
+
+        return res
+
+    def rmatmul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the reversed "matmul" operation between "self" and "y"
+
+        :return: y @ self
+        :rtype: ShareTensor
+        """
+        y = ShareTensor.sanity_checks(self, y, "matmul")
+        return y.matmul(self)
 
     def div(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "div" operation between "self" and "y".
@@ -233,4 +259,6 @@ class ShareTensor:
     __rsub__ = sub
     __mul__ = mul
     __rmul__ = mul
+    __matmul__ = matmul
+    __rmatmul__ = rmatmul
     __div__ = div

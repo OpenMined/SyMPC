@@ -38,7 +38,7 @@ def build_triples(
     )
 
     b = ShareTensor(session=session)
-    b.tensor = torch.empty(size=shape_x, dtype=torch.long).random_(
+    b.tensor = torch.empty(size=shape_y, dtype=torch.long).random_(
         generator=ttp_generator
     )
 
