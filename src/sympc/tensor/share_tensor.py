@@ -91,7 +91,9 @@ class ShareTensor:
         """
         if op_str == "mul" and isinstance(y, (float, torch.FloatTensor)):
             y = ShareTensor(data=y, session=x.session)
-        elif op_str in {"add", "sub", "lt", "gt", "matmul"} and not isinstance(y, ShareTensor):
+        elif op_str in {"add", "sub", "lt", "gt", "matmul"} and not isinstance(
+            y, ShareTensor
+        ):
             y = ShareTensor(data=y, session=x.session)
 
         return y
@@ -152,7 +154,9 @@ class ShareTensor:
 
         return res
 
-    def matmul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+    def matmul(
+        self, y: Union[int, float, torch.Tensor, "ShareTensor"]
+    ) -> "ShareTensor":
         """Apply the "matmul" operation between "self" and "y"
 
         :return: self @ y
@@ -169,7 +173,9 @@ class ShareTensor:
 
         return res
 
-    def rmatmul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+    def rmatmul(
+        self, y: Union[int, float, torch.Tensor, "ShareTensor"]
+    ) -> "ShareTensor":
         """Apply the reversed "matmul" operation between "self" and "y"
 
         :return: y @ self
