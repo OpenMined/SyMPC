@@ -50,6 +50,8 @@ jobs:
 
       - name: Install build tools
         run: |
+          sudo apt-get update
+          python -m pip install --upgrade pip
           pip3 install flake8
           #- pip3 install flake8-docstrings
           pip3 install flake8-comprehensions
@@ -59,6 +61,7 @@ jobs:
           python3 -m pip install mypy
           pip3 install codecov
           pip3 install pytest-cov
+          python setup.py install
 
       - name: Lint, format, and type-check
         run: |
