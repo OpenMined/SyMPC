@@ -3,20 +3,12 @@ In this file there would be defined utils functions that might be used
 int any module
 """
 
-from typing import Any
-from typing import List
-from typing import Dict
-from typing import Union
-from typing import Optional
-from typing import Callable
-from typing import Type
-
-from itertools import repeat
+import asyncio
 import functools
 import operator
-import asyncio
-
-from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
+from itertools import repeat
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 
 def ispointer(obj: Any) -> bool:

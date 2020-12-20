@@ -2,23 +2,16 @@
 Class used to have orchestrate the computation on shared values
 """
 
+import operator
+from typing import Any, List, Optional, Tuple, Union
+
 import torch
 import torchcsprng as csprng  # type: ignore
 
-from typing import Union
-from typing import List
-from typing import Tuple
-from typing import Any
-from typing import Optional
-
+from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
-from sympc.encoder import FixedPointEncoder
-from sympc.utils import ispointer
-from sympc.utils import islocal
-from sympc.utils import parallel_execution
-
-import operator
+from sympc.utils import islocal, ispointer, parallel_execution
 
 
 class MPCTensor:
