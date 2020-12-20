@@ -89,4 +89,4 @@ jobs:
         run: |
           coverage report --ignore-errors --fail-under 95 -m
           # ensuring coverage of tests stays at 100 until entire coverage can be 100
-          coverage report --ignore-errors --fail-under 100 -m --include="test/*"
+          coverage report --ignore-errors --fail-under 100 -m --include="tests/*"
