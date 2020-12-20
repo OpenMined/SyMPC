@@ -33,9 +33,9 @@ def test_fp_encoding():
     assert (encoded_tensor == target_tensor).all
     # Test encoding with foats.
     fp_encoder = FixedPointEncoder()
-    float = 2.00
+    float = 42.0
     encoded_float = fp_encoder.encode(float)
-    target_float = torch.LongTensor([round(2.00)]) * fp_encoder._scale
+    target_float = torch.LongTensor([42.0]) * fp_encoder._scale
     assert (encoded_float == target_float).all
     # Test encoding with ints.
     fp_encoder = FixedPointEncoder()
