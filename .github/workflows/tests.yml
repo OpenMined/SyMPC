@@ -18,7 +18,7 @@ on:
       - ".github/workflows/**.yml"
 
 jobs:
-  python-linting:
+  python-tests:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 1
@@ -50,6 +50,8 @@ jobs:
 
       - name: Install build tools
         run: |
+          sudo apt-get update
+          python -m pip install --upgrade pip
           pip3 install flake8
           #- pip3 install flake8-docstrings
           pip3 install flake8-comprehensions
@@ -57,18 +59,34 @@ jobs:
           pip3 install interrogate
           pip3 install black
           python3 -m pip install mypy
+          pip3 install codecov
+          pip3 install pytest-cov
+          python setup.py install
+
       - name: Lint, format, and type-check
         run: |
-          # stop the build if there are Python syntax errors or undefined names
+          # Stop the build if there are Python syntax errors or undefined names
           flake8 --config=.flake8 .
           black --check .
           # Run type checker in CI such that type errors can be identified and gradually addressed.
           # Once all existing type errors are addressed, the `|| echo` after the mypy call can be removed.
           mypy src || echo "Type errors found, continuing build..."
+
       - name: Check docstring coverage
         run: |
           interrogate -mvp src/ -f 52.5
+
       - name: Scan for security issues
         run: |
           pip install bandit
           bandit -r src -ll
+
+      - name: Run tests
+        run: |
+          pytest tests/ --cov=.
+          
+      - name: Check test coverage
+        run: |
+          coverage report --ignore-errors -m
+          # ensuring coverage of tests stays at 100 until entire coverage can be 100
+          coverage report --ignore-errors -m --include="tests/*"
