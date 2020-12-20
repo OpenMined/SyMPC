@@ -80,7 +80,7 @@ jobs:
 
       - name: Run tests
         run: |
-          coverage run -m pytest test/
+          coverage run -m pytest tests/
           
       - name: Check test coverage
         run: |
