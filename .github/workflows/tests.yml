@@ -75,8 +75,8 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ --cov=.
-          
+          pytest tests/ --cov=src
+
       - name: Check test coverage
         run: |
           coverage report --ignore-errors -m
