@@ -54,12 +54,12 @@ jobs:
           python -m pip install --upgrade pip
           pip3 install -r requirements_dev.txt
           pip install -e .
-
       - name: Lint, format, and type-check
         run: |
           # Stop the build if there are Python syntax errors or undefined names
           flake8 --config=.flake8 .
           black --check .
+          isort --check-only .
           # Run type checker in CI such that type errors can be identified and gradually addressed.
           # Once all existing type errors are addressed, the `|| echo` after the mypy call can be removed.
           mypy src || echo "Type errors found, continuing build..."
@@ -70,7 +70,7 @@ jobs:
 
       - name: Scan for security issues
         run: |
-          pip install bandit
+          pip install bandit==1.7.0
           bandit -r src -ll
 
       - name: Run tests

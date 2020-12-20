@@ -5,7 +5,6 @@ Util functions used when doing SMPC
 from functools import lru_cache
 from typing import Union
 
-
 import torch
 import torchcsprng as csprng  # type: ignore
 

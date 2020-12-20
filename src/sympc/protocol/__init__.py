@@ -2,8 +2,6 @@
 Implemented Protocols
 """
 
-from . import beaver
-from . import spdz
-
+from . import beaver, spdz
 
 __all__ = ["beaver", "spdz"]

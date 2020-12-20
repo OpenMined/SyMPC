@@ -2,7 +2,7 @@
 Custom MPC Tensors
 """
 
-from .share_tensor import ShareTensor
+from .share_tensor import ShareTensor  # isort:skip
 from .mpc_tensor import MPCTensor
 
 __all__ = [

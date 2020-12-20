@@ -2,15 +2,13 @@
 Class used to represent a share owned by a party
 """
 
-from typing import Any
-from typing import Union
-from typing import Optional
+import operator
+from typing import Any, Optional, Union
+
+import torch
 
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
-import operator
-
-import torch
 
 
 class ShareTensor:
