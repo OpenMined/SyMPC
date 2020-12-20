@@ -1,10 +1,8 @@
 """
 Tests for the Fixed Precision Encoder.
 """
-import pytest
 import torch
 
-from sympc.session import Session
 from sympc.encoder import FixedPointEncoder
 
 
@@ -33,14 +31,14 @@ def test_fp_encoding():
     assert (encoded_tensor == target_tensor).all
     # Test encoding with foats.
     fp_encoder = FixedPointEncoder()
-    float = 42.0
-    encoded_float = fp_encoder.encode(float)
+    test_float = 42.0
+    encoded_float = fp_encoder.encode(test_float)
     target_float = torch.LongTensor([42.0]) * fp_encoder._scale
     assert (encoded_float == target_float).all
     # Test encoding with ints.
     fp_encoder = FixedPointEncoder()
-    int = 2
-    encoded_int = fp_encoder.encode(int)
+    test_int = 2
+    encoded_int = fp_encoder.encode(test_int)
     target_int = torch.LongTensor([2]) * fp_encoder._scale
     assert (encoded_int == target_int).all
     
