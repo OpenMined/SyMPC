@@ -52,15 +52,7 @@ jobs:
         run: |
           sudo apt-get update
           python -m pip install --upgrade pip
-          pip3 install flake8
-          #- pip3 install flake8-docstrings
-          pip3 install flake8-comprehensions
-          pip3 install pep8-naming
-          pip3 install interrogate
-          pip3 install black
-          python3 -m pip install mypy
-          pip3 install codecov
-          pip3 install pytest-cov
+          pip3 install -r requirements_dev.txt
           python setup.py install
 
       - name: Lint, format, and type-check
