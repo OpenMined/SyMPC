@@ -76,9 +76,3 @@ jobs:
       - name: Run tests
         run: |
           pytest
-
-      - name: Check test coverage
-        run: |
-          coverage report --ignore-errors -m
-          # ensuring coverage of tests stays at 100 until entire coverage can be 100
-          coverage report --ignore-errors -m --include="tests/*"
