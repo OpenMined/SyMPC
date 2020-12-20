@@ -2,14 +2,13 @@
 The Beaver Triples
 """
 
+import operator
 from typing import Tuple
 
 import torch
 import torchcsprng as csprng  # type: ignore
-import operator
 
-from sympc.tensor import MPCTensor
-from sympc.tensor import ShareTensor
+from sympc.tensor import MPCTensor, ShareTensor
 
 EXPECTED_OPS = {"matmul", "mul"}
 
