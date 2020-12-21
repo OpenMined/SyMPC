@@ -2,7 +2,6 @@ import pytest
 import torch
 import operator
 
-from sympc.session import Session
 from sympc.tensor import ShareTensor
 
 
