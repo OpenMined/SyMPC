@@ -1,248 +1,147 @@
 import pytest
 import torch
+import operator
 
 from sympc.session import Session
 from sympc.tensor import ShareTensor
 
 
-@pytest.mark.parametrize("precision", [2, 3, 4])
-@pytest.mark.parametrize("base", [2, 10])
+@pytest.mark.parametrize("precision", [12, 3])
+@pytest.mark.parametrize("base", [4, 6])
 def test_send_get(clients, precision, base) -> None:
-    alice_client, bob_client, james_client = clients
-
     x = torch.Tensor([0.122, 1.342, 4.67])
     x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
+    x_ptr = x_share.send(clients[0])
 
     assert x_share == x_ptr.get()
 
 
-@pytest.mark.parametrize("precision", [2, 3, 4])
-@pytest.mark.parametrize("base", [2, 10])
-def test_add(clients, precision, base) -> None:
-    alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
+def test_different_session() -> None:
+    x_share = ShareTensor(data=5)
+    y_share = ShareTensor(data=5)
 
-    # testing for provided session
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, session=session)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr + x_ptr
-    assert (x_share + x_share) == y.get()
+    # Different sessions
+    assert x_share != y_share
 
-    # testing for default values of precision and base
-    x = torch.Tensor([0.122, 1.342, 4.67])
+def test_different_tensor() -> None:
+    x_share = ShareTensor(data = 5)
+    session = x_share.session
+
+    y_share = ShareTensor(data = 6, session = session)
+
+    # Different values for tensor
+    assert x_share != y_share
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ops_share_share_local(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ShareTensor(data=x, encoder_base=base, encoder_precision=precision)
+    y_share = ShareTensor(data=y, encoder_base=base, encoder_precision=precision)
+
+    expected_res = op(x, y)
+    res = op(x_share, y_share)
+    tensor_decoded = res.fp_encoder.decode(res.tensor)
+
+    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ops_share_tensor_local(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ShareTensor(data=x, encoder_base=base, encoder_precision=precision)
+
+    expected_res = op(x, y)
+    res = op(x_share, y)
+    tensor_decoded = res.fp_encoder.decode(res.tensor)
+
+    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_reverse_ops_share_tensor_local(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ShareTensor(data=x, encoder_base=base, encoder_precision=precision)
+
+    expected_res = op(y, x)
+    res = op(y, x_share)
+    tensor_decoded = res.fp_encoder.decode(res.tensor)
+
+    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ops_share_integer_local(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([0.125, -1.25, 4.25, -4.25, 4])
+    y = 4
+
+    x_share = ShareTensor(data=x, encoder_base=base, encoder_precision=precision)
+
+    expected_res = op(x, y)
+    res = op(x_share, y)
+    tensor_decoded = res.fp_encoder.decode(res.tensor)
+
+    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("op_str", ["lt", "gt"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ineq_share_share_local(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ShareTensor(data=x, encoder_base=base, encoder_precision=precision)
+    y_share = ShareTensor(data=y, encoder_base=base, encoder_precision=precision)
+
+    expected_res = op(x, y)
+    res = op(x_share, y_share)
+
+    assert (res == expected_res).all()
+
+
+@pytest.mark.parametrize("op_str", ["lt", "gt"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ineq_share_tensor_local(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ShareTensor(data=x, encoder_base=base, encoder_precision=precision)
+
+    expected_res = op(x, y)
+    res = op(x_share, y)
+
+    assert (res == expected_res).all()
+
+def test_share_print() -> None:
+
+    x = torch.Tensor([5.0])
     x_share = ShareTensor(data=x)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr + x_ptr
-    assert (x_share + x_share) == y.get()
 
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    y = torch.Tensor([1, 5.3, 4.678])
-    x_share = ShareTensor(data=x)
-    y_share = ShareTensor(data=y)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr + y_ptr
-    assert (x_share + y_share) == y.get()
+    encoded_x = x_share.fp_encoder.encode(x)
 
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr + x_ptr
-    assert (x_share + x_share) == y.get()
+    expected = f"[ShareTensor]\n\t| {x_share.fp_encoder}"
+    expected = f"{expected}\n\t| Data: {encoded_x}"
 
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    y = torch.Tensor([1, 5.3, 4.678])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    y_share = ShareTensor(data=y, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr + y_ptr
-    assert (x_share + y_share) == y.get()
+    assert expected == x_share.__str__()
 
-    # with negative numbers
-    x = torch.Tensor([0.122, -1.342, -4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr + x_ptr
-    assert (x_share + x_share) == y.get()
-
-    x = torch.Tensor([-0.122, 1.342, -4.67])
-    y = torch.Tensor([1, -5.3, -4.678])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    y_share = ShareTensor(data=y, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr + y_ptr
-    assert (x_share + y_share) == y.get()
-
-    # with int constant
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    c = 4
-    y = x_ptr + c
-    assert (x_share + c) == y.get()
-
-    # with float constant
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    c = 4.6
-    y = x_ptr + c
-    assert (x_share + c) == y.get()
-
-
-@pytest.mark.parametrize("precision", [2, 3, 4])
-@pytest.mark.parametrize("base", [2, 10])
-def test_sub(clients, precision, base) -> None:
-    alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
-
-    # testing for provided session
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, session=session)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr - x_ptr
-    assert (x_share - x_share) == y.get()
-
-    # testing for default values of precision and base
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr - x_ptr
-    assert (x_share - x_share) == y.get()
-
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    y = torch.Tensor([1, 5.3, 4.678])
-    x_share = ShareTensor(data=x)
-    y_share = ShareTensor(data=y)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr - y_ptr
-    assert (x_share - y_share) == y.get()
-
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr - x_ptr
-    assert (x_share - x_share) == y.get()
-
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    y = torch.Tensor([1, 5.3, 4.678])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    y_share = ShareTensor(data=y, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr - y_ptr
-    assert (x_share - y_share) == y.get()
-
-    # with negative numbers
-    x = torch.Tensor([0.122, -1.342, -4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr - x_ptr
-    assert (x_share - x_share) == y.get()
-
-    x = torch.Tensor([-0.122, 1.342, -4.67])
-    y = torch.Tensor([1, -5.3, -4.678])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    y_share = ShareTensor(data=y, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr - y_ptr
-    assert (x_share - y_share) == y.get()
-
-    # with int constant
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    c = 4
-    y = x_ptr - c
-    assert (x_share - c) == y.get()
-
-    # with float constant
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    c = 4.6
-    y = x_ptr - c
-    assert (x_share - c) == y.get()
-
-
-@pytest.mark.parametrize("precision", [2, 3, 4])
-@pytest.mark.parametrize("base", [2, 10])
-def test_mul(clients, precision, base) -> None:
-    alice_client, bob_client, james_client = clients
-    session = Session(parties=[alice_client, bob_client, james_client])
-
-    # testing for provided session
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, session=session)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr * x_ptr
-    assert (x_share * x_share) == y.get()
-
-    # testing for default values of precision and base
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr * x_ptr
-    assert (x_share * x_share) == y.get()
-
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    y = torch.Tensor([1, 5.3, 4.678])
-    x_share = ShareTensor(data=x)
-    y_share = ShareTensor(data=y)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr * y_ptr
-    assert (x_share * y_share) == y.get()
-
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr * x_ptr
-    assert (x_share * x_share) == y.get()
-
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    y = torch.Tensor([1, 5.3, 4.678])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    y_share = ShareTensor(data=y, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr * y_ptr
-    assert (x_share * y_share) == y.get()
-
-    # with negative numbers
-    x = torch.Tensor([0.122, -1.342, -4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y = x_ptr * x_ptr
-    assert (x_share * x_share) == y.get()
-
-    x = torch.Tensor([-0.122, 1.342, -4.67])
-    y = torch.Tensor([1, -5.3, -4.678])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    y_share = ShareTensor(data=y, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    y_ptr = y_share.send(alice_client)
-    y = x_ptr * y_ptr
-    assert (x_share * y_share) == y.get()
-
-    # with int constant
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    c = 4
-    y = x_ptr * c
-    assert (x_share * c) == y.get()
-
-    # with float constant
-    x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(alice_client)
-    c = 4.6
-    y = x_ptr * c
-    assert (x_share * c) == y.get()

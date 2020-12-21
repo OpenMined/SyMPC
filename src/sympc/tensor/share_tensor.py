@@ -135,6 +135,17 @@ class ShareTensor:
         res = self.apply_function(y_share, "sub")
         return res
 
+    def rsub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "sub" operation between "y" and "self"
+
+        :return: y - self
+        :rtype: ShareTensor
+        """
+        y_share = ShareTensor.sanity_checks(self, y, "sub")
+        res = y_share.apply_function(self, "sub")
+        return res
+
+
     def mul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "mul" operation between "self" and "y"
 
@@ -143,9 +154,6 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
-
-        if res.tensor is None:
-            raise ValueError("tensor attribute is None")
 
         if isinstance(y, ShareTensor):
             res.tensor = res.tensor // self.fp_encoder.scale
@@ -162,9 +170,6 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
-
-        if res.tensor is None:
-            raise ValueError("tensor attribute is None")
 
         if isinstance(y, ShareTensor):
             res.tensor = res.tensor // self.fp_encoder.scale
@@ -212,9 +217,7 @@ class ShareTensor:
         :rtype: bool
         """
         y_share = ShareTensor.sanity_checks(self, y, "gt")
-        if self.tensor is None or y_share.tensor is None:
-            raise ValueError("tensor attribute not present")
-        res = self.tensor < y_share.tensor
+        res = self.tensor > y_share.tensor
         return res
 
     def __lt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
@@ -225,9 +228,6 @@ class ShareTensor:
         """
 
         y_share = ShareTensor.sanity_checks(self, y, "lt")
-        if self.tensor is None or y_share.tensor is None:
-            raise ValueError("tensor attribute not present")
-
         res = self.tensor < y_share.tensor
         return res
 
@@ -260,7 +260,7 @@ class ShareTensor:
     __add__ = add
     __radd__ = add
     __sub__ = sub
-    __rsub__ = sub
+    __rsub__ = rsub
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
