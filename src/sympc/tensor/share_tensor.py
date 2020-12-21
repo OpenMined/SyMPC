@@ -145,7 +145,6 @@ class ShareTensor:
         res = y_share.apply_function(self, "sub")
         return res
 
-
     def mul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "mul" operation between "self" and "y"
 

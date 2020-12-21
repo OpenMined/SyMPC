@@ -23,14 +23,16 @@ def test_different_session() -> None:
     # Different sessions
     assert x_share != y_share
 
+
 def test_different_tensor() -> None:
-    x_share = ShareTensor(data = 5)
+    x_share = ShareTensor(data=5)
     session = x_share.session
 
-    y_share = ShareTensor(data = 6, session = session)
+    y_share = ShareTensor(data=6, session=session)
 
     # Different values for tensor
     assert x_share != y_share
+
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
@@ -133,6 +135,7 @@ def test_ineq_share_tensor_local(op_str, precision, base) -> None:
 
     assert (res == expected_res).all()
 
+
 def test_share_print() -> None:
 
     x = torch.Tensor([5.0])
@@ -144,4 +147,3 @@ def test_share_print() -> None:
     expected = f"{expected}\n\t| Data: {encoded_x}"
 
     assert expected == x_share.__str__()
-
