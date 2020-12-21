@@ -250,6 +250,14 @@ class MPCTensor:
         """
         return self.__apply_op(y, "mul")
 
+    def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "mul" operation between "self" and "y".
+
+        :return: self @ y
+        :rtype: MPCTensor
+        """
+        return self.__apply_op(y, "matmul")
+
     def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
@@ -269,7 +277,7 @@ class MPCTensor:
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
             )
 
-        if op_str in {"mul"}:
+        if op_str in {"mul", "matmul"}:
             from sympc.protocol.spdz import spdz
 
             shares = spdz.mul_master(self, y, op_str)
@@ -337,3 +345,4 @@ class MPCTensor:
     __sub__ = sub
     __mul__ = mul
     __rmul__ = mul
+    __matmul__ = matmul

@@ -78,18 +78,22 @@ def mul_parties(
 
     op = getattr(operator, op_str)
 
-    eps_b = op(eps, b_share)
-    delta_a = op(delta, a_share)
+    eps_b = op(eps, b_share.tensor)
+    delta_a = op(a_share.tensor, delta)
 
-    share = c_share + eps_b + delta_a
+    share_tensor = c_share.tensor + eps_b + delta_a
     if session.rank == 0:
-        delta_eps = op(delta, eps)
-        share.tensor = share.tensor + delta_eps
+        delta_eps = op(eps, delta)
+        share_tensor += delta_eps
 
     scale = session.config.encoder_base ** session.config.encoder_precision
-    share.tensor //= scale
+
+    share_tensor //= scale
 
     # Convert to our tensor type
-    share.tensor = share.tensor.type(session.tensor_type)
+    share_tensor = share_tensor.type(session.tensor_type)
+
+    share = ShareTensor(session=session)
+    share.tensor = share_tensor
 
     return share
