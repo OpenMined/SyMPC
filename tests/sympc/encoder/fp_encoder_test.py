@@ -65,3 +65,31 @@ def test_fp_decoding():
     decoded_int = fp_encoder.decode(test_int)
     target_int = torch.LongTensor([2])
     assert (decoded_int == target_int).all()
+
+
+def test_fp_precision_setter():
+    """
+    Test the precision setter for the FixedPointEncoder.
+    """
+    fp_encoder = FixedPointEncoder()
+    fp_encoder.precision = 3
+    assert fp_encoder.precision == 3
+    assert fp_encoder.scale == fp_encoder.base ** 3
+
+
+def test_fp_base_setter():
+    """
+    Test the base setter for the FixedPointEncoder.
+    """
+    fp_encoder = FixedPointEncoder()
+    fp_encoder.base = 3
+    assert fp_encoder.base == 3
+    assert fp_encoder.scale == 3 ** fp_encoder.precision
+
+
+def test_fp_string_representation():
+    """
+    Test the string representation of the FixedPointEncoder.
+    """
+    fp_encoder = FixedPointEncoder()
+    assert str(fp_encoder) == "[FixedPointEncoder]: precision: 16, base: 2"
