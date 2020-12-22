@@ -1,6 +1,7 @@
 """
 Tests for the Fixed Precision Encoder.
 """
+# third party
 import pytest
 import torch
 

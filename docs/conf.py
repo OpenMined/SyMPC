@@ -8,6 +8,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+# stdlib
 import inspect
 import os
 import shutil
@@ -31,8 +32,10 @@ sys.path.insert(0, os.path.join(__location__, "../src"))
 # Additionally it helps us to avoid running apidoc manually
 
 try:  # for Sphinx >= 1.7
+    # third party
     from sphinx.ext import apidoc
 except ImportError:
+    # third party
     from sphinx import apidoc
 
 output_dir = os.path.join(__location__, "api")
@@ -43,8 +46,9 @@ except FileNotFoundError:
     pass
 
 try:
-    import sphinx
+    # third party
     from pkg_resources import parse_version
+    import sphinx
 
     cmd_line_template = "sphinx-apidoc -f -o {outputdir} {moduledir}"
     cmd_line = cmd_line_template.format(outputdir=output_dir, moduledir=module_dir)
