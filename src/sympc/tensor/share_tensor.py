@@ -169,9 +169,7 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
-
-        if isinstance(y, ShareTensor):
-            res.tensor = res.tensor // self.fp_encoder.scale
+        res.tensor = res.tensor // self.fp_encoder.scale
 
         return res
 
