@@ -1,6 +1,7 @@
+import operator
+
 import pytest
 import torch
-import operator
 
 from sympc.tensor import ShareTensor
 
