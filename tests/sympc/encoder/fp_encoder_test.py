@@ -1,9 +1,8 @@
 """
 Tests for the Fixed Precision Encoder.
 """
-import torch
 import pytest
-
+import torch
 from sympc.encoder import FixedPointEncoder
 
 
