@@ -29,17 +29,17 @@ def test_fp_encoding():
     tensor = torch.Tensor([1, 2, 3])
     encoded_tensor = fp_encoder.encode(tensor)
     target_tensor = torch.LongTensor([1, 2, 3]) * fp_encoder.scale
-    assert (encoded_tensor == target_tensor).all
+    assert (encoded_tensor == target_tensor).all()
     # Test encoding with foats.
     test_float = 42.0
     encoded_float = fp_encoder.encode(test_float)
     target_float = torch.LongTensor([42.0]) * fp_encoder.scale
-    assert (encoded_float == target_float).all
+    assert (encoded_float == target_float).all()
     # Test encoding with ints.
     test_int = 2
     encoded_int = fp_encoder.encode(test_int)
     target_int = torch.LongTensor([2]) * fp_encoder.scale
-    assert (encoded_int == target_int).all
+    assert (encoded_int == target_int).all()
 
 
 def test_fp_decoding():
@@ -51,14 +51,17 @@ def test_fp_decoding():
     # Should throw a ValueError with floating point tensors.
     tensor = torch.Tensor([1.00, 2.00, 3.00])
     with pytest.raises(ValueError):
-        encoded_tensor = fp_encoder.decode(tensor)
-    # Should work ok with integer tensors.
-    # tensor = torch.Tensor([1, 2, 3])
-    # encoded_tensor = fp_encoder.encode(tensor)
-    # target_tensor = torch.LongTensor([1, 2, 3]) * fp_encoder.scale
-    # assert (encoded_tensor == target_tensor).all
-    # # Test decoding with ints.
-    # test_int = 2
-    # encoded_int = fp_encoder.encode(test_int)
-    # target_int = torch.LongTensor([2]) * fp_encoder.scale
-    # assert (encoded_int == target_int).all
+        fp_encoder.decode(tensor)
+    # Test decoding with ints.
+    # Case A (precision = 0):
+    fp_encoder = FixedPointEncoder(precision=0)
+    test_int = 2
+    decoded_int = fp_encoder.decode(test_int)
+    target_int = torch.LongTensor([2])
+    assert (decoded_int == target_int).all()
+    # Case B (precision != 0):
+    fp_encoder = FixedPointEncoder()
+    test_int = 2 * fp_encoder.base ** fp_encoder.precision
+    decoded_int = fp_encoder.decode(test_int)
+    target_int = torch.LongTensor([2])
+    assert (decoded_int == target_int).all()
