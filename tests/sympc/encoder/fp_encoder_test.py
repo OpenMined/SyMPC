@@ -3,6 +3,7 @@ Tests for the Fixed Precision Encoder.
 """
 import pytest
 import torch
+
 from sympc.encoder import FixedPointEncoder
 
 
@@ -47,7 +48,7 @@ def test_fp_decoding():
     """
     fp_encoder = FixedPointEncoder()
     # Test decoding with tensors.
-    # Should throw a ValueError with floating point tensors.
+    # CaseA: throw a ValueError with floating point tensors.
     tensor = torch.Tensor([1.00, 2.00, 3.00])
     with pytest.raises(ValueError):
         fp_encoder.decode(tensor)
