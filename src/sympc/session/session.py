@@ -14,16 +14,24 @@ Example:
 """
 
 
+# stdlib
 import operator
 import secrets
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID, uuid4
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
+from uuid import UUID
+from uuid import uuid4
 
+# third party
 # TODO: This should not be here
 import torch
 
 from sympc.config import Config
-from sympc.session.utils import generate_random_element, get_type_from_ring
+from sympc.session.utils import generate_random_element
+from sympc.session.utils import get_type_from_ring
 
 
 class Session:
