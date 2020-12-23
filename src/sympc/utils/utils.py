@@ -6,6 +6,7 @@ int any module
 import asyncio
 import functools
 import operator
+import sys
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 from itertools import repeat
 from typing import Any, Callable, Dict, List, Optional, Type, Union
@@ -100,9 +101,15 @@ def parallel_execution(
         futures = []
         loop = asyncio.get_event_loop()
 
-        with Executor(
-            max_workers=nr_parties, initializer=initializer, initargs=(loop,)
-        ) as executor:
+        ex_kwargs: Dict[str, Any] = {}
+        ex_kwargs["max_workers"] = nr_parties
+
+        # disable additional args in python 3.6
+        if sys.version_info >= (3, 7):
+            ex_kwargs["initializer"] = initializer
+            ex_kwargs["initargs"] = (loop,)
+
+        with Executor(**ex_kwargs) as executor:
             for i in range(nr_parties):
                 _args = args[i]
                 _kwargs = kwargs.get(i, {})
