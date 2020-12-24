@@ -2,7 +2,9 @@
 Configuration information used for FixedPrecisionEncoder and ShareTensor
 """
 
-from dataclasses import dataclass, field
+# stdlib
+from dataclasses import dataclass
+from dataclasses import field
 
 
 @dataclass

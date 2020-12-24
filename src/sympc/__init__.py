@@ -5,7 +5,9 @@
     following weeks
 """
 
-from pkg_resources import DistributionNotFound, get_distribution
+# third party
+from pkg_resources import DistributionNotFound
+from pkg_resources import get_distribution
 
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401

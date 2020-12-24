@@ -2,9 +2,11 @@
 Util functions used when doing SMPC
 """
 
+# stdlib
 from functools import lru_cache
 from typing import Union
 
+# third party
 import torch
 import torchcsprng as csprng  # type: ignore
 

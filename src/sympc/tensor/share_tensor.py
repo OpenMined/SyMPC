@@ -2,9 +2,13 @@
 Class used to represent a share owned by a party
 """
 
+# stdlib
 import operator
-from typing import Any, Optional, Union
+from typing import Any
+from typing import Optional
+from typing import Union
 
+# third party
 import torch
 
 from sympc.encoder import FixedPointEncoder
