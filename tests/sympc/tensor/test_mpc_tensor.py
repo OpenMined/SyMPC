@@ -6,7 +6,7 @@ from sympc.tensor import MPCTensor
 
 
 def test_mpc_tensor_exception(clients) -> None:
-    alice_client, bob_client, james_client = clients
+    alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
 
@@ -15,7 +15,7 @@ def test_mpc_tensor_exception(clients) -> None:
 
 
 def test_reconstruct(clients):
-    alice_client, bob_client, james_client = clients
+    alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -28,7 +28,7 @@ def test_reconstruct(clients):
 
 
 def test_add(clients):
-    alice_client, bob_client, james_client = clients
+    alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -87,7 +87,7 @@ def test_add(clients):
 
 
 def test_sub(clients):
-    alice_client, bob_client, james_client = clients
+    alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -146,7 +146,7 @@ def test_sub(clients):
 
 
 def test_mul(clients):
-    alice_client, bob_client, james_client = clients
+    alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
