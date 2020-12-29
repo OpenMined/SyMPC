@@ -108,12 +108,9 @@ def parallel_execution(
         futures = []
         loop = asyncio.get_event_loop()
 
-        ex_kwargs: Dict[str, Any] = {}
-        ex_kwargs["max_workers"] = nr_parties
-        ex_kwargs["initializer"] = initializer
-        ex_kwargs["initargs"] = (loop,)
-
-        with Executor(**ex_kwargs) as executor:
+        with Executor(
+            max_workers=nr_parties, initializer=initializer, initargs=(loop,)
+        ) as executor:
             for i in range(nr_parties):
                 _args = args[i]
                 _kwargs = kwargs.get(i, {})
