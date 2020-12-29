@@ -5,14 +5,17 @@ Contains functions that are run at:
 * the parties that hold the shares
 """
 
+# stdlib
 import operator
 from typing import List
 
+# third party
 import torch
 
 from sympc.protocol.beaver import beaver
 from sympc.session import Session
-from sympc.tensor import MPCTensor, ShareTensor
+from sympc.tensor import MPCTensor
+from sympc.tensor import ShareTensor
 from sympc.utils import parallel_execution
 
 EXPECTED_OPS = {"mul", "matmul"}

@@ -3,13 +3,21 @@ In this file there would be defined utils functions that might be used
 int any module
 """
 
+# stdlib
 import asyncio
+from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
 import functools
+from itertools import repeat
 import operator
 import sys
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from itertools import repeat
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Type
+from typing import Union
 
 
 def ispointer(obj: Any) -> bool:
