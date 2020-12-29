@@ -1,5 +1,7 @@
+# stdlib
 import operator
 
+# third party
 import pytest
 import torch
 
