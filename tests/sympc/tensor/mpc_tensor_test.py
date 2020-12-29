@@ -104,22 +104,3 @@ def test_ops_integer(clients, op_str):
     result = op(x, y).reconstruct()
 
     assert torch.allclose(result, expected_result)
-
-
-@pytest.mark.parametrize("op_str", ["lt", "gt"])
-def test_ineq_mpc_secret(clients, op_str):
-    alice_client, bob_client = clients
-    session = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session)
-
-    op = getattr(operator, op_str)
-
-    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
-    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
-    x = MPCTensor(secret=x_secret, session=session)
-    y = MPCTensor(secret=y_secret, session=session)
-
-    expected_result = op(x_secret, y_secret)
-    result = op(x, y_secret).reconstruct()
-
-    assert torch.allclose(result, expected_result)
