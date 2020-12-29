@@ -1,3 +1,5 @@
+import operator
+
 import pytest
 import torch
 
@@ -27,175 +29,97 @@ def test_reconstruct(clients):
     assert torch.allclose(x_secret, x)
 
 
-def test_add(clients):
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
+def test_ops(clients, op_str):
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
-    x_secret = torch.Tensor([1, 2, 3])
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x + x).reconstruct()
-    assert torch.allclose(result, (x_secret + x_secret))
+    op = getattr(operator, op_str)
 
-    x_secret = torch.Tensor([1, 2, 3])
-    y_secret = torch.Tensor([4, 5, 6])
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
     x = MPCTensor(secret=x_secret, session=session)
     y = MPCTensor(secret=y_secret, session=session)
-    result = (x + y).reconstruct()
-    assert torch.allclose(result, (x_secret + y_secret))
+    result = op(x, y).reconstruct()
+    expected_result = op(x_secret, y_secret)
 
-    # with negative numbers
-    x_secret = torch.Tensor([1, -2, 3])
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x + x).reconstruct()
-    assert torch.allclose(result, (x_secret + x_secret))
-
-    x_secret = torch.Tensor([1, -2, 3])
-    y_secret = torch.Tensor([4, 5, -6])
-    x = MPCTensor(secret=x_secret, session=session)
-    y = MPCTensor(secret=y_secret, session=session)
-    result = (x + y).reconstruct()
-    assert torch.allclose(result, (x_secret + y_secret))
-
-    # with constant integer
-    x_secret = torch.Tensor([1, 2, 3])
-    c = 4
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x + c).reconstruct()
-    assert torch.allclose(result, (x_secret + c))
-
-    # with constant float
-    x_secret = torch.Tensor([1, 2, 3])
-    c = 4.6
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x + c).reconstruct()
-    result_c = x_secret + c
-    assert torch.allclose(result, result_c)
-
-    # test with different sessions
-    session_alternate = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session_alternate)
-
-    x_secret = torch.Tensor([1, 2, 3])
-
-    x_session = MPCTensor(secret=x_secret, session=session)
-    x_session_alternate = MPCTensor(secret=x_secret, session=session_alternate)
-
-    with pytest.raises(ValueError):
-        result = x_session + x_session_alternate
+    assert torch.allclose(result, expected_result)
 
 
-def test_sub(clients):
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+def test_ops_mpc_secret(clients, op_str):
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
-    x_secret = torch.Tensor([1, 2, 3])
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
     x = MPCTensor(secret=x_secret, session=session)
-    result = (x - x).reconstruct()
-    assert torch.allclose(result, (x_secret - x_secret))
 
-    x_secret = torch.Tensor([1, 2, 3])
-    y_secret = torch.Tensor([4, 5, 6])
-    x = MPCTensor(secret=x_secret, session=session)
-    y = MPCTensor(secret=y_secret, session=session)
-    result = (x - y).reconstruct()
-    assert torch.allclose(result, (x_secret - y_secret))
+    expected_result = op(x_secret, y_secret)
+    result = op(x, y_secret).reconstruct()
 
-    # with negative numbers
-    x_secret = torch.Tensor([1, -2, 3])
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x - x).reconstruct()
-    assert torch.allclose(result, (x_secret - x_secret))
-
-    x_secret = torch.Tensor([1, -2, 3])
-    y_secret = torch.Tensor([4, 5, -6])
-    x = MPCTensor(secret=x_secret, session=session)
-    y = MPCTensor(secret=y_secret, session=session)
-    result = (x - y).reconstruct()
-    assert torch.allclose(result, (x_secret - y_secret))
-
-    # with constant integer
-    x_secret = torch.Tensor([1, 2, 3])
-    c = 4
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x - c).reconstruct()
-    assert torch.allclose(result, (x_secret - c))
-
-    # with constant float
-    x_secret = torch.Tensor([1, 2, 3])
-    c = 4.6
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x - c).reconstruct()
-    result_c = x_secret - c
-    assert torch.allclose(result, result_c)
-
-    # test with different sessions
-    session_alternate = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session_alternate)
-
-    x_secret = torch.Tensor([1, 2, 3])
-
-    x_session = MPCTensor(secret=x_secret, session=session)
-    x_session_alternate = MPCTensor(secret=x_secret, session=session_alternate)
-
-    with pytest.raises(ValueError):
-        result = x_session - x_session_alternate
+    assert torch.allclose(result, expected_result)
 
 
-def test_mul(clients):
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+def test_ops_secret_mpc(clients, op_str):
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
-    x_secret = torch.Tensor([1, 2, 3])
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x * x).reconstruct()
-    result_secret = x_secret * x_secret
-    assert torch.allclose(result, result_secret)
+    op = getattr(operator, op_str)
 
-    x_secret = torch.Tensor([1, 2, 3])
-    y_secret = torch.Tensor([4, 5, 6])
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected_result = op(y_secret, x_secret)
+    result = op(y_secret, x).reconstruct()
+
+    assert torch.allclose(result, expected_result)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+def test_ops_integer(clients, op_str):
+    alice_client, bob_client = clients
+    # TODO: for more than 2 parties
+    session = Session(parties=[alice_client, bob_client])
+    Session.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([0.125, -1.25, -4.25, 4])
+    y = 4
+
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected_result = op(x_secret, y)
+    result = op(x, y).reconstruct()
+
+    assert torch.allclose(result, expected_result)
+
+
+@pytest.mark.parametrize("op_str", ["lt", "gt"])
+def test_ineq_mpc_secret(clients, op_str):
+    alice_client, bob_client = clients
+    session = Session(parties=[alice_client, bob_client])
+    Session.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
     x = MPCTensor(secret=x_secret, session=session)
     y = MPCTensor(secret=y_secret, session=session)
-    result = (x * y).reconstruct()
-    result_secret = x_secret * y_secret
-    assert torch.allclose(result, result_secret)
 
-    # with negative numbers
-    x_secret = torch.Tensor([1, -2, 3])
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x * x).reconstruct()
-    result_secret = x_secret * x_secret
-    assert torch.allclose(result, result_secret)
+    expected_result = op(x_secret, y_secret)
+    result = op(x, y_secret).reconstruct()
 
-    # with constant integer
-    x_secret = torch.Tensor([1, 2, 3])
-    c = 4
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x * c).reconstruct()
-    result_secret = x_secret * c
-    assert torch.allclose(result, result_secret)
-
-    # with constant float
-    x_secret = torch.Tensor([1, 2, 3])
-    c = 4.6
-    x = MPCTensor(secret=x_secret, session=session)
-    result = (x * c).reconstruct()
-    result_secret = x_secret * c
-    assert torch.allclose(result, result_secret)
-
-    # test with different sessions
-    session_alternate = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session_alternate)
-
-    x_secret = torch.Tensor([1, 2, 3])
-
-    x_session = MPCTensor(secret=x_secret, session=session)
-    x_session_alternate = MPCTensor(secret=x_secret, session=session_alternate)
-
-    with pytest.raises(ValueError):
-        result = x_session * x_session_alternate
+    assert torch.allclose(result, expected_result)

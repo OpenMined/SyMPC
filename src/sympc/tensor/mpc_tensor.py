@@ -351,6 +351,7 @@ class MPCTensor:
     __add__ = add
     __radd__ = add
     __sub__ = sub
+    __rsub__ = sub
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
