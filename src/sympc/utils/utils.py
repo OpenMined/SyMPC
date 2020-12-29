@@ -10,7 +10,6 @@ from concurrent.futures import ThreadPoolExecutor
 import functools
 from itertools import repeat
 import operator
-import sys
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -111,11 +110,8 @@ def parallel_execution(
 
         ex_kwargs: Dict[str, Any] = {}
         ex_kwargs["max_workers"] = nr_parties
-
-        # disable additional args in python 3.6
-        if sys.version_info >= (3, 7):
-            ex_kwargs["initializer"] = initializer
-            ex_kwargs["initargs"] = (loop,)
+        ex_kwargs["initializer"] = initializer
+        ex_kwargs["initargs"] = (loop,)
 
         with Executor(**ex_kwargs) as executor:
             for i in range(nr_parties):
