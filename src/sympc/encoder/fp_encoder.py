@@ -14,8 +14,10 @@ GitHub: https://github.com/facebookresearch/CrypTen
 #
 # Part of the code is from the CrypTen Facebook Project
 
+# stdlib
 from typing import Union
 
+# third party
 import torch
 
 

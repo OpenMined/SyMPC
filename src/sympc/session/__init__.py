@@ -4,6 +4,7 @@ session
 """
 
 from .session import Session
-from .utils import get_generator, get_type_from_ring
+from .utils import get_generator
+from .utils import get_type_from_ring
 
 __all__ = ["Session", "get_type_from_ring", "get_generator"]
