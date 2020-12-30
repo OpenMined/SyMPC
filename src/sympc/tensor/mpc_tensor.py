@@ -250,6 +250,14 @@ class MPCTensor:
         """
         return self.__apply_op(y, "sub")
 
+    def rsub(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "sub" operation between "y" and "self".
+
+        :return: y - self
+        :rtype: MPCTensor
+        """
+        return self.__apply_op(y, "sub") * -1
+
     def mul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "mul" operation between "self" and "y".
 
@@ -351,7 +359,7 @@ class MPCTensor:
     __add__ = add
     __radd__ = add
     __sub__ = sub
-    __rsub__ = sub
+    __rsub__ = rsub
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
