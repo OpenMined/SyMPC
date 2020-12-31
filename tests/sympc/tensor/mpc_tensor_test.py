@@ -109,3 +109,19 @@ def test_ops_integer(clients, op_str) -> None:
     result = op(x, y).reconstruct()
 
     assert torch.allclose(result, expected_result)
+
+
+def test_mpc_print(clients) -> None:
+    alice_client, bob_client = clients
+    session = Session(parties=[alice_client, bob_client])
+    Session.setup_mpc(session)
+
+    x_secret = torch.Tensor([5.0])
+
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected = f"[MPCTensor]\n\t|"
+    expected = f"{expected} {alice_client} -> ShareTensorPointer\n\t|"
+    expected = f"{expected} {bob_client} -> ShareTensorPointer"
+
+    assert expected == x.__str__()
