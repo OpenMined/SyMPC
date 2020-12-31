@@ -120,7 +120,7 @@ def test_mpc_print(clients) -> None:
 
     x = MPCTensor(secret=x_secret, session=session)
 
-    expected = f"[MPCTensor]\n\t|"
+    expected = "[MPCTensor]\n\t|"
     expected = f"{expected} {alice_client} -> ShareTensorPointer\n\t|"
     expected = f"{expected} {bob_client} -> ShareTensorPointer"
 
