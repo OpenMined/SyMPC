@@ -250,7 +250,7 @@ class MPCTensor:
         """
         return self.__apply_op(y, "sub")
 
-    def rsub(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+    def rsub(self, y: Union[torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "sub" operation between "y" and "self".
 
         :return: y - self

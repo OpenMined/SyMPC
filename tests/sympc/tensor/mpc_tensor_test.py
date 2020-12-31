@@ -18,13 +18,13 @@ def test_mpc_tensor_exception(clients) -> None:
         MPCTensor(secret=42, session=session)
 
 
-def test_reconstruct(clients):
+def test_reconstruct(clients) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
-    x_secret = torch.Tensor([1, 2, 3, 4])
+    x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)
     x = x.reconstruct()
 
@@ -32,7 +32,7 @@ def test_reconstruct(clients):
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
-def test_ops(clients, op_str):
+def test_ops(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
@@ -51,9 +51,10 @@ def test_ops(clients, op_str):
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
-def test_ops_mpc_secret(clients, op_str):
+def test_ops_mpc_public(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
+    # TODO: support for matmul
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
@@ -70,9 +71,10 @@ def test_ops_mpc_secret(clients, op_str):
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
-def test_ops_secret_mpc(clients, op_str):
+def test_ops_public_mpc(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
+    # TODO: support for matmul
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
@@ -89,9 +91,10 @@ def test_ops_secret_mpc(clients, op_str):
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
-def test_ops_integer(clients, op_str):
+def test_ops_integer(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
+    # TODO: support for matmul
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
