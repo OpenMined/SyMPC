@@ -309,7 +309,7 @@ class MPCTensor:
         """
 
         op = getattr(operator, op_str)
-        if op_str in {"mul"}:
+        if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
         elif op_str in {"add", "sub"}:
             shares = list(self.share_ptrs)
