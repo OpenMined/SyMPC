@@ -81,7 +81,6 @@ class MPCTensor:
                         break
             else:
                 self.share_ptrs = []
-                print("here")
                 shares = MPCTensor.generate_shares(secret_share, self.session)
                 for share, party in zip(shares, self.session.parties):
                     self.share_ptrs.append(share.send(party))
