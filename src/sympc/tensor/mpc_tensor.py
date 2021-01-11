@@ -81,7 +81,7 @@ class MPCTensor:
                         break
             else:
                 self.share_ptrs = []
-
+                print("here")
                 shares = MPCTensor.generate_shares(secret_share, self.session)
                 for share, party in zip(shares, self.session.parties):
                     self.share_ptrs.append(share.send(party))
@@ -280,7 +280,7 @@ class MPCTensor:
         :return: self // y
         :rtype: MPCTensor
         """
-        return self.__apply_op(y, "div")
+        return self.__apply_op(y, "truediv")
 
     def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
@@ -363,3 +363,4 @@ class MPCTensor:
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
+    __truediv__ = div
