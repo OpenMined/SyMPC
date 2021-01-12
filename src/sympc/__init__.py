@@ -15,6 +15,9 @@ from . import protocol  # noqa: 401
 from . import session  # noqa: 401
 from . import tensor  # noqa: 401
 
+import syft
+syft.load_lib("sympc")
+
 try:
     # Change here if project is renamed and does not equal the package name
     dist_name = __name__
