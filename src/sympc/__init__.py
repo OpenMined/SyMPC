@@ -8,6 +8,7 @@
 # third party
 from pkg_resources import DistributionNotFound
 from pkg_resources import get_distribution
+import syft
 
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
@@ -15,7 +16,6 @@ from . import protocol  # noqa: 401
 from . import session  # noqa: 401
 from . import tensor  # noqa: 401
 
-import syft
 syft.load_lib("sympc")
 
 try:
