@@ -34,7 +34,7 @@ def test_reconstruct(clients) -> None:
     assert torch.allclose(x_secret, x)
 
 
-def test_op_mpc_different_sessions(clients):
+def test_op_mpc_different_sessions(clients) -> None:
     alice_client, bob_client = clients
     session_one = Session(parties=[alice_client, bob_client])
     session_two = Session(parties=[alice_client, bob_client])
@@ -48,7 +48,7 @@ def test_op_mpc_different_sessions(clients):
         z = x + y
 
 
-def test_remote_mpc_no_shape(clients):
+def test_remote_mpc_no_shape(clients) -> None:
     alice_client, bob_client = clients
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -59,7 +59,7 @@ def test_remote_mpc_no_shape(clients):
         x = MPCTensor(secret=x_remote, session=session)
 
 
-def test_remote_mpc_with_shape(clients):
+def test_remote_mpc_with_shape(clients) -> None:
     alice_client, bob_client = clients
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -71,7 +71,7 @@ def test_remote_mpc_with_shape(clients):
     assert x_remote == result
 
 
-def test_remote_not_tensor(clients):
+def test_remote_not_tensor(clients) -> None:
     alice_client, bob_client = clients
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -89,7 +89,7 @@ def test_remote_not_tensor(clients):
     assert x_remote_int == result
 
 
-def test_local_secret_not_tensor(clients):
+def test_local_secret_not_tensor(clients) -> None:
     alice_client, bob_client = clients
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -108,7 +108,7 @@ def test_local_secret_not_tensor(clients):
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
-def test_ops(clients, op_str) -> None:
+def test_ops_mpc_mpc(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
     session = Session(parties=[alice_client, bob_client])
@@ -126,7 +126,7 @@ def test_ops(clients, op_str) -> None:
     assert torch.allclose(result, expected_result)
 
 
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "div"])
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul", "div"])
 def test_ops_mpc_public(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
@@ -149,7 +149,7 @@ def test_ops_mpc_public(clients, op_str) -> None:
         assert torch.allclose(result, expected_result, atol=10e-3)
 
 
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
 def test_ops_public_mpc(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties

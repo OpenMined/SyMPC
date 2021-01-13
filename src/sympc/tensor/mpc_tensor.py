@@ -273,6 +273,26 @@ class MPCTensor:
         """
         return self.__apply_op(y, "matmul")
 
+    def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "matmul" operation between "self" and "y".
+
+        :return: self @ y
+        :rtype: MPCTensor
+        """
+        return self.__apply_op(y, "matmul")
+
+    def rmatmul(self, y: torch.Tensor) -> "MPCTensor":
+        """Apply the "matmul" operation between "y" and "self".
+
+        :return: y @ self
+        :rtype: MPCTensor
+        """
+        op = getattr(operator, "matmul")
+        shares = [op(y, share) for share in self.share_ptrs]
+
+        result = MPCTensor(shares=shares, session=self.session)
+        return result
+
     def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
@@ -362,3 +382,4 @@ class MPCTensor:
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
+    __rmatmul__ = rmatmul
