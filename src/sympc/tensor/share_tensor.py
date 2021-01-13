@@ -177,9 +177,7 @@ class ShareTensor:
 
         return res
 
-    def rmatmul(
-        self, y: Union[int, float, torch.Tensor, "ShareTensor"]
-    ) -> "ShareTensor":
+    def rmatmul(self, y: torch.Tensor) -> "ShareTensor":
         """Apply the reversed "matmul" operation between "self" and "y"
 
         :return: y @ self
