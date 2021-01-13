@@ -279,7 +279,7 @@ class MPCTensor:
         :return: self // y
         :rtype: MPCTensor
         """
-        return self.__apply_op(y, "truediv")
+        return self.__apply_op(y, "div")
 
     def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
@@ -362,4 +362,3 @@ class MPCTensor:
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
-    __truediv__ = div

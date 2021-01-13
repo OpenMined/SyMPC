@@ -17,6 +17,9 @@ def test_mpc_tensor_exception(clients) -> None:
     with pytest.raises(ValueError):
         MPCTensor(secret=42, session=session)
 
+    with pytest.raises(ValueError):
+        x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
+
 
 def test_reconstruct(clients) -> None:
     alice_client, bob_client = clients
@@ -31,15 +34,7 @@ def test_reconstruct(clients) -> None:
     assert torch.allclose(x_secret, x)
 
 
-def test_sessions_without_setup_mpc(clients):
-    alice_client, bob_client = clients
-    session = Session(parties=[alice_client, bob_client])
-
-    with pytest.raises(ValueError):
-        x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
-
-
-def test_sessions_with_different_sessions(clients):
+def test_op_mpc_different_sessions(clients):
     alice_client, bob_client = clients
     session_one = Session(parties=[alice_client, bob_client])
     session_two = Session(parties=[alice_client, bob_client])
@@ -95,7 +90,6 @@ def test_remote_not_tensor(clients):
 
 
 def test_local_secret_not_tensor(clients):
-    # TODO: float
     alice_client, bob_client = clients
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
@@ -105,6 +99,12 @@ def test_local_secret_not_tensor(clients):
     result = x.reconstruct()
 
     assert x_int == result
+
+    x_float = 5.987
+    x = MPCTensor(secret=x_float, session=session)
+    result = x.reconstruct()
+
+    assert torch.allclose(torch.tensor(x_float), result)
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
@@ -126,7 +126,7 @@ def test_ops(clients, op_str) -> None:
     assert torch.allclose(result, expected_result)
 
 
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "truediv"])
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "div"])
 def test_ops_mpc_public(clients, op_str) -> None:
     alice_client, bob_client = clients
     # TODO: for more than 2 parties
@@ -134,19 +134,19 @@ def test_ops_mpc_public(clients, op_str) -> None:
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
-    op = getattr(operator, op_str)
     x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
     y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
     x = MPCTensor(secret=x_secret, session=session)
 
-    expected_result = op(x_secret, y_secret)
+    if op_str == "div":
+        with pytest.raises(AttributeError):
+            op = getattr(operator, op_str)
 
-    if op_str == "truediv":
-        with pytest.raises(ValueError):
-            result = op(x, y_secret).reconstruct()
     else:
+        op = getattr(operator, op_str)
+        expected_result = op(x_secret, y_secret)
         result = op(x, y_secret).reconstruct()
-        assert torch.allclose(result, expected_result, atol=10 ** -3)
+        assert torch.allclose(result, expected_result, atol=10e-3)
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
@@ -167,7 +167,7 @@ def test_ops_public_mpc(clients, op_str) -> None:
     expected_result = op(y_secret, x_secret)
     result = op(y_secret, x).reconstruct()
 
-    assert torch.allclose(result, expected_result, atol=10 ** -3)
+    assert torch.allclose(result, expected_result, atol=10e-3)
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
@@ -189,7 +189,7 @@ def test_ops_integer(clients, op_str) -> None:
     expected_result = op(x_secret, y)
     result = op(x, y).reconstruct()
 
-    assert torch.allclose(result, expected_result, atol=10 ** -3)
+    assert torch.allclose(result, expected_result, atol=10e-3)
 
 
 def test_mpc_print(clients) -> None:
