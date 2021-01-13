@@ -42,7 +42,7 @@ class MPCTensor:
 
     Attributes:
         share_ptrs (List[ShareTensor]): pointer to the shares (hold by the parties)
-        session (Sesssion): session used for the MPC
+        session (Session): session used for the MPC
         shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
@@ -81,7 +81,6 @@ class MPCTensor:
                         break
             else:
                 self.share_ptrs = []
-
                 shares = MPCTensor.generate_shares(secret_share, self.session)
                 for share, party in zip(shares, self.session.parties):
                     self.share_ptrs.append(share.send(party))
@@ -250,6 +249,14 @@ class MPCTensor:
         """
         return self.__apply_op(y, "sub")
 
+    def rsub(self, y: Union[torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "sub" operation between "y" and "self".
+
+        :return: y - self
+        :rtype: MPCTensor
+        """
+        return self.__apply_op(y, "sub") * -1
+
     def mul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "mul" operation between "self" and "y".
 
@@ -351,6 +358,7 @@ class MPCTensor:
     __add__ = add
     __radd__ = add
     __sub__ = sub
+    __rsub__ = rsub
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
