@@ -5,10 +5,9 @@ on:
     branches:
       - main
     paths:
-      - '**.py'
+      - "**.py"
       - "setup.cfg"
       - ".github/workflows/**.yml"
-
 
   pull_request:
     types: [opened, synchronize, reopened]

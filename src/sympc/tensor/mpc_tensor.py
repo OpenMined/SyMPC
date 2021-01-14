@@ -42,7 +42,7 @@ class MPCTensor:
 
     Attributes:
         share_ptrs (List[ShareTensor]): pointer to the shares (hold by the parties)
-        session (Sesssion): session used for the MPC
+        session (Session): session used for the MPC
         shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
@@ -81,7 +81,6 @@ class MPCTensor:
                         break
             else:
                 self.share_ptrs = []
-
                 shares = MPCTensor.generate_shares(secret_share, self.session)
                 for share, party in zip(shares, self.session.parties):
                     self.share_ptrs.append(share.send(party))
@@ -250,6 +249,14 @@ class MPCTensor:
         """
         return self.__apply_op(y, "sub")
 
+    def rsub(self, y: Union[torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "sub" operation between "y" and "self".
+
+        :return: y - self
+        :rtype: MPCTensor
+        """
+        return self.__apply_op(y, "sub") * -1
+
     def mul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "mul" operation between "self" and "y".
 
@@ -265,6 +272,26 @@ class MPCTensor:
         :rtype: MPCTensor
         """
         return self.__apply_op(y, "matmul")
+
+    def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "matmul" operation between "self" and "y".
+
+        :return: self @ y
+        :rtype: MPCTensor
+        """
+        return self.__apply_op(y, "matmul")
+
+    def rmatmul(self, y: torch.Tensor) -> "MPCTensor":
+        """Apply the "matmul" operation between "y" and "self".
+
+        :return: y @ self
+        :rtype: MPCTensor
+        """
+        op = getattr(operator, "matmul")
+        shares = [op(y, share) for share in self.share_ptrs]
+
+        result = MPCTensor(shares=shares, session=self.session)
+        return result
 
     def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
@@ -309,7 +336,7 @@ class MPCTensor:
         """
 
         op = getattr(operator, op_str)
-        if op_str in {"mul"}:
+        if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
         elif op_str in {"add", "sub"}:
             shares = list(self.share_ptrs)
@@ -351,6 +378,8 @@ class MPCTensor:
     __add__ = add
     __radd__ = add
     __sub__ = sub
+    __rsub__ = rsub
     __mul__ = mul
     __rmul__ = mul
     __matmul__ = matmul
+    __rmatmul__ = rmatmul
