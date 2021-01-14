@@ -1,12 +1,9 @@
-# third party
-import pytest
-import syft as sy
-
+# stdlib
 from typing import Any
-from typing import List
 from typing import Callable
+from typing import List
 
-
+# third party
 import pytest
 import syft as sy
 
