@@ -85,3 +85,18 @@ def test_setup_przs(clients):
     session = Session(parties=[alice_client, bob_client])
     Session._setup_przs(session)
     assert True
+
+
+def test_eq():
+    """
+    Test __eq__ for Session.
+    """
+    session = Session()
+    other1 = Session()
+    other2 = session
+    # Test different instances:
+    assert session != 1
+    # Test different sessions:
+    assert session != other1
+    # Test equal sessions:
+    assert session == other2
