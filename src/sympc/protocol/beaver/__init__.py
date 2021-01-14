@@ -2,4 +2,4 @@
 Beaver Generators Mechanism
 """
 
-from .beaver import *
+from .beaver import *  # noqa: F401

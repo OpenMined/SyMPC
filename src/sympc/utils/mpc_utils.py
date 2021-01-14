@@ -1,7 +1,7 @@
+# stdlib
 from typing import List
 
-from sympc.tensor import ShareTensor
-
+# third party
 # TODO: Remove this
 import torch
 

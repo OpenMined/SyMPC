@@ -1,8 +1,10 @@
+# stdlib
+from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Any
-from typing import Optional
+
+from sympc.session import Session
 
 
 class CryptoPrimitiveProvider:
@@ -48,7 +50,10 @@ class CryptoPrimitiveProvider:
         primitives = list(zip(*map(lambda x: zip(*x), res)))
 
         if p_kwargs is not None:
-            """Do not transfer the primitives if there is not specified a values for populate kwargs """
+            """
+            Do not transfer the primitives if there is not
+            specified a values for populate kwargs
+            """
             CryptoPrimitiveProvider._transfer_primitives_to_parties(
                 op_str, primitives, sessions, p_kwargs
             )
@@ -68,7 +73,7 @@ class CryptoPrimitiveProvider:
         p_kwargs: Dict[str, Any],
     ) -> None:
         if not isinstance(primitives, list):
-            raise ValueError(f"Primitives should be a List")
+            raise ValueError("Primitives should be a List")
 
         if len(primitives) != len(sessions):
             raise ValueError(

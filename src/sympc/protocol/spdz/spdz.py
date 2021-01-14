@@ -8,20 +8,17 @@ Contains functions that are run at:
 # stdlib
 import operator
 from typing import List
-from typing import Tuple
 from typing import Union
 
 # third party
 import torch
 
 from sympc.session import Session
+from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
-from sympc.store import CryptoPrimitiveProvider
-from sympc.session import Session
-from sympc.utils import parallel_execution
-
 from sympc.utils import count_wraps
+from sympc.utils import parallel_execution
 
 EXPECTED_OPS = {"mul", "matmul"}
 

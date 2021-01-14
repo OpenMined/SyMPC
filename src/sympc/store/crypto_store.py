@@ -1,14 +1,9 @@
+# stdlib
 from typing import Any
 from typing import Callable
-from typing import Union
-from typing import List
-from typing import Iterable
-from typing import Tuple
 from typing import Dict
-
-from collections import defaultdict
-import itertools
-import operator
+from typing import Iterable
+from typing import List
 
 
 class CryptoStore:

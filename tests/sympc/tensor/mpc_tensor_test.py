@@ -194,7 +194,7 @@ def test_mpc_print(get_clients) -> None:
     x = MPCTensor(secret=x_secret, session=session)
 
     expected = "[MPCTensor]\nShape: {x_secret.shape}\n\t|"
-    expected = f"{expected} {P_0} -> ShareTensorPointer\n\t|"
-    expected = f"{expected} {P_1} -> ShareTensorPointer"
+    expected = f"{expected} P_0 -> ShareTensorPointer\n\t|"
+    expected = f"{expected} P_1 -> ShareTensorPointer"
 
     assert expected == x.__str__()

@@ -4,7 +4,6 @@ Class used to have orchestrate the computation on shared values
 
 # stdlib
 import operator
-from typing import Any
 from typing import List
 from typing import Optional
 from typing import Tuple

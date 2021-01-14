@@ -92,11 +92,7 @@ class ShareTensor:
         :return: the y value
         :rtype: ShareTensor, int or Integer type Tensor
         """
-        if op_str == "mul" and isinstance(y, (float, torch.FloatTensor)):
-            y = ShareTensor(data=y, session=x.session)
-        elif op_str in {"add", "sub", "lt", "gt", "matmul"} and not isinstance(
-            y, ShareTensor
-        ):
+        if not isinstance(y, ShareTensor):
             y = ShareTensor(data=y, session=x.session)
 
         return y

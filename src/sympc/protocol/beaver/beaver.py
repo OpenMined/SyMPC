@@ -4,22 +4,22 @@ The Beaver Triples
 
 # stdlib
 import operator
-from typing import Tuple
-from typing import List
-from typing import Dict
 from typing import Any
+from typing import Dict
 from typing import Iterable
+from typing import List
+from typing import Tuple
 
 # third party
 import torch
 import torchcsprng as csprng  # type: ignore
 
-from sympc.tensor import MPCTensor
-from sympc.tensor import ShareTensor
-from sympc.utils import count_wraps
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
+from sympc.tensor import MPCTensor
+from sympc.tensor import ShareTensor
+from sympc.utils import count_wraps
 
 ttp_generator = csprng.create_random_device_generator()
 
@@ -92,7 +92,7 @@ def mul_store_get(
 
     try:
         primitive = primitives[0]
-    except _:
+    except:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
@@ -139,7 +139,7 @@ def matmul_store_get(
 
     try:
         primitive = primitives[0]
-    except _:
+    except:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
