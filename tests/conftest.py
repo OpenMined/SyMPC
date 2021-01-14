@@ -2,6 +2,8 @@
 import pytest
 import syft as sy
 
+import sympc  # noqa: 401
+
 
 @pytest.fixture
 def clients():
