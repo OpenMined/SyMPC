@@ -188,7 +188,7 @@ class Session:
         2 parties will generate the same random number at a given moment:
         - Party 1 holds G1 and G2
         - Party 2 holds G2 and G3
-        - Party 3 holds G3 and
+        - Party 3 holds G3 and G1
 
         Step 2: When they generate a PRZS:
             Party 1 generates: Next(G1) - Next(G2)
