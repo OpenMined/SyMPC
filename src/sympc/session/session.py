@@ -98,6 +98,7 @@ class Session:
         parties: Optional[List[Any]] = None,
         ring_size: int = 2 ** 64,
         config: Optional[Config] = None,
+        ttp: Optional[Any] = None,
         uuid: Optional[UUID] = None,
     ) -> None:
         """ Initializer for the Session """
@@ -113,6 +114,10 @@ class Session:
             self.parties = []
         else:
             self.parties = parties
+
+        # Some protocols require a trusted third party
+        # Ex: SPDZ
+        self.trusted_third_party = ttp
 
         self.config = config if config else Config()
 

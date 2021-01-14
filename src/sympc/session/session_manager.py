@@ -78,7 +78,6 @@ class SessionManager:
 
     def __init__(
         self,
-        ttp: Optional[Any] = None,
         uuid: Optional[UUID] = None,
     ) -> None:
         """ Initializer for the Session """
@@ -88,10 +87,6 @@ class SessionManager:
         # Each worker will have the rank as the index in the list
         # Only the party that is the CC (Control Center) will have access
         # to this
-
-        # Some protocols require a trusted third party
-        # Ex: SPDZ
-        self.trusted_third_party = ttp
 
         self.crypto_store: Dict[Any, Any] = {}
         self.protocol: Optional[str] = None
