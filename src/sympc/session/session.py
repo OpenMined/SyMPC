@@ -2,7 +2,7 @@
 The implementation for the Session
 It is used to identify a MPC computation done between multiple parties
 
-This would be used in case a party is involved in multipel MPC session,
+This would be used in case a party is involved in multiple MPC session,
 this one is used to identify in which one is used
 
 Example:
@@ -141,7 +141,7 @@ class Session:
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
     ) -> Any:
         """Generate a random share using the two generators that are
-        hold by a party.
+        held by a party.
         """
 
         from sympc.tensor import ShareTensor
