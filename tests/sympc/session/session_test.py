@@ -64,3 +64,14 @@ def test_przs_generate_random_share():
     share = session.przs_generate_random_share(shape=(1, 2), generators=generators)
     assert isinstance(share, ShareTensor)
     assert (share.tensor == torch.tensor([0, 0])).all()
+
+
+def test_setup_mpc(clients):
+    """
+    Test setup_mpc method for session.
+    """
+    alice_client, bob_client = clients
+    session = Session(parties=[alice_client, bob_client])
+    Session.setup_mpc(session)
+    assert session.rank == 1
+    assert len(session.session_ptrs) == 2
