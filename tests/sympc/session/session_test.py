@@ -6,9 +6,13 @@ Tests for the Session class.
 from uuid import UUID
 from uuid import uuid4
 
+# third party
+import torch
+
 from sympc.config import Config
 from sympc.session import Session
 from sympc.session.utils import get_type_from_ring
+from sympc.tensor import ShareTensor
 
 
 def test_session_init():
@@ -49,3 +53,14 @@ def test_session_init():
     assert session.ring_size == 2 ** 32
     assert session.min_value == -(2 ** 32) // 2
     assert session.max_value == (2 ** 32 - 1) // 2
+
+
+def test_przs_generate_random_share():
+    """
+    Test przs_generate_random_share method from Session.
+    """
+    session = Session()
+    generators = [torch.Generator(), torch.Generator()]
+    share = session.przs_generate_random_share(shape=(1, 2), generators=generators)
+    assert isinstance(share, ShareTensor)
+    assert (share.tensor == torch.tensor([0, 0])).all()
