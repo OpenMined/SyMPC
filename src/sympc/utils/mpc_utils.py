@@ -30,7 +30,7 @@ def count_wraps(share_list: List[torch.tensor]) -> torch.Tensor:
         res -= ((prev_share < 0) & (cur_share < 0) & (next_share > 0)).long()
 
         # If prev and current shares are positive,
-        # but the result is positive then is an underflow
+        # but the result is positive then is an overflow
         res += ((prev_share > 0) & (cur_share > 0) & (next_share < 0)).long()
         prev_share = next_share
 

@@ -9,6 +9,7 @@ Contains functions that are run at:
 import operator
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # third party
 import torch
@@ -28,7 +29,7 @@ EXPECTED_OPS = {"mul", "matmul"}
 """ Functions that are executed at the orchestrator """
 
 
-def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> List[ShareTensor]:
+def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
     """Function that is executed by the orchestrator to multiply two secret values
 
     :return: a new set of shares that represents the multiplication
@@ -57,8 +58,8 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> List[ShareTensor]:
 
     a_sh, b_sh, c_sh = primitives[0]
 
-    a_mpc = MPCTensor(shares=a_sh, session=session)
-    b_mpc = MPCTensor(shares=b_sh, session=session)
+    a_mpc = MPCTensor(shares=a_sh, shape=x.shape, session=session)
+    b_mpc = MPCTensor(shares=b_sh, shape=y.shape, session=session)
 
     eps = x - a_mpc
     delta = y - b_mpc
@@ -73,37 +74,51 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> List[ShareTensor]:
     args = [[el] + common_args for el in session.session_ptrs]
 
     shares = parallel_execution(mul_parties, session.parties)(args)
+    result = MPCTensor(shares=shares, shape=c_sh[0].shape, session=session)
 
-    if session.nr_parties > 2:
-        res_shape = c_sh[0].shape
-        primitives = CryptoPrimitiveProvider.generate_primitives(
-            "beaver_wraps",
-            sessions=session.session_ptrs,
-            g_kwargs={"nr_parties": session.nr_parties, "shape": res_shape},
-            p_kwargs=None,
-        )
+    return result
 
-        r_sh, theta_r_sh = primitives[0]
 
-        r_mpc = MPCTensor(shares=r_sh, session=session)
-        res = MPCTensor(shares=shares, session=session)
+def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
+    """Function that is executed by the orchestrator to divide a secret by a value
+    (that value is public)
 
-        z = r_mpc + res
-        z_shares_local = z.get_shares()
+    :return: a new set of shares that represents the multiplication
+           between two secret values
+    :rtype: MPCTensor
+    """
 
-        common_args = [z_shares_local]
-        args = zip(session.session_ptrs, r_mpc.share_ptrs, theta_r_sh, res.share_ptrs)
-        args = [list(el) + common_args for el in args]
+    session = x.session
+    res_shape = x.shape
 
-        theta_x = parallel_execution(div_wraps, session.parties)(args)
-        theta_x_plaintext = MPCTensor(shares=theta_x, session=session).reconstruct()
+    if session.nr_parties == 2:
+        shares = [operator.truediv(share, y) for share in x.share_ptrs]
+        return MPCTensor(shares=shares, session=session, shape=res_shape)
 
-        scale = session.config.encoder_base ** session.config.encoder_precision
-        shares = res - theta_x_plaintext * (session.ring_size // scale)
+    primitives = CryptoPrimitiveProvider.generate_primitives(
+        "beaver_wraps",
+        sessions=session.session_ptrs,
+        g_kwargs={"nr_parties": session.nr_parties, "shape": res_shape},
+        p_kwargs=None,
+    )
 
-        return shares.share_ptrs
+    r_sh, theta_r_sh = primitives[0]
 
-    return shares
+    r_mpc = MPCTensor(shares=r_sh, session=session, shape=x.shape)
+
+    z = r_mpc + x
+    z_shares_local = z.get_shares()
+
+    common_args = [z_shares_local, y]
+    args = zip(session.session_ptrs, r_mpc.share_ptrs, theta_r_sh, x.share_ptrs)
+    args = [list(el) + common_args for el in args]
+
+    theta_x = parallel_execution(div_wraps, session.parties)(args)
+    theta_x_plaintext = MPCTensor(shares=theta_x, session=session).reconstruct()
+
+    res = x - theta_x_plaintext * 4 * ((session.ring_size // 4) // y)
+
+    return res
 
 
 """ Functions that are executed at each party that holds shares """
@@ -115,6 +130,7 @@ def div_wraps(
     theta_r: ShareTensor,
     x_share: ShareTensor,
     z_shares: List[torch.Tensor],
+    y: Union[torch.Tensor, int],
 ) -> ShareTensor:
     """
     From CrypTen
@@ -140,8 +156,7 @@ def div_wraps(
         theta_z = count_wraps(z_shares)
         theta_x.tensor += theta_z
 
-    scale = session.config.encoder_base ** session.config.encoder_precision
-    x_share.tensor //= scale
+    x_share.tensor //= y
 
     return theta_x
 
@@ -189,6 +204,10 @@ def mul_parties(
     share = ShareTensor(session=session)
     share.tensor = share_tensor
 
+    # Ideally this should stay in the MPCTensor
+    # Step 1. Do spdz_mul
+    # Step 2. Divide by scale
+    # This is done here to reduce one round of communication
     if session.nr_parties == 2:
         share.tensor //= share.fp_encoder.scale
 

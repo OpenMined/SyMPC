@@ -159,9 +159,6 @@ class ShareTensor:
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
 
-        if isinstance(y, ShareTensor):
-            res.tensor = res.tensor // self.fp_encoder.scale
-
         return res
 
     def matmul(
@@ -174,7 +171,6 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
-        res.tensor = res.tensor // self.fp_encoder.scale
 
         return res
 
@@ -194,22 +190,13 @@ class ShareTensor:
         :return: self / y
         :rtype: ShareTensor
         """
-        if not isinstance(y, int):
+        if not isinstance(y, (int, torch.LongTensor)):
             raise ValueError("Div works (for the moment) only with integers!")
 
         res = ShareTensor(session=self.session)
-        res.tensor = self.tensor / y
+        res.tensor = self.tensor // y
 
         return res
-
-    def div_(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> None:
-        # TODO: This needs to be moved in framework specific functions
-        if not isinstance(y, int):
-            raise ValueError("Supported only Integer division")
-
-        self.tensor //= y
-
-        return self
 
     def __getattr__(self, attr_name: str) -> Any:
         """Get the attribute from the ShareTensor.
@@ -279,5 +266,4 @@ class ShareTensor:
     __rmul__ = mul
     __matmul__ = matmul
     __rmatmul__ = rmatmul
-    __div__ = div
-    __floordiv__ = div_
+    __truediv__ = div

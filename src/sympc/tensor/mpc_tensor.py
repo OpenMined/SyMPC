@@ -86,13 +86,19 @@ class MPCTensor:
                 self.share_ptrs = MPCTensor.generate_przs(self.shape, self.session)
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:  # type: ignore
-                        self.share_ptrs[i] = self.share_ptrs[i] + secret_share
-                        break
+                        self.share_ptrs[i] = self.share_ptrs[i] + secret
+                        return
             else:
-                nr_parties = len(self.session.parties)
                 tensor_type = self.session.tensor_type
-                shares_local = MPCTensor.generate_shares(secret, nr_parties, tensor_type)
-                shares = MPCTensor.distribute_shares(shares_local, self.session.parties)
+                shares = MPCTensor.generate_shares(
+                    secret, self.session.nr_parties, tensor_type
+                )
+
+        if not ispointer(shares[0]):
+            shares = MPCTensor.distribute_shares(shares, self.session.parties)
+
+        if shape is not None:
+            self.shape = shape
 
         self.share_ptrs = shares
 
@@ -165,7 +171,7 @@ class MPCTensor:
 
     @staticmethod
     def generate_shares(
-        secret: Union[ShareTensor, int, float],
+        secret: ShareTensor,
         nr_parties: int,
         tensor_type: Optional[torch.dtype] = None,
     ) -> List[ShareTensor]:
@@ -188,7 +194,9 @@ class MPCTensor:
             rand_value = torch.empty(size=shape, dtype=tensor_type).random_(
                 generator=generator
             )
-            share = ShareTensor(data=rand_value, encoder_precision=0)
+            share = ShareTensor(session=secret.session)
+            share.tensor = rand_value
+
             random_shares.append(share)
 
         shares = []
@@ -288,14 +296,6 @@ class MPCTensor:
         return self.__apply_op(y, "mul")
 
     def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
-        """Apply the "mul" operation between "self" and "y".
-
-        :return: self @ y
-        :rtype: MPCTensor
-        """
-        return self.__apply_op(y, "matmul")
-
-    def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "matmul" operation between "self" and "y".
 
         :return: self @ y
@@ -312,16 +312,36 @@ class MPCTensor:
         op = getattr(operator, "matmul")
         shares = [op(y, share) for share in self.share_ptrs]
 
+        if isinstance(y, (float, int)):
+            y_shape = (1,)
+        else:
+            y_shape = y.shape
+
         result = MPCTensor(shares=shares, session=self.session)
+        result.shape = MPCTensor.__get_shape("matmul", y_shape, self.shape)
+
+        scale = (
+            self.session.config.encoder_base ** self.session.config.encoder_precision
+        )
+        result = result.div(scale)
+
         return result
 
     def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
-        :return: self // y
+        :return: self / y
         :rtype: MPCTensor
         """
-        raise NotImplementedError("Not implemented, YET!")
+
+        is_private = isinstance(y, MPCTensor)
+        if is_private:
+            raise ValueError("Not implemented!")
+
+        from sympc.protocol.spdz import spdz
+
+        result = spdz.public_divide(self, y)
+        return result
 
     def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
@@ -337,14 +357,14 @@ class MPCTensor:
         if op_str in {"mul", "matmul"}:
             from sympc.protocol.spdz import spdz
 
-            shares = spdz.mul_master(self, y, op_str)
+            result = spdz.mul_master(self, y, op_str)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
             ]
 
-        result = MPCTensor(shares=shares, session=self.session)
+            result = MPCTensor(shares=shares, session=self.session)
 
         return result
 
@@ -370,6 +390,23 @@ class MPCTensor:
         result = MPCTensor(shares=shares, session=self.session)
         return result
 
+    @staticmethod
+    def __get_shape(
+        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int]
+    ) -> Tuple[int]:
+
+        if x_shape is None or y_shape is None:
+            raise ValueError(
+                f"Shapes should not be None; x_shape {x_shape}, y_shape {y_shape}"
+            )
+
+        op = getattr(operator, op_str)
+        x = torch.ones(size=x_shape)
+        y = torch.ones(size=y_shape)
+
+        res = op(x, y)
+        return res.shape
+
     def __apply_op(
         self, y: Union["MPCTensor", torch.Tensor, float, int], op_str: str
     ) -> "MPCTensor":
@@ -386,12 +423,28 @@ class MPCTensor:
         else:
             result = self.__apply_public_op(y, op_str)
 
+        if isinstance(y, (float, int)):
+            y_shape = (1,)
+        else:
+            y_shape = y.shape
+
+        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape)
+
+        is_spdz_division_called = is_private and self.session.nr_parties == 2
+        if not is_spdz_division_called and op_str in {"mul", "matmul"}:
+            # For private op we do the division in the mul_parties function from spdz
+            scale = (
+                self.session.config.encoder_base
+                ** self.session.config.encoder_precision
+            )
+            result = result.div(scale)
+
         return result
 
     def __str__(self) -> str:
         """ Return the string representation of MPCTensor """
         type_name = type(self).__name__
-        out = f"[{type_name}]"
+        out = f"[{type_name}]\nShape: {self.shape}"
 
         for share in self.share_ptrs:
             out = f"{out}\n\t| {share.client} -> {share.__name__}"
@@ -405,3 +458,4 @@ class MPCTensor:
     __rmul__ = mul
     __matmul__ = matmul
     __rmatmul__ = rmatmul
+    __truediv__ = div

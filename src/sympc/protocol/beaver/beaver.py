@@ -16,7 +16,6 @@ import torchcsprng as csprng  # type: ignore
 
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
-from sympc.util import count_wraps
 from sympc.utils import count_wraps
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
