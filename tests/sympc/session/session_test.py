@@ -75,3 +75,13 @@ def test_setup_mpc(clients):
     Session.setup_mpc(session)
     assert session.rank == 1
     assert len(session.session_ptrs) == 2
+
+
+def test_setup_przs(clients):
+    """
+    Test _setup_przs method for session.
+    """
+    alice_client, bob_client = clients
+    session = Session(parties=[alice_client, bob_client])
+    Session._setup_przs(session)
+    assert True
