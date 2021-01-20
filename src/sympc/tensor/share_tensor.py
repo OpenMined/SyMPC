@@ -51,7 +51,7 @@ class ShareTensor:
 
     def __init__(
         self,
-        data: Optional[Any] = None,
+        data: Optional[Union[float, int, torch.Tensor]] = None,
         session: Optional[Session] = None,
         encoder_base: int = 2,
         encoder_precision: int = 16,
@@ -77,6 +77,7 @@ class ShareTensor:
         )
 
         self.tensor: Optional[torch.Tensor] = None
+
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self.fp_encoder.encode(data).type(tensor_type)
@@ -91,11 +92,7 @@ class ShareTensor:
         :return: the y value
         :rtype: ShareTensor, int or Integer type Tensor
         """
-        if op_str == "mul" and isinstance(y, (float, torch.FloatTensor)):
-            y = ShareTensor(data=y, session=x.session)
-        elif op_str in {"add", "sub", "lt", "gt", "matmul"} and not isinstance(
-            y, ShareTensor
-        ):
+        if not isinstance(y, ShareTensor):
             y = ShareTensor(data=y, session=x.session)
 
         return y
@@ -158,7 +155,10 @@ class ShareTensor:
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
 
-        if isinstance(y, ShareTensor):
+        if self.session.nr_parties == 0:
+            # We are using a simple share without usig the MPCTensor
+            # In case we used the MPCTensor - the division would have
+            # been done in the protocol
             res.tensor = res.tensor // self.fp_encoder.scale
 
         return res
@@ -173,7 +173,12 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
-        res.tensor = res.tensor // self.fp_encoder.scale
+
+        if self.session.nr_parties == 0:
+            # We are using a simple share without usig the MPCTensor
+            # In case we used the MPCTensor - the division would have
+            # been done in the protocol
+            res.tensor = res.tensor // self.fp_encoder.scale
 
         return res
 
@@ -190,11 +195,16 @@ class ShareTensor:
         """Apply the "div" operation between "self" and "y".
         Currently, NotImplemented
 
-        :return: self // y
+        :return: self / y
         :rtype: ShareTensor
         """
+        if not isinstance(y, (int, torch.LongTensor)):
+            raise ValueError("Div works (for the moment) only with integers!")
 
-        raise NotImplementedError("Not implemented, YET!")
+        res = ShareTensor(session=self.session)
+        res.tensor = self.tensor // y
+
+        return res
 
     def __getattr__(self, attr_name: str) -> Any:
         """Get the attribute from the ShareTensor.
@@ -264,4 +274,4 @@ class ShareTensor:
     __rmul__ = mul
     __matmul__ = matmul
     __rmatmul__ = rmatmul
-    __div__ = div
+    __truediv__ = div

@@ -9,9 +9,8 @@ from sympc.session import Session
 from sympc.tensor import MPCTensor
 
 
-def test_mpc_tensor_exception(clients) -> None:
-    alice_client, bob_client = clients
-    # TODO: for more than 2 parties
+def test_mpc_tensor_exception(get_clients) -> None:
+    alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
 
     with pytest.raises(ValueError):
@@ -21,10 +20,9 @@ def test_mpc_tensor_exception(clients) -> None:
         x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
 
 
-def test_reconstruct(clients) -> None:
-    alice_client, bob_client = clients
-    # TODO: for more than 2 parties
-    session = Session(parties=[alice_client, bob_client])
+def test_reconstruct(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
@@ -34,10 +32,10 @@ def test_reconstruct(clients) -> None:
     assert torch.allclose(x_secret, x)
 
 
-def test_op_mpc_different_sessions(clients) -> None:
-    alice_client, bob_client = clients
-    session_one = Session(parties=[alice_client, bob_client])
-    session_two = Session(parties=[alice_client, bob_client])
+def test_op_mpc_different_sessions(get_clients) -> None:
+    clients = get_clients(2)
+    session_one = Session(parties=clients)
+    session_two = Session(parties=clients)
     Session.setup_mpc(session_one)
     Session.setup_mpc(session_two)
 
@@ -48,8 +46,8 @@ def test_op_mpc_different_sessions(clients) -> None:
         z = x + y
 
 
-def test_remote_mpc_no_shape(clients) -> None:
-    alice_client, bob_client = clients
+def test_remote_mpc_no_shape(get_clients) -> None:
+    alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
@@ -59,8 +57,8 @@ def test_remote_mpc_no_shape(clients) -> None:
         x = MPCTensor(secret=x_remote, session=session)
 
 
-def test_remote_mpc_with_shape(clients) -> None:
-    alice_client, bob_client = clients
+def test_remote_mpc_with_shape(get_clients) -> None:
+    alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
@@ -71,8 +69,8 @@ def test_remote_mpc_with_shape(clients) -> None:
     assert x_remote == result
 
 
-def test_remote_not_tensor(clients) -> None:
-    alice_client, bob_client = clients
+def test_remote_not_tensor(get_clients) -> None:
+    alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
@@ -89,8 +87,8 @@ def test_remote_not_tensor(clients) -> None:
     assert x_remote_int == result
 
 
-def test_local_secret_not_tensor(clients) -> None:
-    alice_client, bob_client = clients
+def test_local_secret_not_tensor(get_clients) -> None:
+    alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
     Session.setup_mpc(session)
 
@@ -107,11 +105,11 @@ def test_local_secret_not_tensor(clients) -> None:
     assert torch.allclose(torch.tensor(x_float), result)
 
 
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
-def test_ops_mpc_mpc(clients, op_str) -> None:
-    alice_client, bob_client = clients
-    # TODO: for more than 2 parties
-    session = Session(parties=[alice_client, bob_client])
+@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("op_str", ["mul", "matmul"])
+def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
+    clients = get_clients(nr_clients)
+    session = Session(parties=clients)
     Session.setup_mpc(session)
 
     op = getattr(operator, op_str)
@@ -123,39 +121,35 @@ def test_ops_mpc_mpc(clients, op_str) -> None:
     result = op(x, y).reconstruct()
     expected_result = op(x_secret, y_secret)
 
-    assert torch.allclose(result, expected_result)
+    assert torch.allclose(result, expected_result, rtol=10e-4)
 
 
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul", "div"])
-def test_ops_mpc_public(clients, op_str) -> None:
-    alice_client, bob_client = clients
-    # TODO: for more than 2 parties
-    # TODO: support for matmul
-    session = Session(parties=[alice_client, bob_client])
+@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("op_str", ["mul", "matmul", "truediv"])
+def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
+    clients = get_clients(nr_clients)
+    session = Session(parties=clients)
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
-    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    if op_str == "truediv":
+        y_secret = torch.Tensor([[2, 3], [4, 5]]).long()
+    else:
+        y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
     x = MPCTensor(secret=x_secret, session=session)
 
-    if op_str == "div":
-        with pytest.raises(AttributeError):
-            op = getattr(operator, op_str)
-
-    else:
-        op = getattr(operator, op_str)
-        expected_result = op(x_secret, y_secret)
-        result = op(x, y_secret).reconstruct()
-        assert torch.allclose(result, expected_result, atol=10e-3)
+    op = getattr(operator, op_str)
+    expected_result = op(x_secret, y_secret)
+    result = op(x, y_secret).reconstruct()
+    assert torch.allclose(result, expected_result, atol=10e-4)
 
 
+@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
-def test_ops_public_mpc(clients, op_str) -> None:
-    alice_client, bob_client = clients
-    # TODO: for more than 2 parties
-    # TODO: support for matmul
-    # TODO: support for div
-    session = Session(parties=[alice_client, bob_client])
+def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
+    clients = get_clients(nr_clients)
+    session = Session(parties=clients)
     Session.setup_mpc(session)
 
     op = getattr(operator, op_str)
@@ -167,16 +161,14 @@ def test_ops_public_mpc(clients, op_str) -> None:
     expected_result = op(y_secret, x_secret)
     result = op(y_secret, x).reconstruct()
 
-    assert torch.allclose(result, expected_result, atol=10e-3)
+    assert torch.allclose(result, expected_result, atol=10e-4)
 
 
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
-def test_ops_integer(clients, op_str) -> None:
-    alice_client, bob_client = clients
-    # TODO: for more than 2 parties
-    # TODO: support for matmul
-    # TODO: support for div
-    session = Session(parties=[alice_client, bob_client])
+@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "truediv"])
+def test_ops_integer(get_clients, nr_clients, op_str) -> None:
+    clients = get_clients(nr_clients)
+    session = Session(parties=clients)
     Session.setup_mpc(session)
 
     op = getattr(operator, op_str)
@@ -192,17 +184,19 @@ def test_ops_integer(clients, op_str) -> None:
     assert torch.allclose(result, expected_result, atol=10e-3)
 
 
-def test_mpc_print(clients) -> None:
-    alice_client, bob_client = clients
-    session = Session(parties=[alice_client, bob_client])
+def test_mpc_print(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
     Session.setup_mpc(session)
 
     x_secret = torch.Tensor([5.0])
 
     x = MPCTensor(secret=x_secret, session=session)
 
-    expected = "[MPCTensor]\n\t|"
-    expected = f"{expected} {alice_client} -> ShareTensorPointer\n\t|"
-    expected = f"{expected} {bob_client} -> ShareTensorPointer"
+    expected = f"[MPCTensor]\nShape: {x_secret.shape}\n\t|"
+    expected = (
+        f"{expected} <VirtualMachineClient: P_0 Client> -> ShareTensorPointer\n\t|"
+    )
+    expected = f"{expected} <VirtualMachineClient: P_1 Client> -> ShareTensorPointer"
 
     assert expected == x.__str__()

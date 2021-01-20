@@ -10,10 +10,11 @@ from sympc.tensor import ShareTensor
 
 @pytest.mark.parametrize("precision", [12, 3])
 @pytest.mark.parametrize("base", [4, 6])
-def test_send_get(clients, precision, base) -> None:
+def test_send_get(get_clients, precision, base) -> None:
     x = torch.Tensor([0.122, 1.342, 4.67])
     x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
-    x_ptr = x_share.send(clients[0])
+    client = get_clients(1)[0]
+    x_ptr = x_share.send(client)
 
     assert x_share == x_ptr.get()
 

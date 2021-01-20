@@ -56,8 +56,9 @@ class Session:
 
         uuid (Optional[UUID]): used to identify a session
         parties (Optional[List[Any]): used to send/receive messages
+        nr_parties (int): number of parties
         trusted_third_party (Optional[Any]): the trusted third party
-        crypto_store (Dict[Any, Any]): keep track of items needed in MPC (for the moment not used)
+        crypto_store (CryptoStore): keep track of items needed in MPC (for the moment not used)
         protocol (Optional[str]): specify what protocol to register for a session
         config (Config): used for the Fixed Precision Encoder
         przs_generator (Optional[torch.Generator]): Pseudo-Random-Zero-Share Generators
@@ -73,7 +74,7 @@ class Session:
     """
 
     # Those values are not used at comparison
-    NOT_COMPARE = {"id", "description", "tags", "parties"}
+    NOT_COMPARE = {"id", "description", "tags", "parties", "crypto_store"}
 
     __slots__ = {
         # Populated in Syft
@@ -82,6 +83,7 @@ class Session:
         "description",
         "uuid",
         "parties",
+        "nr_parties",
         "trusted_third_party",
         "crypto_store",
         "protocol",
@@ -112,16 +114,21 @@ class Session:
         # to this
 
         self.parties: List[Any]
+        self.nr_parties: int
+
         if parties is None:
             self.parties = []
+            self.nr_parties = 0
         else:
             self.parties = parties
+            self.nr_parties = len(parties)
 
         # Some protocols require a trusted third party
         # Ex: SPDZ
         self.trusted_third_party = ttp
 
-        self.crypto_store: Dict[Any, Any] = {}
+        # The CryptoStore is initialized at each party when it is unserialized
+        self.crypto_store: Optional[Any] = None  # TODO: this should be CryptoStore
         self.protocol: Optional[str] = None
         self.config = config if config else Config()
 
@@ -136,6 +143,11 @@ class Session:
         self.ring_size = ring_size
         self.min_value = -(ring_size) // 2
         self.max_value = (ring_size - 1) // 2
+
+    def populate_crypto_store(
+        self, op_str: str, primitives: Any, *args: List[Any], **kwargs: Dict[Any, Any]
+    ) -> None:
+        self.crypto_store.populate_store(op_str, primitives, *args, **kwargs)
 
     def przs_generate_random_share(
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
@@ -170,11 +182,13 @@ class Session:
         """Must be called to send the session to all other parties involved in the
         computation.
         """
+
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party
             session.rank = rank
             session.session_ptrs.append(session.send(party))  # type: ignore
 
+        nr_parties = len(session.parties)
         Session._setup_przs(session)
 
     @staticmethod
