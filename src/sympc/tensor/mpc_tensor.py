@@ -94,13 +94,13 @@ class MPCTensor:
                     secret, self.session.nr_parties, tensor_type
                 )
 
-                if not ispointer(shares[0]):
-                    shares = MPCTensor.distribute_shares(shares, self.session.parties)
+        if not ispointer(shares[0]):
+            shares = MPCTensor.distribute_shares(shares, self.session.parties)
 
-                if shape is not None:
-                    self.shape = shape
+        if shape is not None:
+            self.shape = shape
 
-                self.share_ptrs = shares
+        self.share_ptrs = shares
 
     @staticmethod
     def distribute_shares(shares, parties):
