@@ -125,7 +125,7 @@ def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
-@pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul", "truediv"])
+@pytest.mark.parametrize("op_str", ["mul", "matmul", "truediv"])
 def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients)
@@ -193,8 +193,10 @@ def test_mpc_print(get_clients) -> None:
 
     x = MPCTensor(secret=x_secret, session=session)
 
-    expected = "[MPCTensor]\nShape: {x_secret.shape}\n\t|"
-    expected = f"{expected} P_0 -> ShareTensorPointer\n\t|"
-    expected = f"{expected} P_1 -> ShareTensorPointer"
+    expected = f"[MPCTensor]\nShape: {x_secret.shape}\n\t|"
+    expected = (
+        f"{expected} <VirtualMachineClient: P_0 Client> -> ShareTensorPointer\n\t|"
+    )
+    expected = f"{expected} <VirtualMachineClient: P_1 Client> -> ShareTensorPointer"
 
     assert expected == x.__str__()

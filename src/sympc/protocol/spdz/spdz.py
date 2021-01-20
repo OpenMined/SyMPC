@@ -137,9 +137,9 @@ def div_wraps(
         [theta_x] = theta_z + [beta_xr] - [theta_r] - [eta_xr]
 
     Where:
-        [theta_i] is the wraps for a variable i
-        [beta_ij] is the differential wraps for variables i and j
-        [eta_ij]  is the plaintext wraps for variables i and j
+        [theta_x] is the wraps for a variable x
+        [beta_xr] is the differential wraps for variables x and r
+        [eta_xr]  is the plaintext wraps for variables x and r
 
     Note: Since [eta_xr] = 0 with probability 1 - |x| / Q for modulus Q, we
     can make the assumption that [eta_xr] = 0 with high probability.

@@ -169,11 +169,9 @@ def count_wraps_rand(
     r = ShareTensor(data=rand_val, encoder_precision=0)
 
     r_shares = MPCTensor.generate_shares(r, nr_parties, torch.long)
-    wraps = count_wraps(r_shares)
+    wraps = count_wraps([share.data for share in r_shares])
 
     theta_r = ShareTensor(data=wraps, encoder_precision=0)
-    theta_r.tensor = wraps
-
     theta_r_shares = MPCTensor.generate_shares(theta_r, nr_parties, torch.long)
 
     return r_shares, theta_r_shares

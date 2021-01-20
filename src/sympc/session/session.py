@@ -32,6 +32,7 @@ import torch
 from sympc.config import Config
 from sympc.session.utils import generate_random_element
 from sympc.session.utils import get_type_from_ring
+from sympc.store import CryptoStore
 
 
 class Session:
@@ -58,7 +59,7 @@ class Session:
         parties (Optional[List[Any]): used to send/receive messages
         nr_parties (int): number of parties
         trusted_third_party (Optional[Any]): the trusted third party
-        crypto_store (Dict[Any, Any]): keep track of items needed in MPC (for the moment not used)
+        crypto_store (CryptoStore): keep track of items needed in MPC (for the moment not used)
         protocol (Optional[str]): specify what protocol to register for a session
         config (Config): used for the Fixed Precision Encoder
         przs_generator (Optional[torch.Generator]): Pseudo-Random-Zero-Share Generators
@@ -74,7 +75,7 @@ class Session:
     """
 
     # Those values are not used at comparison
-    NOT_COMPARE = {"id", "description", "tags", "parties"}
+    NOT_COMPARE = {"id", "description", "tags", "parties", "crypto_store"}
 
     __slots__ = {
         # Populated in Syft
@@ -128,7 +129,7 @@ class Session:
         self.trusted_third_party = ttp
 
         # The CryptoStore is initialized at each party when it is unserialized
-        self.crypto_store = None
+        self.crypto_store: Optional[CryptoStore] = None
         self.protocol: Optional[str] = None
         self.config = config if config else Config()
 

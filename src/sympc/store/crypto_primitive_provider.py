@@ -10,8 +10,7 @@ from sympc.session import Session
 class CryptoPrimitiveProvider:
     """A trusted third party should use this class to generate crypto primitives """
 
-    _FUNC_PROVIDERS: Dict[str, Callable] = {}
-    _DEFAULT_NR_INSTANCES = 10
+    _func_providers: Dict[str, Callable] = {}
 
     def __init__(self) -> None:
         raise ValueError("This class should not be initialized")
@@ -24,10 +23,10 @@ class CryptoPrimitiveProvider:
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
-        if op_str not in CryptoPrimitiveProvider._FUNC_PROVIDERS:
+        if op_str not in CryptoPrimitiveProvider._func_providers:
             raise ValueError(f"{op_str} not registered")
 
-        generator = CryptoPrimitiveProvider._FUNC_PROVIDERS[op_str]
+        generator = CryptoPrimitiveProvider._func_providers[op_str]
 
         res = [generator(**g_kwargs) for _ in range(n_instances)]
 
@@ -84,7 +83,6 @@ class CryptoPrimitiveProvider:
             session.populate_crypto_store(op_str, list(primitives_party), **p_kwargs)
 
     @staticmethod
-    def show() -> None:
-        res = f"Providers: {list(CryptoPrimitiveProvider._FUNC_PROVIDERS.keys())}\n"
-        res += f"Default_number_instances: {CryptoPrimitiveProvider._DEFAULT_NR_INSTANCES}\n"
-        print(res)
+    def get_state() -> None:
+        res = f"Providers: {list(CryptoPrimitiveProvider._func_providers.keys())}\n"
+        return res

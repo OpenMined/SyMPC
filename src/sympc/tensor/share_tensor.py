@@ -155,6 +155,12 @@ class ShareTensor:
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
 
+        if self.session.nr_parties == 0:
+            # We are using a simple share without usig the MPCTensor
+            # In case we used the MPCTensor - the division would have
+            # been done in the protocol
+            res.tensor = res.tensor // self.fp_encoder.scale
+
         return res
 
     def matmul(
@@ -167,6 +173,12 @@ class ShareTensor:
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
+
+        if self.session.nr_parties == 0:
+            # We are using a simple share without usig the MPCTensor
+            # In case we used the MPCTensor - the division would have
+            # been done in the protocol
+            res.tensor = res.tensor // self.fp_encoder.scale
 
         return res
 

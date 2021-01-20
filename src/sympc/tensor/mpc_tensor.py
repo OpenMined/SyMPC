@@ -429,8 +429,9 @@ class MPCTensor:
 
         result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape)
 
-        is_spdz_division_called = is_private and self.session.nr_parties == 2
-        if not is_spdz_division_called and op_str in {"mul", "matmul"}:
+        if op_str in {"mul", "matmul"} and not (
+            is_private and self.session.nr_parties == 2
+        ):
             # For private op we do the division in the mul_parties function from spdz
             scale = (
                 self.session.config.encoder_base
