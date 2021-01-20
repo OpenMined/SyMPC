@@ -82,7 +82,7 @@ class MPCTensor:
 
             if is_remote_secret:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
-                # party that holds the secret will add it to it's share
+                # party that holds the secret will add it to its share
                 self.share_ptrs = MPCTensor.generate_przs(self.shape, self.session)
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:  # type: ignore
