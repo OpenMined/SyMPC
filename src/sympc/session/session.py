@@ -32,7 +32,6 @@ import torch
 from sympc.config import Config
 from sympc.session.utils import generate_random_element
 from sympc.session.utils import get_type_from_ring
-from sympc.store import CryptoStore
 
 
 class Session:
@@ -129,7 +128,7 @@ class Session:
         self.trusted_third_party = ttp
 
         # The CryptoStore is initialized at each party when it is unserialized
-        self.crypto_store: Optional[CryptoStore] = None
+        self.crypto_store: Optional[Any] = None  # TODO: this should be CryptoStore
         self.protocol: Optional[str] = None
         self.config = config if config else Config()
 

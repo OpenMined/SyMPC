@@ -3,6 +3,7 @@ Class used to have orchestrate the computation on shared values
 """
 
 # stdlib
+from functools import lru_cache
 import operator
 from typing import List
 from typing import Optional
@@ -93,13 +94,13 @@ class MPCTensor:
                     secret, self.session.nr_parties, tensor_type
                 )
 
-        if not ispointer(shares[0]):
-            shares = MPCTensor.distribute_shares(shares, self.session.parties)
+                if not ispointer(shares[0]):
+                    shares = MPCTensor.distribute_shares(shares, self.session.parties)
 
-        if shape is not None:
-            self.shape = shape
+                if shape is not None:
+                    self.shape = shape
 
-        self.share_ptrs = shares
+                self.share_ptrs = shares
 
     @staticmethod
     def distribute_shares(shares, parties):
@@ -390,6 +391,7 @@ class MPCTensor:
         return result
 
     @staticmethod
+    @lru_cache
     def __get_shape(
         op_str: str, x_shape: Tuple[int], y_shape: Tuple[int]
     ) -> Tuple[int]:

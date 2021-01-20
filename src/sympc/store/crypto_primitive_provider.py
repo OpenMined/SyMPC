@@ -23,12 +23,21 @@ class CryptoPrimitiveProvider:
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
+        """
+        Generate "op_str" primitives.
+        The "g_kwargs" (generate kwargs) are passed to the registered generator function
+        The "p_kwargs" (populate kwargs) are passed to the registered populate function
+
+        :return: list of primitives
+        :rtype: list of Any Type
+        """
+
         if op_str not in CryptoPrimitiveProvider._func_providers:
             raise ValueError(f"{op_str} not registered")
 
         generator = CryptoPrimitiveProvider._func_providers[op_str]
 
-        res = [generator(**g_kwargs) for _ in range(n_instances)]
+        primitives_sequential = [generator(**g_kwargs) for _ in range(n_instances)]
 
         """
         Example -- for n_instances=2 and n_parties=2:
@@ -46,7 +55,7 @@ class CryptoPrimitiveProvider:
 
         The first party (party 0) receives Row 0 and the second party (party 1) receives Row 1
         """
-        primitives = list(zip(*map(lambda x: zip(*x), res)))
+        primitives = list(zip(*map(lambda x: zip(*x), primitives_sequential)))
 
         if p_kwargs is not None:
             """
@@ -57,12 +66,12 @@ class CryptoPrimitiveProvider:
                 op_str, primitives, sessions, p_kwargs
             )
 
-        # TODO: "res" here represents the pointers to the primitives
+        # TODO: "primitives_sequenatial" here represents the pointers to the primitives
         # The function "generate_primitives" should ideally not return anything
 
         # Since we do not have (YET!) the possiblity to return typed tuples from a remote
         # execute function we are using this
-        return res
+        return primitives_sequential
 
     @staticmethod
     def _transfer_primitives_to_parties(
