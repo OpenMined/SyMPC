@@ -391,7 +391,7 @@ class MPCTensor:
         return result
 
     @staticmethod
-    @lru_cache
+    @lru_cache(maxsize=128)
     def __get_shape(
         op_str: str, x_shape: Tuple[int], y_shape: Tuple[int]
     ) -> Tuple[int]:
