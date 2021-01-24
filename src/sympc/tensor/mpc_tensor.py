@@ -193,8 +193,9 @@ class MPCTensor:
         tensor_type: Optional[torch.dtype] = None,
         **kwargs,
     ) -> List[ShareTensor]:
-        """
-        Given a secret, split it into a number of shares such that each party would get one
+        """Given a secret, split it into a number of shares such that each
+        party would get one.
+
         Args:
             secret (Union[ShareTensor, torch.Tensor, float, int]): secret to split
             nr_parties (int): number of parties to split the scret
@@ -219,8 +220,6 @@ class MPCTensor:
                 | Data: tensor([14933283.]), [ShareTensor]
                 | [FixedPointEncoder]: precision: 4, base: 3
                 | Data: tensor([-14933121.])]
-
-
         """
 
         if not isinstance(secret, (ShareTensor, torch.Tensor, float, int)):
