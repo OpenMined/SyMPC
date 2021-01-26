@@ -109,9 +109,10 @@ def parallel_execution(
         loop = asyncio.get_event_loop()
 
         with Executor(
-            max_workers=nr_parties, initializer=initializer, initargs=(loop,)
+            max_workers=nr_parties, initargs=(loop,)
         ) as executor:
             for i in range(nr_parties):
+                initializer(*initargs)
                 _args = args[i]
                 _kwargs = kwargs.get(i, {})
                 futures.append(executor.submit(funcs[i], *_args, **_kwargs))
