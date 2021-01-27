@@ -222,14 +222,14 @@ class MPCTensor:
                 | Data: tensor([-14933121.])]
         """
 
-        if not isinstance(secret, (ShareTensor, torch.Tensor, float, int)):
+        if isinstance(secret, (torch.Tensor, float, int)):
+            secret = ShareTensor(secret, **kwargs)
+
+        # if secret is not a ShareTensor, a new instance is created
+        if not isinstance(secret, ShareTensor):
             raise ValueError(
                 "Secret should be a ShareTensor, torchTensor, float or int."
             )
-
-        # if secret is not a ShareTensor, a new instance is created
-        if isinstance(secret, (torch.Tensor, float, int)):
-            secret = ShareTensor(secret, **kwargs)
 
         shape = secret.shape
 
