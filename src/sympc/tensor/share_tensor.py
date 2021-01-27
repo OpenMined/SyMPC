@@ -44,7 +44,6 @@ class ShareTensor:
         "tensor",
         "session",
         "fp_encoder",
-        "data",
     }
 
     def __init__(
@@ -77,12 +76,11 @@ class ShareTensor:
         self.tensor: Optional[torch.Tensor] = None
 
         if data is not None:
-            self.data = data
             tensor_type = self.session.tensor_type
-            self.tensor = self._encode().type(tensor_type)
+            self.tensor = self._encode(data).type(tensor_type)
 
-    def _encode(self):
-        return self.fp_encoder.encode(self.data)
+    def _encode(self, data):
+        return self.fp_encoder.encode(data)
 
     def decode(self):
         return self._decode()
