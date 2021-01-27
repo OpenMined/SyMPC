@@ -210,7 +210,7 @@ def test_mpc_print(get_clients) -> None:
     assert x.__str__() == x.__str__()
 
 
-def test_generate_shares(get_clients) -> None:
+def test_generate_shares() -> None:
 
     precision = 12
     base = 4
@@ -246,4 +246,4 @@ def test_generate_shares_session(get_clients) -> None:
     shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
     shares_from_secret = MPCTensor.generate_shares(x_secret, 2, session=session)
 
-    assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
+    assert sum(shares_from_share_tensor) == sum(shares_from_secret)
