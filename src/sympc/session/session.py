@@ -17,6 +17,7 @@ Example:
 # stdlib
 import operator
 from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Union
@@ -118,6 +119,9 @@ class Session:
         # Some protocols require a trusted third party
         # Ex: SPDZ
         self.trusted_third_party = ttp
+        # The CryptoStore is initialized at each party when it is unserialized
+        self.crypto_store: Dict[Any, Any] = {}  # TODO: this should be CryptoStore
+        self.protocol: Optional[str] = None
 
         self.config = config if config else Config()
 

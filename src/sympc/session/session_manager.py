@@ -8,7 +8,6 @@ This class holds the static methods used for the Session.
 import operator
 import secrets
 from typing import Any
-from typing import Dict
 from typing import Optional
 from uuid import UUID
 from uuid import uuid4
@@ -68,7 +67,6 @@ class SessionManager:
         "protocol",
         "config",
         "przs_generators",
-        "rank",
         "session_ptrs",
         "ring_size",
         "min_value",
@@ -87,9 +85,6 @@ class SessionManager:
         # Each worker will have the rank as the index in the list
         # Only the party that is the CC (Control Center) will have access
         # to this
-
-        self.crypto_store: Dict[Any, Any] = {}
-        self.protocol: Optional[str] = None
 
     @staticmethod
     def setup_mpc(session: "Session") -> None:
