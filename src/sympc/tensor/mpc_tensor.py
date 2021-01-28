@@ -3,8 +3,8 @@ Class used to have orchestrate the computation on shared values
 """
 
 # stdlib
+from functools import lru_cache
 import operator
-from typing import Any
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -50,7 +50,7 @@ class MPCTensor:
 
     def __init__(
         self,
-        session: Session,
+        session: Optional[Session] = None,
         secret: Optional[Union[ShareTensor, torch.Tensor, float, int]] = None,
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
         shares: Optional[List[ShareTensor]] = None,
@@ -61,32 +61,54 @@ class MPCTensor:
         - secret is not known by the orchestrator (PRZS is employed)
         """
 
-        if len(session.session_ptrs) == 0:
+        if session is None and secret.session is None:
+            raise ValueError(
+                "Need to provide a session, as argument or in the ShareTensor"
+            )
+
+        self.session = session if session is not None else secret.session
+
+        if len(self.session.session_ptrs) == 0:
             raise ValueError("setup_mpc was not called on the session")
 
-        self.session = session
         if secret is not None:
-            secret_share, self.shape, is_remote_secret = MPCTensor.sanity_checks(
-                secret, shape, session
+            """In the case the secret is hold by a remote party then we use the PRZS
+            to generate the shares and then the pointer tensor is added to share specific
+            to the holder of the secret
+            """
+            secret, self.shape, is_remote_secret = MPCTensor.sanity_checks(
+                secret, shape, self.session
             )
-            parties = session.parties
 
             if is_remote_secret:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
-                # party that holds the secret will add it to it's share
+                # party that holds the secret will add it to its share
                 self.share_ptrs = MPCTensor.generate_przs(self.shape, self.session)
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:  # type: ignore
-                        self.share_ptrs[i] = self.share_ptrs[i] + secret_share
-                        break
+                        self.share_ptrs[i] = self.share_ptrs[i] + secret
+                        return
             else:
-                self.share_ptrs = []
-                shares = MPCTensor.generate_shares(secret_share, self.session)
-                for share, party in zip(shares, self.session.parties):
-                    self.share_ptrs.append(share.send(party))
+                tensor_type = self.session.tensor_type
+                shares = MPCTensor.generate_shares(
+                    secret, self.session.nr_parties, tensor_type
+                )
 
-        elif shares is not None:
-            self.share_ptrs = shares
+        if not ispointer(shares[0]):
+            shares = MPCTensor.distribute_shares(shares, self.session.parties)
+
+        if shape is not None:
+            self.shape = shape
+
+        self.share_ptrs = shares
+
+    @staticmethod
+    def distribute_shares(shares, parties):
+        share_ptrs = []
+        for share, party in zip(shares, parties):
+            share_ptrs.append(share.send(party))
+
+        return share_ptrs
 
     @staticmethod
     def sanity_checks(
@@ -148,40 +170,37 @@ class MPCTensor:
         return shares
 
     @staticmethod
-    def generate_shares(secret, session: Session) -> List[ShareTensor]:
-        """Given a secret generate, split it into a number of shares such that
+    def generate_shares(
+        secret: ShareTensor,
+        nr_parties: int,
+        tensor_type: Optional[torch.dtype] = None,
+    ) -> List[ShareTensor]:
+        """Given a secret, split it into a number of shares such that
         each party would get one
 
         :return: list of shares
-        :rtype: List of Zero Shares
+        :rtype: list of ShareTensor
         """
+
         if not isinstance(secret, ShareTensor):
             raise ValueError("Secret should be a ShareTensor")
 
-        parties: List[Any] = session.parties
-        nr_parties = len(parties)
-
-        min_value = session.min_value
-        max_value = session.max_value
-
         shape = secret.shape
-        tensor_type = session.tensor_type
 
         random_shares = []
         generator = csprng.create_random_device_generator()
 
         for _ in range(nr_parties - 1):
-            rand_value = torch.empty(size=shape, dtype=torch.long).random_(
+            rand_value = torch.empty(size=shape, dtype=tensor_type).random_(
                 generator=generator
             )
-            share = ShareTensor(session=session)
-
-            # Add the share after such that we do not encode it
+            share = ShareTensor(session=secret.session)
             share.tensor = rand_value
+
             random_shares.append(share)
 
         shares = []
-        for i in range(len(parties)):
+        for i in range(nr_parties):
             if i == 0:
                 share = random_shares[i]
             elif i < nr_parties - 1:
@@ -192,7 +211,9 @@ class MPCTensor:
             shares.append(share)
         return shares
 
-    def reconstruct(self, decode: bool = True) -> torch.Tensor:
+    def reconstruct(
+        self, decode: bool = True, get_shares: bool = False
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Request and get the shares from all the parties and reconstruct the secret.
         Depending on the value of "decode", the secret would be decoded or not using
         the FixedPrecision Encoder specific for the session
@@ -221,7 +242,12 @@ class MPCTensor:
 
         tensor_type = self.session.tensor_type
 
-        plaintext = sum(share.tensor for share in local_shares)
+        shares = [share.tensor for share in local_shares]
+
+        if get_shares:
+            return shares
+
+        plaintext = sum(shares)
 
         if decode:
             fp_encoder = FixedPointEncoder(
@@ -232,6 +258,10 @@ class MPCTensor:
             plaintext = fp_encoder.decode(plaintext)
 
         return plaintext
+
+    def get_shares(self):
+        res = self.reconstruct(get_shares=True)
+        return res
 
     def add(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "add" operation between "self" and "y".
@@ -266,14 +296,6 @@ class MPCTensor:
         return self.__apply_op(y, "mul")
 
     def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
-        """Apply the "mul" operation between "self" and "y".
-
-        :return: self @ y
-        :rtype: MPCTensor
-        """
-        return self.__apply_op(y, "matmul")
-
-    def matmul(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "matmul" operation between "self" and "y".
 
         :return: self @ y
@@ -290,16 +312,36 @@ class MPCTensor:
         op = getattr(operator, "matmul")
         shares = [op(y, share) for share in self.share_ptrs]
 
+        if isinstance(y, (float, int)):
+            y_shape = (1,)
+        else:
+            y_shape = y.shape
+
         result = MPCTensor(shares=shares, session=self.session)
+        result.shape = MPCTensor.__get_shape("matmul", y_shape, self.shape)
+
+        scale = (
+            self.session.config.encoder_base ** self.session.config.encoder_precision
+        )
+        result = result.div(scale)
+
         return result
 
     def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
-        :return: self // y
+        :return: self / y
         :rtype: MPCTensor
         """
-        return self.__apply_op(y, "div")
+
+        is_private = isinstance(y, MPCTensor)
+        if is_private:
+            raise ValueError("Not implemented!")
+
+        from sympc.protocol.spdz import spdz
+
+        result = spdz.public_divide(self, y)
+        return result
 
     def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
@@ -315,14 +357,14 @@ class MPCTensor:
         if op_str in {"mul", "matmul"}:
             from sympc.protocol.spdz import spdz
 
-            shares = spdz.mul_master(self, y, op_str)
-            result = MPCTensor(shares=shares, session=self.session)
+            result = spdz.mul_master(self, y, op_str)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
-            result = MPCTensor(session=self.session)
-            result.share_ptrs = [
+            shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
             ]
+
+            result = MPCTensor(shares=shares, session=self.session)
 
         return result
 
@@ -348,6 +390,24 @@ class MPCTensor:
         result = MPCTensor(shares=shares, session=self.session)
         return result
 
+    @staticmethod
+    @lru_cache(maxsize=128)
+    def __get_shape(
+        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int]
+    ) -> Tuple[int]:
+
+        if x_shape is None or y_shape is None:
+            raise ValueError(
+                f"Shapes should not be None; x_shape {x_shape}, y_shape {y_shape}"
+            )
+
+        op = getattr(operator, op_str)
+        x = torch.ones(size=x_shape)
+        y = torch.ones(size=y_shape)
+
+        res = op(x, y)
+        return res.shape
+
     def __apply_op(
         self, y: Union["MPCTensor", torch.Tensor, float, int], op_str: str
     ) -> "MPCTensor":
@@ -364,12 +424,29 @@ class MPCTensor:
         else:
             result = self.__apply_public_op(y, op_str)
 
+        if isinstance(y, (float, int)):
+            y_shape = (1,)
+        else:
+            y_shape = y.shape
+
+        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape)
+
+        if op_str in {"mul", "matmul"} and not (
+            is_private and self.session.nr_parties == 2
+        ):
+            # For private op we do the division in the mul_parties function from spdz
+            scale = (
+                self.session.config.encoder_base
+                ** self.session.config.encoder_precision
+            )
+            result = result.div(scale)
+
         return result
 
     def __str__(self) -> str:
         """ Return the string representation of MPCTensor """
         type_name = type(self).__name__
-        out = f"[{type_name}]"
+        out = f"[{type_name}]\nShape: {self.shape}"
 
         for share in self.share_ptrs:
             out = f"{out}\n\t| {share.client} -> {share.__name__}"
@@ -383,3 +460,4 @@ class MPCTensor:
     __rmul__ = mul
     __matmul__ = matmul
     __rmatmul__ = rmatmul
+    __truediv__ = div

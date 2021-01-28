@@ -17,3 +17,4 @@
 #
 torch>=1.6
 torchcsprng
+git+git://github.com/OpenMined/PySyft/tree/sympc-dev@sympc-dev#egg=syft
