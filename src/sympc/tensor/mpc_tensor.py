@@ -295,8 +295,6 @@ class MPCTensor:
         args = [[share] for share in self.share_ptrs]
         local_shares = request_wrap(args)
 
-        tensor_type = self.session.tensor_type
-
         shares = [share.tensor for share in local_shares]
 
         if get_shares:
@@ -553,6 +551,15 @@ class MPCTensor:
     def __repr__(self):
         return self.__str__()
 
+    def gt(self, other) -> bool:
+        protocol = self.session.get_protocol()
+
+        if isinstance(other, MPCTensor):
+            raise ValueError("Only compare with public values")
+
+        res = protocol.relu_deriv(self - other - 1)
+        return res
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
@@ -562,3 +569,4 @@ class MPCTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+    __gt__ = gt

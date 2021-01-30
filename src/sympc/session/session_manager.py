@@ -93,8 +93,8 @@ class SessionManager:
             seed = secrets.randbits(32)
             next_rank = (rank + 1) % nr_parties
 
-            gen_current = session.parties[rank].sympc.session.get_generator(seed)
-            gen_next = parties[next_rank].sympc.session.get_generator(seed)
+            gen_current = session.parties[rank].sympc.utils.get_new_generator(seed)
+            gen_next = parties[next_rank].sympc.utils.get_new_generator(seed)
 
             session.przs_generators[rank][1] = gen_current
             session.przs_generators[next_rank][0] = gen_next

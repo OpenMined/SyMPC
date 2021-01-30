@@ -25,8 +25,9 @@ from uuid import uuid4
 import torch
 
 from sympc.config import Config
-from sympc.session.utils import generate_random_element
-from sympc.session.utils import get_type_from_ring
+from sympc.protocol.protocol import Protocol
+from sympc.utils import generate_random_element
+from sympc.utils import get_type_from_ring
 
 
 class Session:
@@ -96,6 +97,7 @@ class Session:
         parties: Optional[List[Any]] = None,
         ring_size: int = 2 ** 64,
         config: Optional[Config] = None,
+        protocol: Optional[str] = "SecureNN",
         ttp: Optional[Any] = None,
         uuid: Optional[UUID] = None,
     ) -> None:
@@ -128,6 +130,11 @@ class Session:
 
         self.protocol: Optional[str] = None
 
+        if protocol not in Protocol.registered_protocols:
+            raise ValueError(f"{protocol} not registered!")
+
+        self.protocol = Protocol.registered_protocols[protocol]
+
         self.config = config if config else Config()
 
         self.przs_generators: List[List[torch.Generator]] = []
@@ -142,10 +149,8 @@ class Session:
         self.min_value = -(ring_size) // 2
         self.max_value = (ring_size - 1) // 2
 
-    def populate_crypto_store(
-        self, op_str: str, primitives: Any, *args: List[Any], **kwargs: Dict[Any, Any]
-    ) -> None:
-        self.crypto_store.populate_store(op_str, primitives, *args, **kwargs)
+    def get_protocol(self) -> Protocol:
+        return self.protocol
 
     def przs_generate_random_share(
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
