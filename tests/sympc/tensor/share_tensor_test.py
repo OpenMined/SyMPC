@@ -150,3 +150,24 @@ def test_share_print() -> None:
     expected = f"{expected}\n\t| Data: {encoded_x}"
 
     assert expected == x_share.__str__()
+
+
+def test_share_repr() -> None:
+
+    x = torch.Tensor([5.0])
+    x_share = ShareTensor(data=x)
+
+    encoded_x = x_share.fp_encoder.encode(x)
+
+    expected = f"[ShareTensor]\n\t| {x_share.fp_encoder}"
+    expected = f"{expected}\n\t| Data: {encoded_x}"
+
+    assert expected == x_share.__str__() == x_share.__repr__()
+
+
+def test_share_decode() -> None:
+
+    x = torch.Tensor([5.0])
+    x_share = ShareTensor(data=x)
+
+    assert x == x_share.decode()
