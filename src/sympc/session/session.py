@@ -1,8 +1,5 @@
-"""The implementation for the Session It is used to identify a MPC computation
+"""The implementation for the Session. It is used to identify a MPC computation
 done between multiple parties.
-
-This would be used in case a party is involved in multiple MPC session,
-this one is used to identify in which one is used
 
 Example:
     Alice Bob and John wants to do some computation

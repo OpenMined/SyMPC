@@ -1,5 +1,4 @@
-"""
-The implementation for the SessionManager.
+"""The implementation for the SessionManager.
 
 This class holds the static methods used for the Session.
 """
@@ -16,15 +15,10 @@ from sympc.session.session import Session
 
 
 class SessionManager:
-    """
-    Class used to manage sessions.
+    """Class used to manage sessions.
 
     Arguments:
-        ring_size (int): field used for the operations applied on the shares
-        config (Optional[Config]): configuration used for information needed
-            by the Fixed Point Encoder
-        ttp (Optional[Any]): trusted third party
-        uuid (Optional[UUID]): used to identify a session
+        uuid (Optional[UUID]): used to identify a session manager instance.
 
     Attributes:
         Syft Serializable Attributes
@@ -35,25 +29,10 @@ class SessionManager:
 
 
         uuid (Optional[UUID]): used to identify a session
-        parties (Optional[List[Any]): used to send/receive messages
-        trusted_third_party (Optional[Any]): the trusted third party
-        crypto_store (Dict[Any, Any]): keep track of items needed in MPC (for the moment not used)
-        protocol (Optional[str]): specify what protocol to register for a session
-        config (Config): used for the Fixed Precision Encoder
-        przs_generator (Optional[torch.Generator]): Pseudo-Random-Zero-Share Generators
-            pointers to the parties generators
-        rank (int): Rank for a party in this session
-        sessio_ptrs (List[Session]): pointers to the session that should be identical to the
-            one we have
-        ring_size (int): field used for the operations applied on the shares
-        min_value (int): the minimum value allowed for tensors' values
-        max_value (int): the maximum value allowed for tensors' values
-        tensor_type (Union[torch.dtype): tensor type used in the computation, this is used
-            such that we get the "modulo" operation for free
     """
 
     # Those values are not used at comparison
-    NOT_COMPARE = {"id", "description", "tags", "parties"}
+    NOT_COMPARE = {"id", "description", "tags"}
 
     __slots__ = {
         # Populated in Syft
@@ -61,24 +40,13 @@ class SessionManager:
         "tags",
         "description",
         "uuid",
-        "parties",
-        "trusted_third_party",
-        "crypto_store",
-        "protocol",
-        "config",
-        "przs_generators",
-        "session_ptrs",
-        "ring_size",
-        "min_value",
-        "max_value",
-        "tensor_type",
     }
 
     def __init__(
         self,
         uuid: Optional[UUID] = None,
     ) -> None:
-        """ Initializer for the Session """
+        """Initializer for the Session."""
 
         self.uuid = uuid4() if uuid is None else uuid
 
@@ -88,9 +56,8 @@ class SessionManager:
 
     @staticmethod
     def setup_mpc(session: "Session") -> None:
-        """Must be called to send the session to all other parties involved in the
-        computation.
-        """
+        """Must be called to send the session to all other parties involved in
+        the computation."""
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party
             session.rank = rank
@@ -100,8 +67,8 @@ class SessionManager:
 
     @staticmethod
     def _setup_przs(session: "Session") -> None:
-        """Setup the Pseudo-Random-Zero-Share generators to the parties involved
-        in the communication.
+        """Setup the Pseudo-Random-Zero-Share generators to the parties
+        involved in the communication.
 
         Assume there are 3 parties:
 
@@ -140,9 +107,8 @@ class SessionManager:
             session.przs_generators[next_rank][0] = gen_next
 
     def __eq__(self, other: Any) -> bool:
-        """
-        Check if "self" is equal with another object given a set of attributes
-        to compare.
+        """Check if "self" is equal with another object given a set of
+        attributes to compare.
 
         :return: if self and other are equal
         :rtype: bool
