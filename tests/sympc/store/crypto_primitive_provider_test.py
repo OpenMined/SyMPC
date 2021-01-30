@@ -10,6 +10,7 @@ from typing import Tuple
 import pytest
 
 from sympc.session import Session
+from sympc.session import SessionManager
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
@@ -20,9 +21,9 @@ PRIMITIVE_NR_ELEMS = 4
 
 @register_primitive_generator("test")
 def provider_test(nr_parties: int) -> List[Tuple[int]]:
-    """
-    This function will generate the values
-    ([0, 1, ...], [0, 1, ...], [0, 1, ...], [0, 1, ...])
+    """This function will generate the values ([0, 1, ...], [0, 1, ...], [0, 1,
+
+    ...], [0, 1, ...])
 
     And the CryptoProvider will arrange them like:
 
@@ -59,7 +60,7 @@ def test_generate_primitive_exception() -> None:
 
 def test_transfer_primitives_type_exception() -> None:
     with pytest.raises(ValueError):
-        """Primitives should be a list"""
+        """Primitives should be a list."""
         CryptoPrimitiveProvider._transfer_primitives_to_parties(
             op_str="test", primitives=50, sessions=[], p_kwargs={}
         )
@@ -67,7 +68,7 @@ def test_transfer_primitives_type_exception() -> None:
 
 def test_transfer_primitives_mismatch_len_exception() -> None:
     with pytest.raises(ValueError):
-        """Primitives and Sesssions should have the same len"""
+        """Primitives and Sesssions should have the same len."""
         CryptoPrimitiveProvider._transfer_primitives_to_parties(
             op_str="test", primitives=[1], sessions=[], p_kwargs={}
         )
@@ -88,7 +89,7 @@ def test_generate_primitive(
 ) -> None:
     parties = get_clients(nr_parties)
     session = Session(parties=parties)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     g_kwargs = {"nr_parties": nr_parties}
     res = CryptoPrimitiveProvider.generate_primitives(
@@ -113,7 +114,7 @@ def test_generate_and_transfer_primitive(
 ) -> None:
     parties = get_clients(nr_parties)
     session = Session(parties=parties)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     g_kwargs = {"nr_parties": nr_parties}
     CryptoPrimitiveProvider.generate_primitives(

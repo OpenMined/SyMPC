@@ -1,6 +1,5 @@
-"""
-The implementation for the Session
-It is used to identify a MPC computation done between multiple parties
+"""The implementation for the Session It is used to identify a MPC computation
+done between multiple parties.
 
 This would be used in case a party is involved in multiple MPC session,
 this one is used to identify in which one is used
@@ -34,8 +33,7 @@ from sympc.session.utils import get_type_from_ring
 
 
 class Session:
-    """
-    Class used to keep information about computation done in SMPC
+    """Class used to keep information about computation done in SMPC.
 
     Arguments:
         parties (Optional[List[Any]): used to send/receive messages
@@ -104,7 +102,7 @@ class Session:
         ttp: Optional[Any] = None,
         uuid: Optional[UUID] = None,
     ) -> None:
-        """ Initializer for the Session """
+        """Initializer for the Session."""
 
         self.uuid = uuid4() if uuid is None else uuid
 
@@ -127,7 +125,7 @@ class Session:
         self.trusted_third_party = ttp
 
         # The CryptoStore is initialized at each party when it is unserialized
-        self.crypto_store: Dict[Any, Any] = {}  # TODO: this should be CryptoStore
+        self.crypto_store: Dict[Any, Any] = None  # TODO: this should be CryptoStore
 
         self.protocol: Optional[str] = None
 
@@ -153,9 +151,8 @@ class Session:
     def przs_generate_random_share(
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
     ) -> Any:
-        """Generate a random share using the two generators that are
-        hold by a party.
-        """
+        """Generate a random share using the two generators that are hold by a
+        party."""
 
         from sympc.tensor import ShareTensor
 
@@ -179,9 +176,8 @@ class Session:
         return share
 
     def __eq__(self, other: Any) -> bool:
-        """
-        Check if "self" is equal with another object given a set of attributes
-        to compare.
+        """Check if "self" is equal with another object given a set of
+        attributes to compare.
 
         :return: if self and other are equal
         :rtype: bool
