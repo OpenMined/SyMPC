@@ -43,6 +43,7 @@ def test_notebooks_basic(notebook):
             "n_train_items": 64,
             "n_test_items": 64,
         },
+        kernel_name="python3",
         timeout=600,
     )
     assert isinstance(res, nbformat.notebooknode.NotebookNode)
