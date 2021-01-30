@@ -40,3 +40,9 @@ repos:
     hooks:
     -   id: bandit
         args: ['--exclude', 'tests']
+
+-   repo: https://github.com/myint/docformatter
+    rev: v1.3.1
+    hooks:
+    -   id: docformatter
+        args: [--in-place]

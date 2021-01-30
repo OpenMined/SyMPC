@@ -7,6 +7,7 @@ import torch
 
 from sympc.session import Session
 from sympc.tensor import MPCTensor
+from sympc.tensor import ShareTensor
 
 
 def test_mpc_tensor_exception(get_clients) -> None:
@@ -24,6 +25,12 @@ def test_reconstruct(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     Session.setup_mpc(session)
+
+    a_rand = 3
+    a = ShareTensor(data=a_rand, encoder_precision=0)
+    a_shares = MPCTensor.generate_shares(a, 2, torch.long)
+
+    a_shares_copy = MPCTensor.generate_shares(a_rand, 2, torch.long)
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)
@@ -200,3 +207,43 @@ def test_mpc_print(get_clients) -> None:
     expected = f"{expected} <VirtualMachineClient: P_1 Client> -> ShareTensorPointer"
 
     assert expected == x.__str__()
+    assert x.__str__() == x.__str__()
+
+
+def test_generate_shares() -> None:
+
+    precision = 12
+    base = 4
+
+    x_secret = torch.Tensor([5.0])
+
+    # test with default values
+    x_share = ShareTensor(data=x_secret)
+
+    shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
+    shares_from_secret = MPCTensor.generate_shares(x_secret, 2)
+
+    assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
+
+    x_share = ShareTensor(data=x_secret, encoder_precision=precision, encoder_base=base)
+
+    shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
+    shares_from_secret = MPCTensor.generate_shares(
+        x_secret, 2, encoder_precision=precision, encoder_base=base
+    )
+
+    assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
+
+
+def test_generate_shares_session(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    Session.setup_mpc(session)
+
+    x_secret = torch.Tensor([5.0])
+    x_share = ShareTensor(data=x_secret, session=session)
+
+    shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
+    shares_from_secret = MPCTensor.generate_shares(x_secret, 2, session=session)
+
+    assert sum(shares_from_share_tensor) == sum(shares_from_secret)
