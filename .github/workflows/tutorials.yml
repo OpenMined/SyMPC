@@ -43,6 +43,7 @@ jobs:
         hash -r
         pip3 install -r requirements.txt
         pip3 install -r requirements_dev.txt
+        pip3 install ipykernel
         python setup.py install
     - name: Run the tutorials
       run: |
