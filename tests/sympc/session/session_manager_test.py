@@ -32,8 +32,9 @@ def test_setup_przs(get_clients):
     """Test _setup_przs method for session."""
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
+    assert len(session.przs_generators) == 0
     SessionManager._setup_przs(session)
-    assert True
+    assert len(session.przs_generators) == 2
 
 
 def test_eq():
