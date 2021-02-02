@@ -31,14 +31,7 @@ class SessionManager:
         uuid (Optional[UUID]): used to identify a session
     """
 
-    # Those values are not used at comparison
-    NOT_COMPARE = {"id", "description", "tags"}
-
     __slots__ = {
-        # Populated in Syft
-        "id",
-        "tags",
-        "description",
         "uuid",
     }
 
@@ -55,7 +48,7 @@ class SessionManager:
         # to this
 
     @staticmethod
-    def setup_mpc(session: "Session") -> None:
+    def setup_mpc(session: Session) -> None:
         """Must be called to send the session to all other parties involved in
         the computation."""
         for rank, party in enumerate(session.parties):
@@ -66,7 +59,7 @@ class SessionManager:
         SessionManager._setup_przs(session)
 
     @staticmethod
-    def _setup_przs(session: "Session") -> None:
+    def _setup_przs(session: Session) -> None:
         """Setup the Pseudo-Random-Zero-Share generators to the parties
         involved in the communication.
 
@@ -119,7 +112,5 @@ class SessionManager:
         if self.__slots__ != other.__slots__:
             return False
 
-        attr_getters = [
-            operator.attrgetter(attr) for attr in self.__slots__ - Session.NOT_COMPARE
-        ]
+        attr_getters = [operator.attrgetter(attr) for attr in self.__slots__]
         return all(getter(self) == getter(other) for getter in attr_getters)
