@@ -9,6 +9,8 @@ import torch
 
 from sympc.config import Config
 from sympc.session import Session
+from sympc.session import SessionManager
+from sympc.session.utils import get_generator
 from sympc.session.utils import get_type_from_ring
 from sympc.tensor import ShareTensor
 
@@ -51,13 +53,17 @@ def test_session_init():
     assert session.max_value == (2 ** 32 - 1) // 2
 
 
-def test_przs_generate_random_share():
+def test_przs_generate_random_share(get_clients):
     """Test przs_generate_random_share method from Session."""
     session = Session()
-    generators = [torch.Generator(), torch.Generator()]
-    share = session.przs_generate_random_share(shape=(1, 2), generators=generators)
+    SessionManager.setup_mpc(session)
+    gen1 = get_generator(42)
+    gen2 = get_generator(43)
+    generators = [gen1, gen2]
+    share = session.przs_generate_random_share(shape=(2, 1), generators=generators)
     assert isinstance(share, ShareTensor)
-    assert (share.tensor == torch.tensor([0, 0])).all()
+    target_tensor = torch.tensor(([-1540733531777602634], [2813554787685566880]))
+    assert (share.tensor == target_tensor).all()
 
 
 def test_eq():
