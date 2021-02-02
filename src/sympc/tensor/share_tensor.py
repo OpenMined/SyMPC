@@ -1,6 +1,4 @@
-"""
-Class used to represent a share owned by a party
-"""
+"""Class used to represent a share owned by a party."""
 
 # stdlib
 import operator
@@ -16,9 +14,8 @@ from sympc.session import Session
 
 
 class ShareTensor:
-    """
-    This class represents 1 share that a party holds when doing
-    secret sharing
+    """This class represents 1 share that a party holds when doing secret
+    sharing.
 
     Arguments:
         data (Optional[Any]): the share a party holds
@@ -57,7 +54,7 @@ class ShareTensor:
         encoder_precision: int = 16,
         ring_size: int = 2 ** 64,
     ) -> None:
-        """ Initializer for the ShareTensor """
+        """Initializer for the ShareTensor."""
 
         if session is None:
             self.session = Session(
@@ -80,14 +77,22 @@ class ShareTensor:
 
         if data is not None:
             tensor_type = self.session.tensor_type
-            self.tensor = self.fp_encoder.encode(data).type(tensor_type)
+            self.tensor = self._encode(data).type(tensor_type)
+
+    def _encode(self, data):
+        return self.fp_encoder.encode(data)
+
+    def decode(self):
+        return self._decode()
+
+    def _decode(self):
+        return self.fp_encoder.decode(self.tensor.type(torch.LongTensor))
 
     @staticmethod
     def sanity_checks(
         x: "ShareTensor", y: Union[int, float, torch.Tensor, "ShareTensor"], op_str: str
     ) -> "ShareTensor":
-        """
-        Check the type of "y" and convert it to a share if necessary
+        """Check the type of "y" and convert it to a share if necessary.
 
         :return: the y value
         :rtype: ShareTensor, int or Integer type Tensor
@@ -100,7 +105,7 @@ class ShareTensor:
     def apply_function(
         self, y: Union["ShareTensor", torch.Tensor, int, float], op_str: str
     ) -> "ShareTensor":
-        """Apply a given operation
+        """Apply a given operation.
 
         :return: the result of applying "op_str" on "self" and y
         :rtype: ShareTensor
@@ -117,7 +122,7 @@ class ShareTensor:
         return res
 
     def add(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
-        """Apply the "add" operation between "self" and "y"
+        """Apply the "add" operation between "self" and "y".
 
         :return: self + y
         :rtype: ShareTensor
@@ -127,7 +132,7 @@ class ShareTensor:
         return res
 
     def sub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
-        """Apply the "sub" operation between "self" and "y"
+        """Apply the "sub" operation between "self" and "y".
 
         :return: self - y
         :rtype: ShareTensor
@@ -137,7 +142,7 @@ class ShareTensor:
         return res
 
     def rsub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
-        """Apply the "sub" operation between "y" and "self"
+        """Apply the "sub" operation between "y" and "self".
 
         :return: y - self
         :rtype: ShareTensor
@@ -147,7 +152,7 @@ class ShareTensor:
         return res
 
     def mul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
-        """Apply the "mul" operation between "self" and "y"
+        """Apply the "mul" operation between "self" and "y".
 
         :return: self * y
         :rtype: ShareTensor
@@ -166,7 +171,7 @@ class ShareTensor:
     def matmul(
         self, y: Union[int, float, torch.Tensor, "ShareTensor"]
     ) -> "ShareTensor":
-        """Apply the "matmul" operation between "self" and "y"
+        """Apply the "matmul" operation between "self" and "y".
 
         :return: self @ y
         :rtype: ShareTensor
@@ -183,7 +188,7 @@ class ShareTensor:
         return res
 
     def rmatmul(self, y: torch.Tensor) -> "ShareTensor":
-        """Apply the reversed "matmul" operation between "self" and "y"
+        """Apply the reversed "matmul" operation between "self" and "y".
 
         :return: y @ self
         :rtype: ShareTensor
@@ -192,8 +197,8 @@ class ShareTensor:
         return y.matmul(self)
 
     def div(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
-        """Apply the "div" operation between "self" and "y".
-        Currently, NotImplemented
+        """Apply the "div" operation between "self" and "y". Currently,
+        NotImplemented.
 
         :return: self / y
         :rtype: ShareTensor
@@ -207,9 +212,9 @@ class ShareTensor:
         return res
 
     def __getattr__(self, attr_name: str) -> Any:
-        """Get the attribute from the ShareTensor.
-        If the attribute is not found at the ShareTensor level, the it would
-        look for in the the "tensor"
+        """Get the attribute from the ShareTensor. If the attribute is not
+        found at the ShareTensor level, the it would look for in the the
+        "tensor".
 
         :return: the attribute value
         :rtype: Anything
@@ -220,7 +225,7 @@ class ShareTensor:
         return getattr(tensor, attr_name)
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
-        """Check if "self" is bigger than "y"
+        """Check if "self" is bigger than "y".
 
         :return: self > y
         :rtype: bool
@@ -230,7 +235,7 @@ class ShareTensor:
         return res
 
     def __lt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
-        """Check if "self" is less than "y"
+        """Check if "self" is less than "y".
 
         :return: self < y
         :rtype: bool
@@ -241,7 +246,7 @@ class ShareTensor:
         return res
 
     def __str__(self) -> str:
-        """ Return the string representation of ShareTensor """
+        """Return the string representation of ShareTensor."""
         type_name = type(self).__name__
         out = f"[{type_name}]"
         out = f"{out}\n\t| {self.fp_encoder}"
@@ -249,10 +254,12 @@ class ShareTensor:
 
         return out
 
+    def __repr__(self):
+        return self.__str__()
+
     def __eq__(self, other: Any) -> bool:
-        """
-        Check if "self" is equal with another object given a set of attributes
-        to compare.
+        """Check if "self" is equal with another object given a set of
+        attributes to compare.
 
         :return: if self and other are equal
         :rtype: bool
