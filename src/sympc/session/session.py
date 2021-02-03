@@ -122,7 +122,9 @@ class Session:
         self.trusted_third_party = ttp
 
         # The CryptoStore is initialized at each party when it is unserialized
-        self.crypto_store: Dict[Any, Any] = None  # TODO: this should be CryptoStore
+        self.crypto_store: Optional[
+            Dict[Any, Any]
+        ] = None  # TODO: this should be CryptoStore
 
         self.protocol: Optional[str] = None
 
