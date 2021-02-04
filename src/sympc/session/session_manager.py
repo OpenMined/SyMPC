@@ -109,8 +109,5 @@ class SessionManager:
         if not isinstance(other, self.__class__):
             return False
 
-        if self.__slots__ != other.__slots__:  # pragma: no cover
-            return False
-
         attr_getters = [operator.attrgetter(attr) for attr in self.__slots__]
         return all(getter(self) == getter(other) for getter in attr_getters)
