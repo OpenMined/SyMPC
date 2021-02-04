@@ -6,6 +6,7 @@ import pytest
 import torch
 
 from sympc.session import Session
+from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 
@@ -24,7 +25,7 @@ def test_mpc_tensor_exception(get_clients) -> None:
 def test_reconstruct(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     a_rand = 3
     a = ShareTensor(data=a_rand, encoder_precision=0)
@@ -43,8 +44,8 @@ def test_op_mpc_different_sessions(get_clients) -> None:
     clients = get_clients(2)
     session_one = Session(parties=clients)
     session_two = Session(parties=clients)
-    Session.setup_mpc(session_one)
-    Session.setup_mpc(session_two)
+    SessionManager.setup_mpc(session_one)
+    SessionManager.setup_mpc(session_two)
 
     x = MPCTensor(secret=torch.Tensor([1, -2]), session=session_one)
     y = MPCTensor(secret=torch.Tensor([1, -2]), session=session_two)
@@ -56,7 +57,7 @@ def test_op_mpc_different_sessions(get_clients) -> None:
 def test_remote_mpc_no_shape(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_remote = alice_client.torch.Tensor([1, -2, 0.3])
 
@@ -67,7 +68,7 @@ def test_remote_mpc_no_shape(get_clients) -> None:
 def test_remote_mpc_with_shape(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_remote = alice_client.torch.Tensor([1, -2, 0.3])
     x = MPCTensor(secret=x_remote, shape=(1, 3), session=session)
@@ -79,7 +80,7 @@ def test_remote_mpc_with_shape(get_clients) -> None:
 def test_remote_not_tensor(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_remote_int = bob_client.python.Int(5)
     x = MPCTensor(secret=x_remote_int, shape=(1,), session=session)
@@ -97,7 +98,7 @@ def test_remote_not_tensor(get_clients) -> None:
 def test_local_secret_not_tensor(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_int = 5
     x = MPCTensor(secret=x_int, session=session)
@@ -117,7 +118,7 @@ def test_local_secret_not_tensor(get_clients) -> None:
 def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     op = getattr(operator, op_str)
 
@@ -136,7 +137,7 @@ def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
 def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
 
@@ -157,7 +158,7 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
 def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     op = getattr(operator, op_str)
 
@@ -176,7 +177,7 @@ def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
 def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     op = getattr(operator, op_str)
 
@@ -194,7 +195,7 @@ def test_ops_integer(get_clients, nr_clients, op_str) -> None:
 def test_mpc_print(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_secret = torch.Tensor([5.0])
 
@@ -238,7 +239,7 @@ def test_generate_shares() -> None:
 def test_generate_shares_session(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
-    Session.setup_mpc(session)
+    SessionManager.setup_mpc(session)
 
     x_secret = torch.Tensor([5.0])
     x_share = ShareTensor(data=x_secret, session=session)
