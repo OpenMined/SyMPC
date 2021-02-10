@@ -1,6 +1,4 @@
-"""
-The Beaver Triples
-"""
+"""The Beaver Triples."""
 
 # stdlib
 import operator
@@ -29,28 +27,30 @@ ttp_generator = csprng.create_random_device_generator()
 def _get_triples(
     op_str: str, nr_parties: int, a_shape: Tuple[int], b_shape: Tuple[int]
 ) -> Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]:
-    """
-    The Trusted Third Party (TTP) or Crypto Provider should provide this triples
-    Currently, the one that orchestrates the communication provides those triples.
-    """
+    """The Trusted Third Party (TTP) or Crypto Provider should provide this
+    triples Currently, the one that orchestrates the communication provides
+    those triples."""
 
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
-    a = ShareTensor(data=a_rand, encoder_precision=0)
-    a_shares = MPCTensor.generate_shares(a, nr_parties, torch.long)
+    a_shares = MPCTensor.generate_shares(
+        a_rand, nr_parties, torch.long, encoder_precision=0
+    )
 
     b_rand = torch.empty(size=b_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
-    b = ShareTensor(data=b_rand, encoder_precision=0)
-    b_shares = MPCTensor.generate_shares(b, nr_parties, torch.long)
+    b_shares = MPCTensor.generate_shares(
+        b_rand, nr_parties, torch.long, encoder_precision=0
+    )
 
     cmd = getattr(operator, op_str)
 
     c_val = cmd(a_rand, b_rand)
-    c = ShareTensor(data=c_val, encoder_precision=0)
-    c_shares = MPCTensor.generate_shares(c, nr_parties, torch.long)
+    c_shares = MPCTensor.generate_shares(
+        c_val, nr_parties, torch.long, encoder_precision=0
+    )
 
     return a_shares, b_shares, c_shares
 
@@ -62,7 +62,7 @@ def _get_triples(
 def get_triples_mul(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """ Get the beaver triples for the matmul operation"""
+    """Get the beaver triples for the matmul operation."""
     return _get_triples("mul", *args, **kwargs)
 
 
@@ -108,7 +108,7 @@ def mul_store_get(
 def get_triples_matmul(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """ Get the beaver triples for the mul operation """
+    """Get the beaver triples for the mul operation."""
     return _get_triples("matmul", *args, **kwargs)
 
 
@@ -155,8 +155,8 @@ def matmul_store_get(
 def count_wraps_rand(
     nr_parties: int, shape: Tuple[int]
 ) -> Tuple[List[ShareTensor], List[ShareTensor]]:
-    """
-    The Trusted Third Party (TTP) or Crypto Provider should generate
+    """The Trusted Third Party (TTP) or Crypto Provider should generate.
+
     - a set of shares for a random number
     - a set of shares for the number of wraparounds for that number
 
@@ -166,12 +166,14 @@ def count_wraps_rand(
     rand_val = torch.empty(size=shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
-    r = ShareTensor(data=rand_val, encoder_precision=0)
 
-    r_shares = MPCTensor.generate_shares(r, nr_parties, torch.long)
+    r_shares = MPCTensor.generate_shares(
+        rand_val, nr_parties, torch.long, encoder_precision=0
+    )
     wraps = count_wraps([share.data for share in r_shares])
 
-    theta_r = ShareTensor(data=wraps, encoder_precision=0)
-    theta_r_shares = MPCTensor.generate_shares(theta_r, nr_parties, torch.long)
+    theta_r_shares = MPCTensor.generate_shares(
+        wraps, nr_parties, torch.long, encoder_precision=0
+    )
 
     return r_shares, theta_r_shares
