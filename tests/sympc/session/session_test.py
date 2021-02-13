@@ -57,8 +57,8 @@ def test_przs_generate_random_share(get_clients):
     """Test przs_generate_random_share method from Session."""
     session = Session()
     SessionManager.setup_mpc(session)
-    gen1 = get_generator(42)
-    gen2 = get_generator(43)
+    gen1 = get_new_generator(42)
+    gen2 = get_new_generator(43)
     generators = [gen1, gen2]
     share = session.przs_generate_random_share(shape=(2, 1), generators=generators)
     assert isinstance(share, ShareTensor)

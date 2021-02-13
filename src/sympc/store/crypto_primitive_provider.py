@@ -89,7 +89,7 @@ class CryptoPrimitiveProvider:
             )
 
         for primitives_party, session in zip(primitives, sessions):
-            session.populate_crypto_store(op_str, list(primitives_party), **p_kwargs)
+            session.crypto_store.populate_store(op_str, list(primitives_party), **p_kwargs)
 
     @staticmethod
     def get_state() -> None:

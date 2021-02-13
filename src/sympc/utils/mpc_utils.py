@@ -90,16 +90,18 @@ def get_nr_bits(ring_size: int) -> int:
     return (ring_size - 1).bit_length()
 
 
-def decompose(tensor: torch.Tensor, ring_size: int) -> torch.Tensor:
+def decompose(tensor: torch.Tensor, ring_size: int, shape=None) -> torch.Tensor:
     """Decompose a tensor into its binary representation."""
 
     tensor_type = get_type_from_ring(ring_size)
 
     nr_bits = get_nr_bits(ring_size)
-    print("NR BITS", nr_bits)
     powers = torch.arange(nr_bits, dtype=tensor_type)
 
-    for _ in range(len(tensor.shape)):
+    if shape is None:
+        shape = tensor.shape
+
+    for _ in range(len(shape)):
         powers = powers.unsqueeze(0)
 
     tensor = tensor.unsqueeze(-1)

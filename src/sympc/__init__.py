@@ -8,7 +8,6 @@
 # third party
 from pkg_resources import DistributionNotFound
 from pkg_resources import get_distribution
-import syft
 
 try:
     # third party

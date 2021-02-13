@@ -13,7 +13,17 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 
 
-class ShareTensor:
+tensor_methods = {"unsqueeze", "shape"}
+
+
+class SYMPCTensor(type):
+    def __getattribute__(cls, name):
+        if name in tensor_methods:
+            return None
+        return super().__getattribute__(name)
+
+
+class ShareTensor(metaclass=SYMPCTensor):
     """This class represents 1 share that a party holds when doing secret
     sharing.
 
@@ -211,6 +221,10 @@ class ShareTensor:
 
         return res
 
+    def __getattribute__(self, attr_name: str) -> Any:
+        attr = super().__getattribute__(attr_name)
+        return attr
+
     def __getattr__(self, attr_name: str) -> Any:
         """Get the attribute from the ShareTensor. If the attribute is not
         found at the ShareTensor level, the it would look for in the the
@@ -282,3 +296,5 @@ class ShareTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+
+

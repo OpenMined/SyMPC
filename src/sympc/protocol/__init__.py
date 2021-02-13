@@ -5,6 +5,6 @@ from . import beaver
 from . import spdz
 from .protocol import Protocol
 from .securenn import SecureNN
-from .aby import ABY
+from .aby3 import ABY3
 
-__all__ = ["beaver", "spdz", "Protocol", "SecureNN", "ABY"]
+__all__ = ["beaver", "spdz", "Protocol", "SecureNN", "ABY3"]
