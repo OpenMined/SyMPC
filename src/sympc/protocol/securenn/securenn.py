@@ -91,7 +91,6 @@ class SecureNN(metaclass=Protocol):
         res = przs_share + share
         return res
 
-
     @staticmethod
     def relu_deriv(x: MPCTensor) -> MPCTensor:
         """

@@ -4,6 +4,8 @@
 import operator
 from typing import Any
 from typing import Optional
+from typing import List
+from typing import Dict
 from typing import Union
 
 # third party
@@ -13,17 +15,10 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 
 
-tensor_methods = {"unsqueeze", "shape"}
+FORWARD_TENSOR_ATTRS = {"unsqueeze", "shape"}
 
 
-class SYMPCTensor(type):
-    def __getattribute__(cls, name):
-        if name in tensor_methods:
-            return None
-        return super().__getattribute__(name)
-
-
-class ShareTensor(metaclass=SYMPCTensor):
+class ShareTensor:
     """This class represents 1 share that a party holds when doing secret
     sharing.
 
@@ -221,22 +216,10 @@ class ShareTensor(metaclass=SYMPCTensor):
 
         return res
 
-    def __getattribute__(self, attr_name: str) -> Any:
-        attr = super().__getattribute__(attr_name)
-        return attr
-
     def __getattr__(self, attr_name: str) -> Any:
-        """Get the attribute from the ShareTensor. If the attribute is not
-        found at the ShareTensor level, the it would look for in the the
-        "tensor".
-
-        :return: the attribute value
-        :rtype: Anything
-        """
-        # Default to some tensor specific attributes like
-        # size, shape, etc.
         tensor = self.tensor
-        return getattr(tensor, attr_name)
+        res = getattr(tensor, attr_name)
+        return res
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
         """Check if "self" is bigger than "y".
@@ -268,7 +251,7 @@ class ShareTensor(metaclass=SYMPCTensor):
 
         return out
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     def __eq__(self, other: Any) -> bool:
@@ -287,6 +270,18 @@ class ShareTensor(metaclass=SYMPCTensor):
 
         return True
 
+    # Forward to tensor methods
+
+    @property
+    def shape(self) -> Any:
+        return self.tensor.shape
+
+    def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        tensor = self.tensor.unsqueeze(*args, **kwargs)
+        res = ShareTensor(session=self.session)
+        res.tensor = tensor
+        return res
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
@@ -296,5 +291,3 @@ class ShareTensor(metaclass=SYMPCTensor):
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
-
-
