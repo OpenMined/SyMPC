@@ -108,5 +108,5 @@ def decompose(
 
     tensor = tensor.unsqueeze(-1)
     moduli = (2 ** powers).to(tensor_type)
-    tensor = torch.fmod(tensor / moduli, 2)
+    tensor = torch.fmod(tensor / moduli, 2).to(tensor_type)
     return tensor

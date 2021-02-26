@@ -14,49 +14,64 @@ class ABY3(metaclass=Protocol):
     def A2B(x: MPCTensor) -> List[MPCTensor]:
         """
         Convert an Arithmetic Shared Value to a Binary Shared Value
-        (from ring size 2^(pow != 1) to ring size 2)
+        To preserve space each Binary Shared Value is kept on a bit
         """
 
         session = x.session
         parties = session.parties
+        nr_parties = session.nr_parties
         ring_size = session.ring_size
         shape = x.shape
 
         x_reshared = [
-            MPCTensor(secret=share, session=x.session, shape=x.shape)
+            MPCTensor(secret=share, session=session, mpc_type="binary", shape=x.shape)
             for share in x.share_ptrs
         ]
 
-        args = [
-            [x_reshared[0].share_ptrs[0], x_reshared[1].share_ptrs[0]],
-            [x_reshared[0].share_ptrs[1], x_reshared[1].share_ptrs[1]],
-        ]
+        print("VALUES")
+        print((x.share_ptrs[0] + 0).get())
+        print((x.share_ptrs[1] + 0).get())
+        print(x_reshared[0].reconstruct(decode=False))
+        print(x_reshared[1].reconstruct(decode=False))
 
-        p = parallel_execution(ABY3.sum_shares, session.parties)(args)
-        import pdb
+        args = [[] for _ in range(nr_parties)]
+        for share in x_reshared:
+            for party, share_ptr in enumerate(share.share_ptrs):
+                args[party].append(share_ptr)
 
-        pdb.set_trace()
-        # session.ring_size = 2
-        # x_share_binary = [MPCTensor(session=session, secret=x_share)]
-        # MPCTensor.generate_przs(x.shape, session)
+        shares_p0 = [decompose(args[0][0].get().tensor, 2**64), decompose(args[0][1].get().tensor, 2**64)]
+        shares_p1 = [decompose(args[1][0].get().tensor, 2**64), decompose(args[1][1].get().tensor, 2**64)]
+        import pdb; pdb.set_trace()
+
+        """
+
+        #p = parallel_execution(ABY3.sum_shares, session.parties)(args)
+        res = MPCTensor(shares=p, session=session, mpc_type="binary", shape=x.shape)
+        print("Decode")
+        print(res.reconstruct(decode=False))
+        print("No de code")
+        print(res.reconstruct())
+        """
+
+    def circuit_add(x, y):
+        pass
+
+
 
     def sum_shares(*shares: List[ShareTensor]) -> List[ShareTensor]:
-        session = shares[0].session
-        res = ShareTensor(session=session)
+        """
+        Sum the shares such that each party would have in the end a Binary Shared Value
 
-        x = torch.stack([shareTensor.data for shareTensor in shares])
+        Args:
+            shares (List[ShareTensor)): The shares that each party should add together
 
-        # Add all BinarySharedTensors
-        while x.size(0) > 1:
-            extra = None
-            if x.size(0) % 2 == 1:
-                extra = x[0]
-                x = x[1:]
-            x0 = x[: (x.size(0) // 2)]
-            x1 = x[(x.size(0) // 2) :]
-            x = x0 + x1
-            if extra is not None:
-                x = torch_cat([x.share, extra.unsqueeze(0)])
+        Returns:
+            shares: The Binary Shares
+        """
+        res = ShareTensor(session=shares[0].session)
+        res.tensor = share[0].tensor
 
-        res.tensor = x
+        for share in shares[1:]:
+            res = res + share
+
         return res

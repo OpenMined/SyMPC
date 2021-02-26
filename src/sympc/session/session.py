@@ -153,7 +153,10 @@ class Session:
         return self.protocol
 
     def przs_generate_random_share(
-        self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
+        self,
+        shape: Union[tuple, torch.Size],
+        mpc_type: str,
+        generators: List[torch.Generator],
     ) -> Any:
         """Generate a random share using the two generators that are hold by a
         party."""
@@ -175,7 +178,12 @@ class Session:
         )
 
         share = ShareTensor(session=self)
-        share.tensor = current_share - next_share
+        if mpc_type == "arithmetic":
+            share.tensor = current_share - next_share
+        elif mpc_type == "binary":
+            share.tensor = current_share ^ next_share
+        else:
+            raise ValueError(f"{mpc_type} not known!")
 
         return share
 

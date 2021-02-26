@@ -35,21 +35,27 @@ def _get_triples(
         generator=ttp_generator
     )
     a_shares = MPCTensor.generate_shares(
-        a_rand, nr_parties, torch.long, encoder_precision=0
+        secret=a_rand,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
     )
 
     b_rand = torch.empty(size=b_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
     b_shares = MPCTensor.generate_shares(
-        b_rand, nr_parties, torch.long, encoder_precision=0
+        secret=b_rand,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
     )
 
     cmd = getattr(operator, op_str)
 
     c_val = cmd(a_rand, b_rand)
     c_shares = MPCTensor.generate_shares(
-        c_val, nr_parties, torch.long, encoder_precision=0
+        secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
 
     return a_shares, b_shares, c_shares
@@ -168,12 +174,12 @@ def count_wraps_rand(
     )
 
     r_shares = MPCTensor.generate_shares(
-        rand_val, nr_parties, torch.long, encoder_precision=0
+        secret=rand_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
     wraps = count_wraps([share.data for share in r_shares])
 
     theta_r_shares = MPCTensor.generate_shares(
-        wraps, nr_parties, torch.long, encoder_precision=0
+        secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
 
     return r_shares, theta_r_shares

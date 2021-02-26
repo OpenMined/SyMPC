@@ -22,16 +22,21 @@ def test_mpc_tensor_exception(get_clients) -> None:
         x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
 
 
-def test_reconstruct(get_clients) -> None:
+@pytest.mark.parametrize("mpc_type", ["arithmetic", "binary"])
+def test_reconstruct(get_clients, mpc_type) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
     a_rand = 3
     a = ShareTensor(data=a_rand, encoder_precision=0)
-    a_shares = MPCTensor.generate_shares(a, 2, torch.long)
+    a_shares = MPCTensor.generate_shares(
+        secret=a, nr_parties=2, tensor_type=torch.long, mpc_type=mpc_type
+    )
 
-    a_shares_copy = MPCTensor.generate_shares(a_rand, 2, torch.long)
+    a_shares_copy = MPCTensor.generate_shares(
+        secret=a_rand, nr_parties=2, tensor_type=torch.long, mpc_type=mpc_type
+    )
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)

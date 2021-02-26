@@ -173,6 +173,16 @@ class ShareTensor:
 
         return res
 
+    def xor(self, y: Union[int, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        res = ShareTensor(session=self.session)
+
+        if isinstance(y, ShareTensor):
+            res.tensor = self.tensor ^ y.tensor
+        else:
+            res.tensor = self.tensor ^ y
+
+        return res
+
     def matmul(
         self, y: Union[int, float, torch.Tensor, "ShareTensor"]
     ) -> "ShareTensor":
@@ -291,3 +301,4 @@ class ShareTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+    __xor__ = xor
