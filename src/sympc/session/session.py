@@ -142,11 +142,6 @@ class Session:
         self.min_value = -(ring_size) // 2
         self.max_value = (ring_size - 1) // 2
 
-    def populate_crypto_store(
-        self, op_str: str, primitives: Any, *args: List[Any], **kwargs: Dict[Any, Any]
-    ) -> None:
-        self.crypto_store.populate_store(op_str, primitives, *args, **kwargs)
-
     def przs_generate_random_share(
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
     ) -> Any:
