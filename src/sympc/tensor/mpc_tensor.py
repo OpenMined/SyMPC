@@ -1,7 +1,6 @@
 """Class used to have orchestrate the computation on shared values."""
 
 # stdlib
-from copy import deepcopy
 from functools import lru_cache
 import operator
 from typing import Any
@@ -569,7 +568,7 @@ class MPCTensor:
     __truediv__ = div
 
 
-SESSION_GLOBAL = Session()
+PARTIES_TO_SESSION: Dict[Any, Session] = {}
 
 
 def share(_self, **kwargs: Dict[Any, Any]):
@@ -579,18 +578,21 @@ def share(_self, **kwargs: Dict[Any, Any]):
         raise ValueError("Parties or Session should be provided as a kwarg")
 
     if "session" not in kwargs:
-        from sympc.session import SessionManager
+        parties = frozenset({client.id for client in kwargs["parties"]})
 
-        global SESSION_GLOBAL
-        session = deepcopy(SESSION_GLOBAL)
+        if parties not in PARTIES_TO_SESSION:
+            from sympc.session import SessionManager
 
-        for key, val in kwargs.items():
-            setattr(session, key, val)
+            session = Session(kwargs["parties"])
+            PARTIES_TO_SESSION[parties] = session
+            SessionManager.setup_mpc(session)
 
-        SessionManager.setup_mpc(session)
-        session.nr_parties = len(kwargs["parties"])
+            for key, val in kwargs.items():
+                setattr(session, key, val)
+        else:
+            session = PARTIES_TO_SESSION[parties]
+
         kwargs.pop("parties")
-
         kwargs["session"] = session
 
     return MPCTensor(secret=_self, **kwargs)

@@ -17,7 +17,6 @@ from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 
 try:
-    # third party
     import syft  # noqa: 401
 
     syft.load_lib("sympc")
