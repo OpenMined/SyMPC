@@ -174,7 +174,10 @@ def count_wraps_rand(
     )
 
     r_shares = MPCTensor.generate_shares(
-        secret=rand_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
+        secret=rand_val,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
     )
     wraps = count_wraps([share.data for share in r_shares])
 

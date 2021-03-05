@@ -8,7 +8,8 @@ from sympc.session import Session
 
 
 class CryptoPrimitiveProvider:
-    """A trusted third party should use this class to generate crypto primitives """
+    """A trusted third party should use this class to generate crypto
+    primitives."""
 
     _func_providers: Dict[str, Callable] = {}
 
@@ -18,15 +19,14 @@ class CryptoPrimitiveProvider:
     @staticmethod
     def generate_primitives(
         op_str: str,
-        sessions: int,
+        sessions: List[Any],
         n_instances: int = 1,
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
-        """
-        Generate "op_str" primitives.
-        The "g_kwargs" (generate kwargs) are passed to the registered generator function
-        The "p_kwargs" (populate kwargs) are passed to the registered populate function
+        """Generate "op_str" primitives. The "g_kwargs" (generate kwargs) are
+        passed to the registered generator function The "p_kwargs" (populate
+        kwargs) are passed to the registered populate function.
 
         :return: list of primitives
         :rtype: list of Any Type
@@ -37,7 +37,9 @@ class CryptoPrimitiveProvider:
 
         generator = CryptoPrimitiveProvider._func_providers[op_str]
 
-        primitives_sequential = [generator(**g_kwargs) for _ in range(n_instances)]
+        # TODO: put back support for SPDZ
+        # primitives_sequential = [generator(**g_kwargs) for _ in range(n_instances)]
+        primitives = generator(**g_kwargs)
 
         """
         Example -- for n_instances=2 and n_parties=2:
@@ -55,13 +57,11 @@ class CryptoPrimitiveProvider:
 
         The first party (party 0) receives Row 0 and the second party (party 1) receives Row 1
         """
-        primitives = list(zip(*map(lambda x: zip(*x), primitives_sequential)))
+        # primitives = list(zip(*map(lambda x: zip(*x), primitives_sequential))) TODO
 
         if p_kwargs is not None:
-            """
-            Do not transfer the primitives if there is not
-            specified a values for populate kwargs
-            """
+            """Do not transfer the primitives if there is not specified a
+            values for populate kwargs."""
             CryptoPrimitiveProvider._transfer_primitives_to_parties(
                 op_str, primitives, sessions, p_kwargs
             )
@@ -71,7 +71,7 @@ class CryptoPrimitiveProvider:
 
         # Since we do not have (YET!) the possiblity to return typed tuples from a remote
         # execute function we are using this
-        return primitives_sequential
+        return primitives  # TODO
 
     @staticmethod
     def _transfer_primitives_to_parties(
@@ -90,7 +90,7 @@ class CryptoPrimitiveProvider:
 
         for primitives_party, session in zip(primitives, sessions):
             session.crypto_store.populate_store(
-                op_str, list(primitives_party), **p_kwargs
+                op_str, primitives_party, **p_kwargs  # TODO
             )
 
     @staticmethod

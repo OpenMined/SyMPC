@@ -3,9 +3,9 @@
 # stdlib
 import operator
 from typing import Any
-from typing import Optional
-from typing import List
 from typing import Dict
+from typing import List
+from typing import Optional
 from typing import Union
 
 # third party
@@ -13,7 +13,6 @@ import torch
 
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
-
 
 FORWARD_TENSOR_ATTRS = {"unsqueeze", "shape"}
 
@@ -285,6 +284,9 @@ class ShareTensor:
     @property
     def shape(self) -> Any:
         return self.tensor.shape
+
+    def numel(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        return self.tensor.numel(*args, **kwargs)
 
     def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
         tensor = self.tensor.unsqueeze(*args, **kwargs)

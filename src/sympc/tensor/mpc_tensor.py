@@ -72,6 +72,7 @@ class MPCTensor:
             raise ValueError("setup_mpc was not called on the session")
 
         self.mpc_type = mpc_type
+        self.shape = None
 
         if secret is not None:
             """In the case the secret is hold by a remote party then we use the
@@ -579,13 +580,13 @@ class MPCTensor:
     def __repr__(self):
         return self.__str__()
 
-    def gt(self, other) -> bool:
+    def numel(self) -> int:
+        return self.share_ptrs[0].numel()
+
+    def le(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
 
-        if isinstance(other, MPCTensor):
-            raise ValueError("Only compare with public values")
-
-        res = protocol.relu_deriv(self - other - 1)
+        res = protocol.le(self, other)
         return res
 
     __add__ = add
@@ -597,4 +598,4 @@ class MPCTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
-    __gt__ = gt
+    __le__ = le
