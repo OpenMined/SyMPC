@@ -5,7 +5,6 @@ from typing import List
 
 # third party
 import pytest
-
 import syft as sy
 
 
