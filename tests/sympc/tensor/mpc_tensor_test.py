@@ -250,16 +250,16 @@ def test_generate_shares_session(get_clients) -> None:
     assert sum(shares_from_share_tensor) == sum(shares_from_secret)
 
 
-def test_share_method_parties(get_clients) -> None:
+def test_share_get_method_parties(get_clients) -> None:
     clients = get_clients(2)
 
     x_secret = torch.Tensor([1.0, 2.0, 5.0])
     mpc_tensor = x_secret.share(parties=clients)
 
-    assert all(mpc_tensor.reconstruct() == x_secret)
+    assert all(mpc_tensor.get() == x_secret)
 
 
-def test_share_method_session(get_clients) -> None:
+def test_share_get_method_session(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -267,4 +267,4 @@ def test_share_method_session(get_clients) -> None:
     x_secret = torch.Tensor([5.0, 6.0, 7.0])
     mpc_tensor = x_secret.share(session=session)
 
-    assert all(mpc_tensor.reconstruct() == x_secret)
+    assert all(mpc_tensor.get() == x_secret)

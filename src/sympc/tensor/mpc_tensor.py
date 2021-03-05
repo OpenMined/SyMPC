@@ -317,6 +317,8 @@ class MPCTensor:
 
         return plaintext
 
+    get = reconstruct
+
     def get_shares(self):
         """Get the shares."""
         res = self.reconstruct(get_shares=True)
