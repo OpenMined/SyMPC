@@ -16,4 +16,4 @@
 # scipy==1.0
 #
 torch>=1.6,<1.8
-torchcsprng
+torchcsprng<0.2.0
