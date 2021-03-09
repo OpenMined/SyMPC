@@ -9,5 +9,6 @@ mypy==0.790
 papermill==2.3.1
 pep8-naming==0.11.1
 pytest==6.2.2
+notebook==6.2.0
 pytest-cov==2.10.1
 git+git://github.com/OpenMined/PySyft.git@dev#egg=syft
