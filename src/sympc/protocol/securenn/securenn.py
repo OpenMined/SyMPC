@@ -2,7 +2,6 @@
 import torch
 import torchcsprng as csprng
 
-import sympc
 from sympc.protocol.protocol import Protocol
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
@@ -83,12 +82,7 @@ class SecureNN(metaclass=Protocol):
 
     @staticmethod
     def share_convert_parties(share: ShareTensor) -> ShareTensor:
-        session = x.session
-        ring_size = session.riing_size
-
-        przs_share = session.przs_generate_random_share(share, share.tensor.shape)
-        res = przs_share + share
-        return res
+        pass
 
     @staticmethod
     def relu_deriv(x: MPCTensor) -> MPCTensor:
