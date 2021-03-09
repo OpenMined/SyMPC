@@ -1,9 +1,5 @@
-"""
-The implementation for the Session
-It is used to identify a MPC computation done between multiple parties
-
-This would be used in case a party is involved in multipel MPC session,
-this one is used to identify in which one is used
+"""The implementation for the Session. It is used to identify a MPC computation
+done between multiple parties.
 
 Example:
     Alice Bob and John wants to do some computation
@@ -16,7 +12,6 @@ Example:
 
 # stdlib
 import operator
-import secrets
 from typing import Any
 from typing import Dict
 from typing import List
@@ -35,8 +30,7 @@ from sympc.session.utils import get_type_from_ring
 
 
 class Session:
-    """
-    Class used to keep information about computation done in SMPC
+    """Class used to keep information about computation done in SMPC.
 
     Arguments:
         parties (Optional[List[Any]): used to send/receive messages
@@ -105,7 +99,7 @@ class Session:
         ttp: Optional[Any] = None,
         uuid: Optional[UUID] = None,
     ) -> None:
-        """ Initializer for the Session """
+        """Initializer for the Session."""
 
         self.uuid = uuid4() if uuid is None else uuid
 
@@ -128,8 +122,12 @@ class Session:
         self.trusted_third_party = ttp
 
         # The CryptoStore is initialized at each party when it is unserialized
-        self.crypto_store: Optional[Any] = None  # TODO: this should be CryptoStore
+        self.crypto_store: Optional[
+            Dict[Any, Any]
+        ] = None  # TODO: this should be CryptoStore
+
         self.protocol: Optional[str] = None
+
         self.config = config if config else Config()
 
         self.przs_generators: List[List[torch.Generator]] = []
@@ -144,17 +142,11 @@ class Session:
         self.min_value = -(ring_size) // 2
         self.max_value = (ring_size - 1) // 2
 
-    def populate_crypto_store(
-        self, op_str: str, primitives: Any, *args: List[Any], **kwargs: Dict[Any, Any]
-    ) -> None:
-        self.crypto_store.populate_store(op_str, primitives, *args, **kwargs)
-
     def przs_generate_random_share(
         self, shape: Union[tuple, torch.Size], generators: List[torch.Generator]
     ) -> Any:
-        """Generate a random share using the two generators that are
-        hold by a party.
-        """
+        """Generate a random share using the two generators that are hold by a
+        party."""
 
         from sympc.tensor import ShareTensor
 
@@ -177,73 +169,14 @@ class Session:
 
         return share
 
-    @staticmethod
-    def setup_mpc(session: "Session") -> None:
-        """Must be called to send the session to all other parties involved in the
-        computation.
-        """
-
-        for rank, party in enumerate(session.parties):
-            # Assign a new rank before sending it to another party
-            session.rank = rank
-            session.session_ptrs.append(session.send(party))  # type: ignore
-
-        nr_parties = len(session.parties)
-        Session._setup_przs(session)
-
-    @staticmethod
-    def _setup_przs(session: "Session") -> None:
-        """Setup the Pseudo-Random-Zero-Share generators to the parties involved
-        in the communication.
-
-        Assume there are 3 parties:
-
-        Step 1: Generate 3 seeds and send them in a ring like formation such that
-        2 parties will generate the same random number at a given moment:
-        - Party 1 holds G1 and G2
-        - Party 2 holds G2 and G3
-        - Party 3 holds G3 and
-
-        Step 2: When they generate a PRZS:
-            Party 1 generates: Next(G1) - Next(G2)
-            Party 2 generates: Next(G2) - Next(G3)
-            Party 3 generates: Next(G3) - Next(G1)
-            -------------------------------------- +
-                         PRZS: 0
-
-        Step 3: The party that has the secret will add it to their own share
-        """
-        nr_parties = len(session.parties)
-
-        # Create the remote lists where we add the generators
-        session.przs_generators = [
-            party.python.List([None, None]) for party in session.parties
-        ]
-
-        parties = session.parties
-
-        for rank in range(nr_parties):
-            seed = secrets.randbits(32)
-            next_rank = (rank + 1) % nr_parties
-
-            gen_current = session.parties[rank].sympc.session.get_generator(seed)
-            gen_next = parties[next_rank].sympc.session.get_generator(seed)
-
-            session.przs_generators[rank][1] = gen_current
-            session.przs_generators[next_rank][0] = gen_next
-
     def __eq__(self, other: Any) -> bool:
-        """
-        Check if "self" is equal with another object given a set of attributes
-        to compare.
+        """Check if "self" is equal with another object given a set of
+        attributes to compare.
 
         :return: if self and other are equal
         :rtype: bool
         """
         if not isinstance(other, self.__class__):
-            return False
-
-        if self.__slots__ != other.__slots__:
             return False
 
         attr_getters = [

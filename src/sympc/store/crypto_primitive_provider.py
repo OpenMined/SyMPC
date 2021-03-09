@@ -8,7 +8,8 @@ from sympc.session import Session
 
 
 class CryptoPrimitiveProvider:
-    """A trusted third party should use this class to generate crypto primitives """
+    """A trusted third party should use this class to generate crypto
+    primitives."""
 
     _func_providers: Dict[str, Callable] = {}
 
@@ -23,10 +24,9 @@ class CryptoPrimitiveProvider:
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
-        """
-        Generate "op_str" primitives.
-        The "g_kwargs" (generate kwargs) are passed to the registered generator function
-        The "p_kwargs" (populate kwargs) are passed to the registered populate function
+        """Generate "op_str" primitives. The "g_kwargs" (generate kwargs) are
+        passed to the registered generator function The "p_kwargs" (populate
+        kwargs) are passed to the registered populate function.
 
         :return: list of primitives
         :rtype: list of Any Type
@@ -58,10 +58,8 @@ class CryptoPrimitiveProvider:
         primitives = list(zip(*map(lambda x: zip(*x), primitives_sequential)))
 
         if p_kwargs is not None:
-            """
-            Do not transfer the primitives if there is not
-            specified a values for populate kwargs
-            """
+            """Do not transfer the primitives if there is not specified a
+            values for populate kwargs."""
             CryptoPrimitiveProvider._transfer_primitives_to_parties(
                 op_str, primitives, sessions, p_kwargs
             )
@@ -77,7 +75,7 @@ class CryptoPrimitiveProvider:
     def _transfer_primitives_to_parties(
         op_str: str,
         primitives: List[Any],
-        sessions: List["Session"],
+        sessions: List[Session],
         p_kwargs: Dict[str, Any],
     ) -> None:
         if not isinstance(primitives, list):
@@ -89,7 +87,9 @@ class CryptoPrimitiveProvider:
             )
 
         for primitives_party, session in zip(primitives, sessions):
-            session.populate_crypto_store(op_str, list(primitives_party), **p_kwargs)
+            session.crypto_store.populate_store(
+                op_str, list(primitives_party), **p_kwargs
+            )
 
     @staticmethod
     def get_state() -> None:
