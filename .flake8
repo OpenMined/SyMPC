@@ -6,7 +6,8 @@ ignore = N801, N802, N805, N806, N812, N803, N804
          W605, W503
          D100, D101, D102, D103, D104, D105, D107,
          D200, D202, D205, D209, D210, D400, D402,
-         D403,D401, D412
+         D403,D401, D412,
+         DAR101, DAR201, DAR401, DAR103
 max-line-length = 100
 exclude = .git,.eggs,__pycache__,build,dist,venv
 max-complexity = 11
