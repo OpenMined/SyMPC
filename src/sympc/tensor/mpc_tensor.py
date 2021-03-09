@@ -3,6 +3,8 @@
 # stdlib
 from functools import lru_cache
 import operator
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -314,6 +316,8 @@ class MPCTensor:
 
         return plaintext
 
+    get = reconstruct
+
     def get_shares(self):
         """Get the shares."""
         res = self.reconstruct(get_shares=True)
@@ -562,3 +566,36 @@ class MPCTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+
+
+PARTIES_TO_SESSION: Dict[Any, Session] = {}
+
+
+def share(_self, **kwargs: Dict[Any, Any]):
+    session = None
+
+    if "parties" not in kwargs and "session" not in kwargs:
+        raise ValueError("Parties or Session should be provided as a kwarg")
+
+    if "session" not in kwargs:
+        parties = frozenset({client.id for client in kwargs["parties"]})
+
+        if parties not in PARTIES_TO_SESSION:
+            from sympc.session import SessionManager
+
+            session = Session(kwargs["parties"])
+            PARTIES_TO_SESSION[parties] = session
+            SessionManager.setup_mpc(session)
+
+            for key, val in kwargs.items():
+                setattr(session, key, val)
+        else:
+            session = PARTIES_TO_SESSION[parties]
+
+        kwargs.pop("parties")
+        kwargs["session"] = session
+
+    return MPCTensor(secret=_self, **kwargs)
+
+
+METHODS_TO_ADD = [share]

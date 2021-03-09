@@ -75,7 +75,7 @@ class CryptoPrimitiveProvider:
     def _transfer_primitives_to_parties(
         op_str: str,
         primitives: List[Any],
-        sessions: List["Session"],
+        sessions: List[Session],
         p_kwargs: Dict[str, Any],
     ) -> None:
         if not isinstance(primitives, list):
