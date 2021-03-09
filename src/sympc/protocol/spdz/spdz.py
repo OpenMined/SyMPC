@@ -1,6 +1,5 @@
-"""
-SPDZ mechanism used for multiplication
-Contains functions that are run at:
+"""SPDZ mechanism used for multiplication Contains functions that are run at:
+
 * the party that orchestrates the computation
 * the parties that hold the shares
 """
@@ -27,7 +26,8 @@ EXPECTED_OPS = {"mul", "matmul"}
 
 
 def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
-    """Function that is executed by the orchestrator to multiply two secret values
+    """Function that is executed by the orchestrator to multiply two secret
+    values.
 
     :return: a new set of shares that represents the multiplication
            between two secret values
@@ -53,7 +53,7 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
         p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
     )
 
-    a_sh, b_sh, c_sh = primitives[0]
+    a_sh, b_sh, c_sh = list(zip(*list(zip(*primitives))[0]))
 
     a_mpc = MPCTensor(shares=a_sh, shape=x.shape, session=session)
     b_mpc = MPCTensor(shares=b_sh, shape=y.shape, session=session)
@@ -77,8 +77,8 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
 
 
 def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
-    """Function that is executed by the orchestrator to divide a secret by a value
-    (that value is public)
+    """Function that is executed by the orchestrator to divide a secret by a
+    value (that value is public)
 
     :return: a new set of shares that represents the multiplication
            between two secret values
@@ -99,7 +99,7 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
         p_kwargs=None,
     )
 
-    r_sh, theta_r_sh = primitives[0]
+    r_sh, theta_r_sh = list(zip(*list(zip(*primitives))[0]))
 
     r_mpc = MPCTensor(shares=r_sh, session=session, shape=x.shape)
 
@@ -129,9 +129,8 @@ def div_wraps(
     z_shares: List[torch.Tensor],
     y: Union[torch.Tensor, int],
 ) -> ShareTensor:
-    """
-    From CrypTen
-    Privately computes the number of wraparounds for a set a shares
+    """From CrypTen Privately computes the number of wraparounds for a set a
+    shares.
 
     To do so, we note that:
         [theta_x] = theta_z + [beta_xr] - [theta_r] - [eta_xr]

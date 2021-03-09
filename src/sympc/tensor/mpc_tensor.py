@@ -589,6 +589,44 @@ class MPCTensor:
         res = protocol.le(self, other)
         return res
 
+    def ge(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+
+        res = protocol.le(other, self)
+        return res
+
+    def lt(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        fp_encoder = FixedPointEncoder(
+            base=self.session.config.encoder_base,
+            precision=self.session.config.encoder_precision,
+        )
+
+        one = fp_encoder.decode(1)
+
+        res = protocol.le(self + one, other)
+        return res
+
+    def gt(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        fp_encoder = FixedPointEncoder(
+            base=self.session.config.encoder_base,
+            precision=self.session.config.encoder_precision,
+        )
+
+        one = fp_encoder.decode(1)
+
+        res = protocol.le(other + one, self)
+        return res
+
+    def eq(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        res = protocol.eq(self, other)
+        return res
+
+    def ne(self, other: "MPCTensor") -> "MPCTensor":
+        return 1 - self.eq(other)
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
@@ -599,3 +637,8 @@ class MPCTensor:
     __rmatmul__ = rmatmul
     __truediv__ = div
     __le__ = le
+    __ge__ = ge
+    __lt__ = lt
+    __gt__ = gt
+    __eq__ = eq
+    __ne__ = ne

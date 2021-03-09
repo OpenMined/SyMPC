@@ -14,7 +14,7 @@ import sycret
 import torch as th
 import torchcsprng as csprng  # type: ignore
 
-from sympc.protocol import Protocol
+from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
@@ -107,6 +107,7 @@ def fss_op(x1, x2, op="eq"):
     shares = parallel_execution(evaluate, session.parties)(args)
 
     response = MPCTensor(session=session, shares=shares)
+    response.shape = x1.shape
     return response
 
 
@@ -128,7 +129,7 @@ def mask_builder(
 
 
 # share level
-def evaluate(session: Session, b, x_masked, op, dtype="long") -> th.Tensor:
+def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
     if op == "eq":
         return eq_evaluate(session, b, x_masked)
     elif op == "comp":
@@ -147,8 +148,10 @@ def eq_evaluate(session: Session, b, x_masked) -> ShareTensor:
 
     result = DPF.eval(b.numpy().item(), x_masked.numpy(), keys)
 
-    share_result = ShareTensor(session=session)
-    share_result.tensor = th.tensor(result)
+    share_result = ShareTensor(
+        data=th.tensor(result), session=session
+    )  # TODO add dtype like in comp_evaluate
+
     return share_result
 
 
@@ -165,8 +168,7 @@ def comp_evaluate(session: Session, b, x_masked, dtype=None) -> ShareTensor:
     dtype_options = {None: th.long, "int": th.int32, "long": th.long}
     result = th.tensor(result_share, dtype=dtype_options[dtype])
 
-    share_result = ShareTensor(session=session)
-    share_result.tensor = result
+    share_result = ShareTensor(data=result, session=session)
 
     return share_result
 
@@ -221,12 +223,44 @@ def _ensure_fss_store(store: Dict[Any, Any]):
             store[fss_key] = [[]]
 
 
-@register_primitive_generator("fss_comp")
-def generate_primitive(
-    n_values: int,
-) -> List[Any]:
-    primitives = keygen(n_values, op="comp")
+def _generate_primitive(op: str, n_values: int) -> List[Any]:
+    primitives = keygen(n_values, op=op)
     return [th.tensor(p) for p in primitives]
+
+
+@register_primitive_generator("fss_eq")
+def generate_primitive(n_values: int) -> List[Any]:
+    return _generate_primitive("eq", n_values)
+
+
+@register_primitive_generator("fss_comp")
+def generate_primitive(n_values: int) -> List[Any]:
+    return _generate_primitive("comp", n_values)
+
+
+def _add_primitive(
+    op: str,
+    store: Dict[Any, Any],
+    primitives: Iterable[Any],
+) -> None:
+    _ensure_fss_store(store)
+    current_primitives = store[op]
+
+    primitives = np.array(primitives)
+
+    if len(current_primitives) == 0 or len(current_primitives[0]) == 0:
+        store[op] = [primitives]
+    else:
+        # This branch never happens with on-the-fly primitives
+        current_primitives.append(primitives)
+
+
+@register_primitive_store_add("fss_eq")
+def add_primitive(
+    store: Dict[Any, Any],
+    primitives: Iterable[Any],
+) -> None:
+    return _add_primitive("fss_eq", store, primitives)
 
 
 @register_primitive_store_add("fss_comp")
@@ -234,27 +268,18 @@ def add_primitive(
     store: Dict[Any, Any],
     primitives: Iterable[Any],
 ) -> None:
-    _ensure_fss_store(store)
-    current_primitives = store["fss_comp"]
-
-    primitives = np.array(primitives)
-
-    if len(current_primitives) == 0 or len(current_primitives[0]) == 0:
-        store["fss_comp"] = [primitives]
-    else:
-        # This branch never happens with on-the-fly primitives
-        current_primitives.append(primitives)
+    return _add_primitive("fss_comp", store, primitives)
 
 
-@register_primitive_store_get("fss_comp")
-def get_primitive(
+def _get_primitive(
+    op: str,
     store: Dict[Tuple[int, int], List[Any]],
     nr_instances: int,
     remove: bool = True,
     **kwargs,
 ) -> Any:
     _ensure_fss_store(store)
-    primitive_stack = store["fss_comp"]
+    primitive_stack = store[op]
 
     available_instances = len(primitive_stack[0]) if len(primitive_stack) > 0 else -1
 
@@ -269,3 +294,23 @@ def get_primitive(
             f"Not enough primitives for fss: {nr_instances} required, "
             f"but only {available_instances} available"
         )
+
+
+@register_primitive_store_get("fss_eq")
+def get_primitive(
+    store: Dict[Tuple[int, int], List[Any]],
+    nr_instances: int,
+    remove: bool = True,
+    **kwargs,
+) -> Any:
+    return _get_primitive("fss_eq", store, nr_instances, remove, **kwargs)
+
+
+@register_primitive_store_get("fss_comp")
+def get_primitive(
+    store: Dict[Tuple[int, int], List[Any]],
+    nr_instances: int,
+    remove: bool = True,
+    **kwargs,
+) -> Any:
+    return _get_primitive("fss_comp", store, nr_instances, remove, **kwargs)

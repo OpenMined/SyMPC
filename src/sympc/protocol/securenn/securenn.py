@@ -1,13 +1,13 @@
+# third party
 import torch
+import torchcsprng as csprng
 
 import sympc
-from sympc.protocol import Protocol
+from sympc.protocol.protocol import Protocol
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import decompose
 from sympc.utils import parallel_execution
-
-import torchcsprng as csprng
 
 generator = csprng.create_random_device_generator()
 
@@ -15,8 +15,7 @@ generator = csprng.create_random_device_generator()
 class SecureNN(metaclass=Protocol):
     @staticmethod
     def private_compare(x_bit: MPCTensor, r: torch.Tensor, l: int) -> MPCTensor:
-        """
-        Perform privately x > r
+        """Perform privately x > r.
 
         Args:
             x (MPCTensor): the private tensor
@@ -93,8 +92,7 @@ class SecureNN(metaclass=Protocol):
 
     @staticmethod
     def relu_deriv(x: MPCTensor) -> MPCTensor:
-        """
-        Compute the derivative of ReLu
+        """Compute the derivative of ReLu.
 
         Args:
             x (MPCTensor): the privately shared tensor

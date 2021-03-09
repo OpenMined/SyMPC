@@ -35,29 +35,11 @@ class CryptoPrimitiveProvider:
         if op_str not in CryptoPrimitiveProvider._func_providers:
             raise ValueError(f"{op_str} not registered")
 
+        assert n_instances == 1  # nosec
+
         generator = CryptoPrimitiveProvider._func_providers[op_str]
 
-        # TODO: put back support for SPDZ
-        # primitives_sequential = [generator(**g_kwargs) for _ in range(n_instances)]
         primitives = generator(**g_kwargs)
-
-        """
-        Example -- for n_instances=2 and n_parties=2:
-        For Beaver Triples the "res" would look like:
-        res = [
-            ([a0_sh_p0, a0_sh_p1], [b0_sh_p0, b0_sh_p1], [c0_sh_p0, c0_sh_p1]),
-            ([a1_sh_p0, a1_sh_p1], [b1_sh_p0, b1_sh_p1], [c1_sh_p0, c1_sh_p1])
-        ]
-
-        We want to send to each party the values they should hold:
-        primitives = [
-            ((a0_sh_p0, b0_sh_p0, c0_sh_p0), (a1_sh_p0, b1_sh_p0, c1_sh_p0)), # (Row 0)
-            ((a0_sh_p1, b0_sh_p1, c0_sh_p1), (a1_sh_p1, b1_sh_p1, c1_sh_p1))  # (Row 1)
-        ]
-
-        The first party (party 0) receives Row 0 and the second party (party 1) receives Row 1
-        """
-        # primitives = list(zip(*map(lambda x: zip(*x), primitives_sequential))) TODO
 
         if p_kwargs is not None:
             """Do not transfer the primitives if there is not specified a
@@ -71,7 +53,7 @@ class CryptoPrimitiveProvider:
 
         # Since we do not have (YET!) the possiblity to return typed tuples from a remote
         # execute function we are using this
-        return primitives  # TODO
+        return primitives
 
     @staticmethod
     def _transfer_primitives_to_parties(
