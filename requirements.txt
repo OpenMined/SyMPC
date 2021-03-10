@@ -16,7 +16,5 @@ sycret
 # numpy==1.13.3
 # scipy==1.0
 #
-torch>=1.6
-torchcsprng
 torch>=1.6,<1.8
 torchcsprng<0.2.0
