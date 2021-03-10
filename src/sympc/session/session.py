@@ -128,12 +128,10 @@ class Session:
             Dict[Any, Any]
         ] = None  # TODO: this should be CryptoStore
 
-        self.protocol: Optional[str] = None
-
         if protocol not in Protocol.registered_protocols:
             raise ValueError(f"{protocol} not registered!")
 
-        self.protocol = Protocol.registered_protocols[protocol]
+        self.protocol: Protocol = Protocol.registered_protocols[protocol]
 
         self.config = config if config else Config()
 
