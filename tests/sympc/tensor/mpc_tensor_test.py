@@ -327,3 +327,42 @@ def test_comp_public_mpc(get_clients, protocol, op_str) -> None:
     expected_result = op(x_secret, y_secret)
 
     assert (result == expected_result).all()
+
+    
+def test_share_get_method_parties(get_clients) -> None:
+    clients = get_clients(2)
+
+    x_secret = torch.Tensor([1.0, 2.0, 5.0])
+    expected_res = x_secret * x_secret
+
+    mpc_tensor = x_secret.share(parties=clients)
+    res = mpc_tensor * mpc_tensor
+
+    assert all(res.get() == expected_res)
+
+
+def test_share_get_method_parties_exception(get_clients) -> None:
+    clients = get_clients(4)
+
+    x_secret = torch.Tensor([1.0, 2.0, 5.0])
+    expected_res = x_secret * x_secret
+
+    mpc_tensor1 = x_secret.share(parties=clients[:2])
+    mpc_tensor2 = x_secret.share(parties=clients[2:])
+
+    with pytest.raises(ValueError):
+        res = mpc_tensor1 * mpc_tensor2
+
+
+def test_share_get_method_session(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.Tensor([5.0, 6.0, 7.0])
+    expected_res = x_secret * x_secret
+
+    mpc_tensor = x_secret.share(session=session)
+    res = mpc_tensor * mpc_tensor
+
+    assert all(res.get() == expected_res)

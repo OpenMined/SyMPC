@@ -72,6 +72,11 @@ jobs:
           pip install bandit==1.7.0
           bandit -r src -ll
 
+      - name: Run darglint - Ignore Errors
+        continue-on-error: true
+        run: |
+          darglint src tests
+
       - name: Run tests
         run: |
           pytest tests/ --deselect=tests/notebooks
