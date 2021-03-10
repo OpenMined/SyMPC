@@ -73,33 +73,35 @@ def fss_op(x1, x2, op="eq"):
 
     assert not th.cuda.is_available()  # nosec
 
-    # TODO switch to x2 when False to get session
-    assert isinstance(x1, MPCTensor)  # nosec
+    # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
+    # FIXME: we cast it into a MPCTensor at the expense of extra communication
     session = x1.session
     dtype = session.tensor_type
 
-    n_values = x1.numel().get()
+    # FIXME: ideally just x1.numel().get() would be sufficient but when x1 is a singular
+    # FIXME: value, its shape will be inferior to x1 - x2. Idea: use the shape of both
+    # FIXME: which should be available to deduce numel, to avoid extra communication
+    diff = x1 - x2
+    shape = diff.shape
+    n_values = diff.numel().get()
 
     CryptoPrimitiveProvider.generate_primitives(
         f"fss_{op}",
         sessions=session.session_ptrs,
-        g_kwargs={
-            "n_values": n_values,
-        },
+        g_kwargs={"n_values": n_values},
         p_kwargs={},
     )
 
-    common_args = [op]
     args = zip(session.session_ptrs, x1.share_ptrs, x2.share_ptrs)
-    args = [list(el) + common_args for el in args]
+    args = [list(el) + [op] for el in args]
 
     shares = parallel_execution(mask_builder, session.parties)(args)
 
-    # TODO: don't do .get(), this should be done remotely
+    # TODO: don't do .reconstruct(), this should be done remotely between the evaluators
     mask_value = MPCTensor(shares=shares, session=session)
     mask_value = mask_value.reconstruct(decode=False) % 2 ** n
 
-    # TODO add dtype to args
+    # TODO: add dtype to args
     args = [
         (session.session_ptrs[i], th.IntTensor([i]), mask_value, op) for i in range(2)
     ]
@@ -107,7 +109,7 @@ def fss_op(x1, x2, op="eq"):
     shares = parallel_execution(evaluate, session.parties)(args)
 
     response = MPCTensor(session=session, shares=shares)
-    response.shape = x1.shape
+    response.shape = shape
     return response
 
 
