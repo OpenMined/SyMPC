@@ -46,14 +46,13 @@ class MPCTensor:
         shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
-    __slots__ = {"share_ptrs", "session", "shape", "mpc_type"}
+    __slots__ = {"share_ptrs", "session", "shape"}
 
     def __init__(
         self,
         session: Optional[Session] = None,
         secret: Optional[Union[ShareTensor, torch.Tensor, float, int]] = None,
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
-        mpc_type: str = "arithmetic",
         shares: Optional[List[ShareTensor]] = None,
     ) -> None:
         """Initializer for the MPCTensor (ShareTensorControlCenter It can be
@@ -73,7 +72,6 @@ class MPCTensor:
         if len(self.session.session_ptrs) == 0:
             raise ValueError("setup_mpc was not called on the session")
 
-        self.mpc_type = mpc_type
         self.shape = None
 
         if secret is not None:
@@ -88,14 +86,11 @@ class MPCTensor:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
                 # party that holds the secret will add it to its share
                 self.share_ptrs = MPCTensor.generate_przs(
-                    shape=self.shape, session=self.session, mpc_type=self.mpc_type
+                    shape=self.shape, session=self.session
                 )
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:  # type: ignore
-                        if mpc_type == "arithmetic":
-                            self.share_ptrs[i] = self.share_ptrs[i] + secret
-                        else:
-                            self.share_ptrs[i] = self.share_ptrs[i] ^ secret
+                        self.share_ptrs[i] = self.share_ptrs[i] + secret
                         return
             else:
                 tensor_type = self.session.tensor_type
@@ -103,7 +98,6 @@ class MPCTensor:
                     secret=secret,
                     nr_parties=self.session.nr_parties,
                     tensor_type=tensor_type,
-                    mpc_type=mpc_type,
                 )
 
         if not ispointer(shares[0]):
@@ -177,7 +171,6 @@ class MPCTensor:
     @staticmethod
     def generate_przs(
         shape: Union[torch.Size, List[int], Tuple[int, ...]],
-        mpc_type: str,
         session: Session,
     ) -> List[ShareTensor]:
         """Generate Pseudo-Random-Zero Shares at the parties involved in the
@@ -198,7 +191,7 @@ class MPCTensor:
             session.session_ptrs, session.przs_generators
         ):
             share_ptr = session_ptr.przs_generate_random_share(
-                shape=shape, generators=generators_ptr, mpc_type=mpc_type
+                shape=shape, generators=generators_ptr
             )
             shares.append(share_ptr)
 
@@ -208,7 +201,6 @@ class MPCTensor:
     def generate_shares(
         secret: Union[ShareTensor, torch.Tensor, float, int],
         nr_parties: int,
-        mpc_type: str = "arithmetic",
         tensor_type: Optional[torch.dtype] = None,
         **kwargs,
     ) -> List[ShareTensor]:
@@ -250,13 +242,7 @@ class MPCTensor:
                 "Secret should be a ShareTensor, torchTensor, float or int."
             )
 
-        if mpc_type == "arithmetic":
-            op = operator.sub
-        elif mpc_type == "binary":
-            op = operator.xor
-        else:
-            raise ValueError(f"mpc_type {mpc_type} now known!")
-
+        op = operator.sub
         shape = secret.shape
 
         random_shares = []
@@ -326,12 +312,7 @@ class MPCTensor:
         if get_shares:
             return shares
 
-        if self.mpc_type == "arithmetic":
-            plaintext = sum(shares)
-        else:
-            plaintext = shares[0]
-            for share in shares[1:]:
-                plaintext ^= share
+        plaintext = sum(shares)
 
         if decode:
             fp_encoder = FixedPointEncoder(
