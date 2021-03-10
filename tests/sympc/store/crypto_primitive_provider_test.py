@@ -20,16 +20,15 @@ PRIMITIVE_NR_ELEMS = 4
 
 
 @register_primitive_generator("test")
-def provider_test(nr_parties: int) -> List[Tuple[int]]:
-    """This function will generate the values ([0, 1, ...], [0, 1, ...], [0, 1,
+def provider_test(nr_parties: int, nr_instances: int) -> List[Tuple[int]]:
+    """This function will generate the values:
 
-    ...], [0, 1, ...])
-
-    And the CryptoProvider will arrange them like:
-
-    [((0, 0, 0, 0), (1, 1, 1, 1), ...)]
+    [((0, 0, 0, 0), (0, 0, 0, 0), ...), ((1, 1, 1, 1), (1, 1, 1, 1)), ...]
     """
-    primitives = (list(range(nr_parties)) for _ in range(PRIMITIVE_NR_ELEMS))
+    primitives = [
+        tuple(tuple(i for _ in range(PRIMITIVE_NR_ELEMS)) for _ in range(nr_instances))
+        for i in range(nr_parties)
+    ]
     return primitives
 
 
@@ -91,35 +90,40 @@ def test_generate_primitive(
     session = Session(parties=parties)
     SessionManager.setup_mpc(session)
 
-    g_kwargs = {"nr_parties": nr_parties}
+    g_kwargs = {"nr_parties": nr_parties, "nr_instances": nr_instances}
     res = CryptoPrimitiveProvider.generate_primitives(
         "test",
-        n_instances=nr_instances,
         sessions=session.session_ptrs,
         g_kwargs=g_kwargs,
         p_kwargs=None,
     )
 
     assert isinstance(res, list)
-    assert len(res) == nr_instances
+    assert len(res) == nr_parties
 
-    for i, primitives in enumerate(res[0]):
-        assert primitives == tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
+    for i, primitives in enumerate(res):
+        for primitive in primitives:
+            assert primitive == tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
 
 
-@pytest.mark.parametrize("nr_instances", [1, 5, 100])
+@pytest.mark.parametrize(
+    ("nr_instances", "nr_instances_retrieve"),
+    [(1, 1), (5, 4), (5, 5), (100, 25), (100, 100)],
+)
 @pytest.mark.parametrize("nr_parties", [2, 3, 4])
 def test_generate_and_transfer_primitive(
-    get_clients: Callable, nr_parties: int, nr_instances: int
+    get_clients: Callable,
+    nr_parties: int,
+    nr_instances: int,
+    nr_instances_retrieve: int,
 ) -> None:
     parties = get_clients(nr_parties)
     session = Session(parties=parties)
     SessionManager.setup_mpc(session)
 
-    g_kwargs = {"nr_parties": nr_parties}
+    g_kwargs = {"nr_parties": nr_parties, "nr_instances": nr_instances}
     CryptoPrimitiveProvider.generate_primitives(
         "test",
-        n_instances=nr_instances,
         sessions=session.session_ptrs,
         g_kwargs=g_kwargs,
         p_kwargs={},
@@ -127,5 +131,10 @@ def test_generate_and_transfer_primitive(
 
     for i in range(nr_parties):
         remote_crypto_store = session.session_ptrs[i].crypto_store
-        primitives = remote_crypto_store.get_primitives_from_store("test").get()
-        assert primitives == [tuple(i for _ in range(PRIMITIVE_NR_ELEMS))]
+        primitives = remote_crypto_store.get_primitives_from_store(
+            op_str="test", nr_instances=nr_instances_retrieve
+        ).get()
+        assert primitives == [
+            tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
+            for _ in range(nr_instances_retrieve)
+        ]

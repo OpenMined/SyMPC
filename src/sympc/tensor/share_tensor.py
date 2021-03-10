@@ -3,6 +3,8 @@
 # stdlib
 import operator
 from typing import Any
+from typing import Dict
+from typing import List
 from typing import Optional
 from typing import Union
 
@@ -11,6 +13,8 @@ import torch
 
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
+
+FORWARD_TENSOR_ATTRS = {"unsqueeze", "shape"}
 
 
 class ShareTensor:
@@ -168,6 +172,16 @@ class ShareTensor:
 
         return res
 
+    def xor(self, y: Union[int, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        res = ShareTensor(session=self.session)
+
+        if isinstance(y, ShareTensor):
+            res.tensor = self.tensor ^ y.tensor
+        else:
+            res.tensor = self.tensor ^ y
+
+        return res
+
     def matmul(
         self, y: Union[int, float, torch.Tensor, "ShareTensor"]
     ) -> "ShareTensor":
@@ -212,17 +226,9 @@ class ShareTensor:
         return res
 
     def __getattr__(self, attr_name: str) -> Any:
-        """Get the attribute from the ShareTensor. If the attribute is not
-        found at the ShareTensor level, the it would look for in the the
-        "tensor".
-
-        :return: the attribute value
-        :rtype: Anything
-        """
-        # Default to some tensor specific attributes like
-        # size, shape, etc.
         tensor = self.tensor
-        return getattr(tensor, attr_name)
+        res = getattr(tensor, attr_name)
+        return res
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
         """Check if "self" is bigger than "y".
@@ -254,7 +260,7 @@ class ShareTensor:
 
         return out
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     def __eq__(self, other: Any) -> bool:
@@ -273,6 +279,21 @@ class ShareTensor:
 
         return True
 
+    # Forward to tensor methods
+
+    @property
+    def shape(self) -> Any:
+        return self.tensor.shape
+
+    def numel(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        return self.tensor.numel(*args, **kwargs)
+
+    def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        tensor = self.tensor.unsqueeze(*args, **kwargs)
+        res = ShareTensor(session=self.session)
+        res.tensor = tensor
+        return res
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
@@ -282,3 +303,4 @@ class ShareTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+    __xor__ = xor

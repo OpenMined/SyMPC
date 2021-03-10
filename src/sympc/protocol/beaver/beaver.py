@@ -26,7 +26,7 @@ ttp_generator = csprng.create_random_device_generator()
 
 def _get_triples(
     op_str: str, nr_parties: int, a_shape: Tuple[int], b_shape: Tuple[int]
-) -> Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]:
+) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """The Trusted Third Party (TTP) or Crypto Provider should provide this
     triples Currently, the one that orchestrates the communication provides
     those triples."""
@@ -35,24 +35,47 @@ def _get_triples(
         generator=ttp_generator
     )
     a_shares = MPCTensor.generate_shares(
-        a_rand, nr_parties, torch.long, encoder_precision=0
+        secret=a_rand,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
     )
 
     b_rand = torch.empty(size=b_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
     b_shares = MPCTensor.generate_shares(
-        b_rand, nr_parties, torch.long, encoder_precision=0
+        secret=b_rand,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
     )
 
     cmd = getattr(operator, op_str)
 
     c_val = cmd(a_rand, b_rand)
     c_shares = MPCTensor.generate_shares(
-        c_val, nr_parties, torch.long, encoder_precision=0
+        secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
+    triple_sequential = [(a_shares, b_shares, c_shares)]
+    """
+    Example -- for n_instances=2 and n_parties=2:
+    For Beaver Triples the "res" would look like:
+    res = [
+        ([a0_sh_p0, a0_sh_p1], [b0_sh_p0, b0_sh_p1], [c0_sh_p0, c0_sh_p1]),
+        ([a1_sh_p0, a1_sh_p1], [b1_sh_p0, b1_sh_p1], [c1_sh_p0, c1_sh_p1])
+    ]
 
-    return a_shares, b_shares, c_shares
+    We want to send to each party the values they should hold:
+    primitives = [
+        [[a0_sh_p0, b0_sh_p0, c0_sh_p0], [a1_sh_p0, b1_sh_p0, c1_sh_p0]], # (Row 0)
+        [[a0_sh_p1, b0_sh_p1, c0_sh_p1], [a1_sh_p1, b1_sh_p1, c1_sh_p1]]  # (Row 1)
+    ]
+
+    The first party (party 0) receives Row 0 and the second party (party 1) receives Row 1
+    """
+    triple = list(map(list, zip(*map(lambda x: map(list, zip(*x)), triple_sequential))))
+    return triple
 
 
 """ Beaver Operations defined for Multiplication """
@@ -168,12 +191,19 @@ def count_wraps_rand(
     )
 
     r_shares = MPCTensor.generate_shares(
-        rand_val, nr_parties, torch.long, encoder_precision=0
+        secret=rand_val,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
     )
     wraps = count_wraps([share.data for share in r_shares])
 
     theta_r_shares = MPCTensor.generate_shares(
-        wraps, nr_parties, torch.long, encoder_precision=0
+        secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
 
-    return r_shares, theta_r_shares
+    primitives_sequential = [(r_shares, theta_r_shares)]
+    primitives = list(
+        map(list, zip(*map(lambda x: map(list, zip(*x)), primitives_sequential)))
+    )
+    return primitives

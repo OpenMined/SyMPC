@@ -1,9 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-    This package represents the MPC component for Syft
-    For the moment it has some basic functionality, but more would come in the
-    following weeks
-"""
+"""This package represents the MPC component for Syft For the moment it has
+some basic functionality, but more would come in the following weeks."""
 
 # third party
 from pkg_resources import DistributionNotFound
@@ -18,7 +15,7 @@ from . import tensor  # noqa: 401
 
 try:
     # third party
-    import syft  # noqa: 401
+    import syft
 
     syft.load_lib("sympc")
 except ImportError as e:

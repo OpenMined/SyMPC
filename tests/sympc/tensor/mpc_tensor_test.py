@@ -29,9 +29,11 @@ def test_reconstruct(get_clients) -> None:
 
     a_rand = 3
     a = ShareTensor(data=a_rand, encoder_precision=0)
-    a_shares = MPCTensor.generate_shares(a, 2, torch.long)
+    a_shares = MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
 
-    a_shares_copy = MPCTensor.generate_shares(a_rand, 2, torch.long)
+    a_shares_copy = MPCTensor.generate_shares(
+        secret=a_rand, nr_parties=2, tensor_type=torch.long
+    )
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)
@@ -248,6 +250,80 @@ def test_generate_shares_session(get_clients) -> None:
     shares_from_secret = MPCTensor.generate_shares(x_secret, 2, session=session)
 
     assert sum(shares_from_share_tensor) == sum(shares_from_secret)
+
+
+@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt"])
+def test_comparison_mpc_mpc(get_clients, protocol, op_str) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients, protocol=protocol)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25], [-3, 3]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+    result = op(x, y).reconstruct()
+    expected_result = op(x_secret, y_secret)
+
+    assert (result == expected_result).all()
+
+
+@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("op_str", ["eq", "ne"])
+def test_equality_mpc_mpc(get_clients, protocol, op_str) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients, protocol=protocol)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -2.5], [-4.25, 2.25]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+    result = op(x, y).reconstruct()
+    expected_result = op(x_secret, y_secret)
+
+    assert (result == expected_result).all()
+
+
+@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt", "eq", "ne"])
+def test_comp_mpc_public(get_clients, protocol, op_str) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients, protocol=protocol)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -2.5], [-4.25, 2.25]])
+    y_secret = 2.5
+    x = MPCTensor(secret=x_secret, session=session)
+    result = op(x, y_secret).reconstruct()
+    expected_result = op(x_secret, y_secret)
+
+    assert (result == expected_result).all()
+
+
+@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt", "eq", "ne"])
+def test_comp_public_mpc(get_clients, protocol, op_str) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients, protocol=protocol)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = 2.5
+    y_secret = torch.Tensor([[0.125, -2.5], [-4.25, 2.25]])
+    y = MPCTensor(secret=y_secret, session=session)
+    result = op(x_secret, y).reconstruct()
+    expected_result = op(x_secret, y_secret)
+
+    assert (result == expected_result).all()
 
 
 def test_share_get_method_parties(get_clients) -> None:

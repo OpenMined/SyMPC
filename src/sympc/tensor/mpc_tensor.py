@@ -72,6 +72,8 @@ class MPCTensor:
         if len(self.session.session_ptrs) == 0:
             raise ValueError("setup_mpc was not called on the session")
 
+        self.shape = None
+
         if secret is not None:
             """In the case the secret is hold by a remote party then we use the
             PRZS to generate the shares and then the pointer tensor is added to
@@ -83,7 +85,9 @@ class MPCTensor:
             if is_remote_secret:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
                 # party that holds the secret will add it to its share
-                self.share_ptrs = MPCTensor.generate_przs(self.shape, self.session)
+                self.share_ptrs = MPCTensor.generate_przs(
+                    shape=self.shape, session=self.session
+                )
                 for i, share in enumerate(self.share_ptrs):
                     if share.client == secret.client:  # type: ignore
                         self.share_ptrs[i] = self.share_ptrs[i] + secret
@@ -91,7 +95,9 @@ class MPCTensor:
             else:
                 tensor_type = self.session.tensor_type
                 shares = MPCTensor.generate_shares(
-                    secret, self.session.nr_parties, tensor_type
+                    secret=secret,
+                    nr_parties=self.session.nr_parties,
+                    tensor_type=tensor_type,
                 )
 
         if not ispointer(shares[0]):
@@ -164,7 +170,8 @@ class MPCTensor:
 
     @staticmethod
     def generate_przs(
-        shape: Union[torch.Size, List[int], Tuple[int, ...]], session: Session
+        shape: Union[torch.Size, List[int], Tuple[int, ...]],
+        session: Session,
     ) -> List[ShareTensor]:
         """Generate Pseudo-Random-Zero Shares at the parties involved in the
         computation.
@@ -183,7 +190,9 @@ class MPCTensor:
         for session_ptr, generators_ptr in zip(
             session.session_ptrs, session.przs_generators
         ):
-            share_ptr = session_ptr.przs_generate_random_share(shape, generators_ptr)
+            share_ptr = session_ptr.przs_generate_random_share(
+                shape=shape, generators=generators_ptr
+            )
             shares.append(share_ptr)
 
         return shares
@@ -233,6 +242,7 @@ class MPCTensor:
                 "Secret should be a ShareTensor, torchTensor, float or int."
             )
 
+        op = operator.sub
         shape = secret.shape
 
         random_shares = []
@@ -252,9 +262,9 @@ class MPCTensor:
             if i == 0:
                 share = random_shares[i]
             elif i < nr_parties - 1:
-                share = random_shares[i] - random_shares[i - 1]
+                share = op(random_shares[i], random_shares[i - 1])
             else:
-                share = secret - random_shares[i - 1]
+                share = op(secret, random_shares[i - 1])
 
             shares.append(share)
         return shares
@@ -296,8 +306,6 @@ class MPCTensor:
 
         args = [[share] for share in self.share_ptrs]
         local_shares = request_wrap(args)
-
-        tensor_type = self.session.tensor_type
 
         shares = [share.tensor for share in local_shares]
 
@@ -557,6 +565,56 @@ class MPCTensor:
     def __repr__(self):
         return self.__str__()
 
+    @staticmethod
+    def __check_or_convert(value, session) -> "MPCTensor":
+        if not isinstance(value, MPCTensor):
+            return MPCTensor(secret=value, session=session)
+        else:
+            return value
+
+    def numel(self) -> int:
+        return self.share_ptrs[0].numel()
+
+    def le(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        return protocol.le(self, other)
+
+    def ge(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        return protocol.le(other, self)
+
+    def lt(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        fp_encoder = FixedPointEncoder(
+            base=self.session.config.encoder_base,
+            precision=self.session.config.encoder_precision,
+        )
+        one = fp_encoder.decode(1)
+        return protocol.le(self + one, other)
+
+    def gt(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        fp_encoder = FixedPointEncoder(
+            base=self.session.config.encoder_base,
+            precision=self.session.config.encoder_precision,
+        )
+        one = fp_encoder.decode(1)
+        r = other + one
+        return protocol.le(r, self)
+
+    def eq(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        return protocol.eq(self, other)
+
+    def ne(self, other: "MPCTensor") -> "MPCTensor":
+        other = self.__check_or_convert(other, self.session)
+        return 1 - self.eq(other)
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
@@ -566,6 +624,12 @@ class MPCTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+    __le__ = le
+    __ge__ = ge
+    __lt__ = lt
+    __gt__ = gt
+    __eq__ = eq
+    __ne__ = ne
 
 
 PARTIES_TO_SESSION: Dict[Any, Session] = {}
