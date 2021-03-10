@@ -23,7 +23,7 @@ def test_session_init():
     assert session.parties == []
     assert session.trusted_third_party is None
     assert session.crypto_store is None
-    assert session.protocol is None
+    assert session.protocol is not None
     assert isinstance(session.config, Config)
     assert session.przs_generators == []
     assert session.rank == -1
@@ -42,7 +42,7 @@ def test_session_init():
     assert session.parties == ["alice", "bob"]
     assert session.trusted_third_party == "TTP"
     assert session.crypto_store is None
-    assert session.protocol is None
+    assert session.protocol is not None
     assert session.config == config
     assert session.przs_generators == []
     assert session.rank == -1
