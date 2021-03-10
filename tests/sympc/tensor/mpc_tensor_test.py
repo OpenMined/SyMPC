@@ -386,3 +386,20 @@ def test_share_get_method_session(get_clients) -> None:
     res = mpc_tensor * mpc_tensor
 
     assert all(res.get() == expected_res)
+
+
+def test_pow(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.Tensor([5.0])
+    x = MPCTensor(secret=x_secret, session=session)
+
+    power_secret = x_secret ** 2
+    power = x ** 2
+
+    assert torch.allclose(power_secret, power.reconstruct())
+
+    with pytest.raises(RuntimeError):
+        power = x ** -2

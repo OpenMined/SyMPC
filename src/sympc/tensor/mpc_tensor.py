@@ -486,12 +486,18 @@ class MPCTensor:
         result = spdz.public_divide(self, y)
         return result
 
-    def pow(self, power: int):
+    def pow(self, power: int) -> "MPCTensor":
         """Compute integer power of a number by recursion using mul This uses
         the following trick:
 
         - Divide power by 2 and multiply base to itself (if the power is even)
         - Decrement power by 1 to make it even and then follow the first step
+
+        Args:
+            power (int): integer value to apply the operation
+
+        Returns:
+             MPCTensor: Result of the pow operation
         """
         if power < 0:
             raise RuntimeError("Negative integer powers are not allowed.")
