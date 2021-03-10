@@ -10,9 +10,9 @@ import torch
 from sympc.config import Config
 from sympc.session import Session
 from sympc.session import SessionManager
+from sympc.tensor import ShareTensor
 from sympc.utils import get_new_generator
 from sympc.utils import get_type_from_ring
-from sympc.tensor import ShareTensor
 
 
 def test_session_init():

@@ -1,10 +1,10 @@
+# third party
 import torch
 
+from sympc.protocol import ABY3
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
-
-from sympc.protocol import ABY3
 
 
 def test_private_compare(get_clients) -> None:

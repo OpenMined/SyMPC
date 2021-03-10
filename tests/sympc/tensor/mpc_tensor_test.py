@@ -328,7 +328,7 @@ def test_comp_public_mpc(get_clients, protocol, op_str) -> None:
 
     assert (result == expected_result).all()
 
-    
+
 def test_share_get_method_parties(get_clients) -> None:
     clients = get_clients(2)
 
