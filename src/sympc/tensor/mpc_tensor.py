@@ -578,19 +578,16 @@ class MPCTensor:
     def le(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
         other = self.__check_or_convert(other, self.session)
-        print(other)
         return protocol.le(self, other)
 
     def ge(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
         other = self.__check_or_convert(other, self.session)
-        print(other)
         return protocol.le(other, self)
 
     def lt(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
         other = self.__check_or_convert(other, self.session)
-        print(other)
         fp_encoder = FixedPointEncoder(
             base=self.session.config.encoder_base,
             precision=self.session.config.encoder_precision,
@@ -601,14 +598,12 @@ class MPCTensor:
     def gt(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
         other = self.__check_or_convert(other, self.session)
-        print(other)
         fp_encoder = FixedPointEncoder(
             base=self.session.config.encoder_base,
             precision=self.session.config.encoder_precision,
         )
         one = fp_encoder.decode(1)
         r = other + one
-        print(r)
         return protocol.le(r, self)
 
     def eq(self, other: "MPCTensor") -> "MPCTensor":

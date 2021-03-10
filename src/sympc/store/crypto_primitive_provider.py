@@ -45,9 +45,6 @@ class CryptoPrimitiveProvider:
                 op_str, primitives, sessions, p_kwargs
             )
 
-        # TODO: "primitives_sequenatial" here represents the pointers to the primitives
-        # The function "generate_primitives" should ideally not return anything
-
         # Since we do not have (YET!) the possiblity to return typed tuples from a remote
         # execute function we are using this
         return primitives

@@ -23,13 +23,12 @@ PRIMITIVE_NR_ELEMS = 4
 def provider_test(nr_parties: int, nr_instances: int) -> List[Tuple[int]]:
     """This function will generate the values:
 
-    [((0, 0, 0, 0), (1, 1, 1, 1), ...)]
+    [((0, 0, 0, 0), (0, 0, 0, 0), ...), ((1, 1, 1, 1), (1, 1, 1, 1)), ...]
     """
     primitives = [
-        tuple(tuple(i for _ in range(PRIMITIVE_NR_ELEMS)) for i in range(nr_parties))
-        for _ in range(nr_instances)
+        tuple(tuple(i for _ in range(PRIMITIVE_NR_ELEMS)) for _ in range(nr_instances))
+        for i in range(nr_parties)
     ]
-    print(primitives)
     return primitives
 
 
@@ -100,16 +99,23 @@ def test_generate_primitive(
     )
 
     assert isinstance(res, list)
-    assert len(res) == nr_instances
+    assert len(res) == nr_parties
 
-    for i, primitives in enumerate(res[0]):
-        assert primitives == tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
+    for i, primitives in enumerate(res):
+        for primitive in primitives:
+            assert primitive == tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
 
 
-@pytest.mark.parametrize("nr_instances", [1, 5, 100])
+@pytest.mark.parametrize(
+    ("nr_instances", "nr_instances_retrieve"),
+    [(1, 1), (5, 4), (5, 5), (100, 25), (100, 100)],
+)
 @pytest.mark.parametrize("nr_parties", [2, 3, 4])
 def test_generate_and_transfer_primitive(
-    get_clients: Callable, nr_parties: int, nr_instances: int
+    get_clients: Callable,
+    nr_parties: int,
+    nr_instances: int,
+    nr_instances_retrieve: int,
 ) -> None:
     parties = get_clients(nr_parties)
     session = Session(parties=parties)
@@ -125,5 +131,10 @@ def test_generate_and_transfer_primitive(
 
     for i in range(nr_parties):
         remote_crypto_store = session.session_ptrs[i].crypto_store
-        primitives = remote_crypto_store.get_primitives_from_store("test").get()
-        assert primitives == [tuple(i for _ in range(PRIMITIVE_NR_ELEMS))]
+        primitives = remote_crypto_store.get_primitives_from_store(
+            op_str="test", nr_instances=nr_instances_retrieve
+        ).get()
+        assert primitives == [
+            tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
+            for _ in range(nr_instances_retrieve)
+        ]
