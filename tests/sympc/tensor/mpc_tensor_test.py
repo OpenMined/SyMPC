@@ -271,6 +271,9 @@ def test_comparison_mpc_mpc(get_clients, protocol, op_str) -> None:
     assert (result == expected_result).all()
 
 
+"""
+
+
 @pytest.mark.parametrize("protocol", ["FSS"])
 @pytest.mark.parametrize("op_str", ["eq", "ne"])
 def test_equality_mpc_mpc(get_clients, protocol, op_str) -> None:
@@ -288,6 +291,9 @@ def test_equality_mpc_mpc(get_clients, protocol, op_str) -> None:
     expected_result = op(x_secret, y_secret)
 
     assert (result == expected_result).all()
+
+
+"""
 
 
 @pytest.mark.parametrize("protocol", ["FSS"])

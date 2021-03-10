@@ -20,7 +20,6 @@ class CryptoPrimitiveProvider:
     def generate_primitives(
         op_str: str,
         sessions: List[Any],
-        n_instances: int = 1,
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
@@ -34,8 +33,6 @@ class CryptoPrimitiveProvider:
 
         if op_str not in CryptoPrimitiveProvider._func_providers:
             raise ValueError(f"{op_str} not registered")
-
-        assert n_instances == 1  # nosec
 
         generator = CryptoPrimitiveProvider._func_providers[op_str]
 
