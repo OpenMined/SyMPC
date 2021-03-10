@@ -1,5 +1,4 @@
 from sympc.approximations.exponential import exp
-from sympc.approximations.log import log
 
 
 def sign(data):
@@ -7,16 +6,12 @@ def sign(data):
 
 
 def modulus(data):
-    """
-    Calculation of modulus for a given tensor
-    """
+    """Calculation of modulus for a given tensor."""
     return data.signum() * data
 
 
 def signum(data):
-    """
-    Calculation of signum function for a given tensor
-    """
+    """Calculation of signum function for a given tensor."""
     sgn = (data > 0) - (data < 0)
     return sgn
 
@@ -26,6 +21,7 @@ def reciprocal(data, method="NR", nr_iters=10):
     Calculate the reciprocal using the algorithm specified in the method args.
     Ref: https://github.com/facebookresearch/CrypTen
     Args:
+        data: data whose reciprocal has to be calculated
         method:
         'NR' : `Newton-Raphson`_ method computes the reciprocal using iterations
                 of :math:`x_{i+1} = (2x_i - self * x_i^2)` and uses
@@ -61,8 +57,5 @@ def reciprocal(data, method="NR", nr_iters=10):
     elif method == "division":
         ones = data * 0 + 1
         return ones / data
-    elif method == "log":
-        new_data = modulus(data)
-        return exp(log(-new_data)) * signum(data)
     else:
         raise ValueError(f"Invalid method {method} given for reciprocal function")
