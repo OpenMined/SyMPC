@@ -72,6 +72,7 @@ class MPCTensor:
             raise ValueError("setup_mpc was not called on the session")
 
         self.mpc_type = mpc_type
+        self.shape = None
 
         if secret is not None:
             """In the case the secret is hold by a remote party then we use the
@@ -579,14 +580,60 @@ class MPCTensor:
     def __repr__(self):
         return self.__str__()
 
-    def gt(self, other) -> bool:
+    @staticmethod
+    def __check_or_convert(value, session) -> "MPCTensor":
+        if not isinstance(value, MPCTensor):
+            return MPCTensor(secret=value, session=session)
+        else:
+            return value
+
+    def numel(self) -> int:
+        return self.share_ptrs[0].numel()
+
+    def le(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        print(other)
+        return protocol.le(self, other)
 
-        if isinstance(other, MPCTensor):
-            raise ValueError("Only compare with public values")
+    def ge(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        print(other)
+        return protocol.le(other, self)
 
-        res = protocol.relu_deriv(self - other - 1)
-        return res
+    def lt(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        print(other)
+        fp_encoder = FixedPointEncoder(
+            base=self.session.config.encoder_base,
+            precision=self.session.config.encoder_precision,
+        )
+        one = fp_encoder.decode(1)
+        return protocol.le(self + one, other)
+
+    def gt(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        print(other)
+        fp_encoder = FixedPointEncoder(
+            base=self.session.config.encoder_base,
+            precision=self.session.config.encoder_precision,
+        )
+        one = fp_encoder.decode(1)
+        r = other + one
+        print(r)
+        return protocol.le(r, self)
+
+    def eq(self, other: "MPCTensor") -> "MPCTensor":
+        protocol = self.session.get_protocol()
+        other = self.__check_or_convert(other, self.session)
+        return protocol.eq(self, other)
+
+    def ne(self, other: "MPCTensor") -> "MPCTensor":
+        other = self.__check_or_convert(other, self.session)
+        return 1 - self.eq(other)
 
     __add__ = add
     __radd__ = add
@@ -597,4 +644,9 @@ class MPCTensor:
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = div
+    __le__ = le
+    __ge__ = ge
+    __lt__ = lt
     __gt__ = gt
+    __eq__ = eq
+    __ne__ = ne

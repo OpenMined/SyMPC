@@ -1,10 +1,9 @@
-"""
-Implemented Protocols
-"""
+"""Implemented Protocols."""
 from . import beaver
 from . import spdz
-from .protocol import Protocol
+from .fss import FSS
 from .securenn import SecureNN
-from .aby3 import ABY3
 
-__all__ = ["beaver", "spdz", "Protocol", "SecureNN", "ABY3"]
+from .protocol import Protocol  # noqa
+
+__all__ = ["beaver", "spdz", "SecureNN", "FSS"]

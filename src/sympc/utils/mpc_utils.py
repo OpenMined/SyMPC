@@ -19,7 +19,7 @@ RING_SIZE_TO_TYPE = {
 
 def count_wraps(share_list: List[torch.tensor]) -> torch.Tensor:
     """Count the number of overflows and underflows that would happen if we
-    reconstruct the original value
+    reconstruct the original value.
 
     This function is taken from the CrypTen project.
     CrypTen repository: https://github.com/facebookresearch/CrypTen
@@ -75,7 +75,7 @@ def generate_random_element(
     shape: Union[tuple, torch.Size],
     device: str = "cpu",
 ) -> torch.Tensor:
-    """Generate a new "random" tensor
+    """Generate a new "random" tensor.
 
     :return: a random tensor using a specific generator
     :rtype: torch.Tensor
@@ -85,7 +85,7 @@ def generate_random_element(
     )
 
 
-@lru_cache
+@lru_cache()
 def get_nr_bits(ring_size: int) -> int:
     return (ring_size - 1).bit_length()
 

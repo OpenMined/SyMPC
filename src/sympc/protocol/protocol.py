@@ -11,7 +11,7 @@ class Protocol(type):
         new_cls = super().__new__(cls, name, bases, dct)
         Protocol.registered_protocols[name] = new_cls
 
-        def __init__(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> None:
+        def __init__(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> None:  # noqa
             raise ValueError("Protocol class should not be instantiated")
 
         setattr(new_cls, "__init__", __init__)
