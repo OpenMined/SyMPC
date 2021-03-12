@@ -8,11 +8,11 @@ from pkg_resources import get_distribution
 
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
+from . import module  # noqa: 401
 from . import protocol  # noqa: 401
 from . import session  # noqa: 401
 from . import store  # noqa: 401
 from . import tensor  # noqa: 401
-from . import module  # noqa: 401
 
 try:
     # third party
@@ -32,6 +32,7 @@ def add_methods_tensor_syft() -> None:
         if getattr(torch.Tensor, method.__name__, None) is not None:
             raise ValueError(f"Method {method.__name__} already exists in tensor!")
         setattr(torch.Tensor, method.__name__, method)
+
 
 try:
     # Change here if project is renamed and does not equal the package name

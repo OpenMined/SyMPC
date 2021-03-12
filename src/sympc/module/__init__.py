@@ -1,4 +1,1 @@
-from .module import SyMPCModule
-
-
-__all__ = ["SyMPCModule"]
+from .module import *  # noqa
