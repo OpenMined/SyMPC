@@ -41,13 +41,17 @@ repos:
       - id: bandit
         args: ["--exclude", "tests"]
 
-  - repo: https://github.com/myint/docformatter
-    rev: v1.4
+  - repo: local
     hooks:
       - id: docformatter
-        args: [--in-place]
+        name: docformatter
+        entry: docformatter --in-place --wrap-descriptions 0 --wrap-summaries 0
+        language: system
+        pass_filenames: true
 
   - repo: https://github.com/pycqa/pydocstyle
     rev: 5.1.1  # pick a git hash / tag to point to
     hooks:
       - id: pydocstyle
+
+

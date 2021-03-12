@@ -1,5 +1,4 @@
-"""In this file there would be defined utils functions that might be used int
-any module."""
+"""Utils functions that might be used into any module."""
 
 # stdlib
 import asyncio
@@ -18,10 +17,13 @@ from typing import Union
 
 
 def ispointer(obj: Any) -> bool:
-    """Check if a given obj is a pointer (is a remote object)
+    """Check if a given obj is a pointer (is a remote object).
 
-    :return: True (if pointer) or False (if not)
-    :rtype: bool
+    Args:
+        obj (Any): Object.
+
+    Returns:
+        bool: True (if pointer) or False (if not).
     """
     if type(obj).__name__.endswith("Pointer") and hasattr(obj, "id_at_location"):
         return True
@@ -29,10 +31,13 @@ def ispointer(obj: Any) -> bool:
 
 
 def islocal(obj: Any) -> bool:
-    """Check if the object is on the local machine (in Duet or VM)
+    """Check if a given obj is on the local machine (in Duet or VM).
 
-    :return: True if yes, else False
-    :rtype: bool
+    Args:
+        obj (Any): Object.
+
+    Returns:
+        bool: True (if pointer) or False (if not).
     """
     party_type = obj.client.class_name
     return party_type in {"VirtualMachineClient", "DomainClient"}
@@ -43,32 +48,29 @@ def parallel_execution(
     parties: Union[None, List[Any]] = None,
     cpu_bound: bool = False,
 ) -> Callable[..., List[Any]]:
-    """Wraps a function such that it can be run in parallel at multiple
-    parties.
+    """Wrap a function such tat it can be run in parallel at multiple parties.
 
-    Arguments:
-        fn (Callable): the function to run
-        parties (Clients from Syft): if this is set, then the function should be
-            run remotely
-        cpu_bound (bool): because of the GIL (global interpreter lock) sometimes
-            it makes more sense to use processes than threads
-            if it is set then processes should be used since they really
-              run in parallel
-            if not then it makes sense to use threads since there is no bottleneck
-              on the CPU side
+    Args:
+        fn (Callable): The function to run.
+        parties (Union[None, List[Any]]): Clients from syft. If this is set, then the f
+            unction should be run remotely. Defaults to None.
+        cpu_bound (bool): Because of the GIL (global interpreter lock) sometimes
+            it makes more sense to use processes than threads if it is set then
+            processes should be used since they really run in parallel if not then
+            it makes sense to use threads since there is no bottleneck on the CPU side
 
-        :return: a function that runs in parallel at multiple parties or not
-        :rtype: a Callable that returns a list of results
+    Returns:
+        Callable[..., List[Any]]: A Callable that returns a list of results.
     """
 
-    def initializer(event_loop):
-        """Initializer used to set the same event loop to other
-        threads/processes.
+    def initializer(event_loop) -> None:
+        """Set the same event loop to other threads/processes.
 
         This is needed because there are new threads/processes started with
         the Executor and they do not have have an event loop set
 
-        It is set manually here, to be the same as the main thread
+        Args:
+            event_loop: The event loop.
         """
         asyncio.set_event_loop(event_loop)
 
@@ -77,9 +79,15 @@ def parallel_execution(
         args: List[List[Any]],
         kwargs: Optional[Dict[Any, Dict[Any, Any]]] = None,
     ) -> List[Any]:
-        """The wrapper function that does sanity checks and checks what
-        executor should be used."""
+        """Wrap sanity checks and checks what executor should be used.
 
+        Args:
+            args (List[List[Any]]): Args.
+            kwargs (Optional[Dict[Any, Dict[Any, Any]]]): Kwargs. Default to None.
+
+        Returns:
+            List[Any]
+        """
         Executor: Union[Type[ProcessPoolExecutor], Type[ThreadPoolExecutor]]
         if cpu_bound:
             Executor = ProcessPoolExecutor
