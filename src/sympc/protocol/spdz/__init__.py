@@ -1,6 +1,4 @@
-"""
-SPDZ multiplication mechanism
-"""
+"""SPDZ multiplication mechanism."""
 
 from . import spdz
 
