@@ -51,4 +51,4 @@ jobs:
           python setup.py install
       - name: Run the tutorials
         run: |
-          pytest tests/notebooks/notebooks_test.py
+          pytest tests/notebooks/notebooks_test.py -n auto
