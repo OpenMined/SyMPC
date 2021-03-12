@@ -1,5 +1,4 @@
-"""
-The implementation for the FixedPrecisionTensor
+"""The implementation for the FixedPrecisionTensor.
 
 The implementation is taken from the Facebook Research Project: CrypTen
 Website: https://crypten.ai/
@@ -22,8 +21,9 @@ import torch
 
 
 class FixedPointEncoder:
-    """
-    Class for encoding/decoding a tensor to/from a fixed precision representation
+    """Class for encoding/decoding a tensor to/from a fixed precision
+    representation.
+
     This class was inspired from the Facebook Research - CrypTen project
 
     Arguments:
@@ -39,13 +39,13 @@ class FixedPointEncoder:
     __slots__ = {"_precision", "_base", "_scale"}
 
     def __init__(self, base: int = 2, precision: int = 16):
-        """ Initializer for the FP Encoder """
+        """Initializer for the FP Encoder."""
         self._precision = precision
         self._base = base
         self._scale = base ** precision
 
     def encode(self, value: Union[torch.Tensor, float, int]) -> torch.LongTensor:
-        """Encode a value using the FixedPoint Encoder
+        """Encode a value using the FixedPoint Encoder.
 
         :return: the encoded value by FPEncoder
         :rtype: a long tensor
@@ -59,7 +59,7 @@ class FixedPointEncoder:
         return long_value
 
     def decode(self, value: Union[int, torch.Tensor]) -> torch.Tensor:
-        """Decode a value using the FixedPoint Encoder
+        """Decode a value using the FixedPoint Encoder.
 
         :return: the decoded value for a tensor
         :rtype: a float tensor
@@ -85,39 +85,35 @@ class FixedPointEncoder:
 
     @property
     def precision(self):
-        """ Get the precision for the FixedPrecision Encoder """
+        """Get the precision for the FixedPrecision Encoder."""
         return self._precision
 
     @precision.setter
     def precision(self, precision: int) -> None:
-        """Set the precision for the FixedPoint Encoder
-        By changing it, there will also be changed the "_scale"
-        attribute
-        """
+        """Set the precision for the FixedPoint Encoder By changing it, there
+        will also be changed the "_scale" attribute."""
         self._precision = precision
         self._scale = self._base ** precision
 
     @property
     def base(self) -> int:
-        """ Get the base for the FixedPrecision Encoder """
+        """Get the base for the FixedPrecision Encoder."""
         return self._base
 
     @base.setter
     def base(self, base: int) -> None:
-        """Set the base for the FixedPoint Encoder
-        By changing it, there will also be changed the "_scale"
-        attribute
-        """
+        """Set the base for the FixedPoint Encoder By changing it, there will
+        also be changed the "_scale" attribute."""
         self._base = base
         self._scale = base ** self._precision
 
     @property
     def scale(self) -> int:
-        """ Get the scale for the FixedPrecision Encoder """
+        """Get the scale for the FixedPrecision Encoder."""
         return self._scale
 
     def __str__(self) -> str:
-        """ Get the string representation """
+        """Get the string representation."""
         type_name = type(self).__name__
         out = f"[{type_name}]: precision: {self._precision}, base: {self._base}"
         return out

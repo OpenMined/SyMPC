@@ -1,7 +1,5 @@
-"""
-In this file there would be defined utils functions that might be used
-int any module
-"""
+"""In this file there would be defined utils functions that might be used int
+any module."""
 
 # stdlib
 import asyncio
@@ -46,7 +44,7 @@ def parallel_execution(
     cpu_bound: bool = False,
 ) -> Callable[..., List[Any]]:
     """Wraps a function such that it can be run in parallel at multiple
-    parties
+    parties.
 
     Arguments:
         fn (Callable): the function to run
@@ -65,7 +63,7 @@ def parallel_execution(
 
     def initializer(event_loop):
         """Initializer used to set the same event loop to other
-        threads/processes
+        threads/processes.
 
         This is needed because there are new threads/processes started with
         the Executor and they do not have have an event loop set
@@ -79,9 +77,8 @@ def parallel_execution(
         args: List[List[Any]],
         kwargs: Optional[Dict[Any, Dict[Any, Any]]] = None,
     ) -> List[Any]:
-        """The wrapper function that does sanity checks and checks
-        what executor should be used
-        """
+        """The wrapper function that does sanity checks and checks what
+        executor should be used."""
 
         Executor: Union[Type[ProcessPoolExecutor], Type[ThreadPoolExecutor]]
         if cpu_bound:
