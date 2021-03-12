@@ -8,6 +8,7 @@ on:
       - "**.py"
       - "setup.cfg"
       - ".github/workflows/**.yml"
+      - "**.txt"
 
   pull_request:
     types: [opened, synchronize, reopened]
@@ -15,6 +16,7 @@ on:
       - "**.py"
       - "setup.cfg"
       - ".github/workflows/**.yml"
+      - "**.txt"
 
 jobs:
   python-tests:
