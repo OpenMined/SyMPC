@@ -3,47 +3,52 @@ name: Tutorials
 on:
   push:
     branches:
-    - master
+      - master
     paths:
-    - '**.py'
-    - '**.ipynb'
-    - 'requirements*.txt'
+      - "**.py"
+      - "**.ipynb"
+      - "requirements*.txt"
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
-    - '**.py'
-    - '**.ipynb'
-    - 'requirements*.txt'
+      - "**.py"
+      - "**.ipynb"
+      - "requirements*.txt"
 
 jobs:
   tutorial-tests:
-
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      max-parallel: 3
       matrix:
-        python-version: [3.7]
+        python-version: [3.7, 3.8, 3.9]
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
-      with:
-        python-version: ${{ matrix.python-version }}
-    - uses: actions/cache@v1.1.2
-      id: cache-reqs
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ matrix.python-version }}-pip-${{ hashFiles('requirements*.txt') }}
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        python -m pip install --upgrade pip
-        hash -r
-        pip3 install -r requirements.txt
-        pip3 install -r requirements_dev.txt
-        python setup.py install
-    - name: Run the tutorials
-      run: |
-        pytest tests/notebooks/notebooks_test.py
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v1
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+      - name: Install dependencies
+        run: |
+          hash -r
+          pip install -r requirements.dev.txt
+          python setup.py install
+      - name: Run the tutorials
+        run: |
+          pytest tests/notebooks/notebooks_test.py

@@ -20,9 +20,9 @@ jobs:
   python-tests:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 2
+      max-parallel: 3
       matrix:
-        python-version: [3.8, 3.9]
+        python-version: [3.7, 3.8, 3.9]
 
     steps:
       - uses: actions/checkout@v2
@@ -31,37 +31,27 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
-
-      - uses: actions/cache@v2
-        if: startsWith(runner.os, 'Linux')
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-${{ matrix.python-version }}-
-
-      - name: Cache packages
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+      - name: pip cache
         uses: actions/cache@v2
-        id: cache-reqs
         with:
-          path: ~/.eggs
-          key: ${{ runner.os }}-python-${{ matrix.python-version }}-${{ hashFiles('**.egg') }}
-
-      - name: Install build tools
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+      - name: Install dependencies
         run: |
-          sudo apt-get update
-          python -m pip install --upgrade pip
-          pip3 install -r requirements_dev.txt
+          hash -r
+          pip install -r requirements.dev.txt
           pip install -e .
-      - name: Lint, format, and type-check
-        run: |
-          # Stop the build if there are Python syntax errors or undefined names
-          flake8 --config=.flake8 .
-          black --check .
-          isort --check-only .
-          # Run type checker in CI such that type errors can be identified and gradually addressed.
-          # Once all existing type errors are addressed, the `|| echo` after the mypy call can be removed.
-          mypy src || echo "Type errors found, continuing build..."
+
+      - uses: pre-commit/action@v2.0.0
 
       - name: Check docstring coverage
         run: |
@@ -69,8 +59,7 @@ jobs:
 
       - name: Scan for security issues
         run: |
-          pip install bandit==1.7.0
-          bandit -r src -ll
+          bandit -r src
 
       - name: Run darglint - Ignore Errors
         continue-on-error: true

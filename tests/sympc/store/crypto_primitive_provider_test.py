@@ -23,7 +23,8 @@ PRIMITIVE_NR_ELEMS = 4
 def provider_test(nr_parties: int, nr_instances: int) -> List[Tuple[int]]:
     """This function will generate the values:
 
-    [((0, 0, 0, 0), (0, 0, 0, 0), ...), ((1, 1, 1, 1), (1, 1, 1, 1)), ...]
+    [((0, 0, 0, 0), (0, 0, 0, 0), ...), ((1, 1, 1, 1), (1, 1, 1, 1)),
+    ...]
     """
     primitives = [
         tuple(tuple(i for _ in range(PRIMITIVE_NR_ELEMS)) for _ in range(nr_instances))

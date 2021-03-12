@@ -1,6 +1,4 @@
-"""
-Configuration used for the Fixed Precision Encoder
-"""
+"""Configuration used for the Fixed Precision Encoder."""
 
 from .config import Config
 
