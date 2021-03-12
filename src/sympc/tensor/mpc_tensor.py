@@ -404,7 +404,10 @@ class MPCTensor:
         Args:
             weight: the convolution kernel
             bias: optional bias
-            **kwargs: kwargs for the PyTorch conv2d
+            stride: stride
+            padding: padding
+            dilation: dilation
+            groups: groups
 
         Returns:
             MPCTensor. Result of the operation.
