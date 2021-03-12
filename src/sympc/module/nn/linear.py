@@ -11,7 +11,7 @@ import torch
 
 from sympc.tensor import MPCTensor
 
-ATOL = 10e-5
+RTOL = 10e-4
 
 
 class Linear:
@@ -73,10 +73,10 @@ class Linear:
         if (linear1.bias is None) != (linear2.bias is None):
             return False
 
-        if not torch.allclose(linear1.weight, linear2.weight, atol=ATOL):
+        if not torch.allclose(linear1.weight, linear2.weight, rtol=RTOL):
             return False
 
-        if not torch.allclose(linear1.bias, linear2.bias, atol=ATOL):
+        if not torch.allclose(linear1.bias, linear2.bias, rtol=RTOL):
             return False
 
         return True
