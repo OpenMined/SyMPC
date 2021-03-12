@@ -1,6 +1,4 @@
-"""
-Tests for the Fixed Precision Encoder.
-"""
+"""Tests for the Fixed Precision Encoder."""
 # third party
 import pytest
 import torch
@@ -9,9 +7,7 @@ from sympc.encoder import FixedPointEncoder
 
 
 def test_fp_encoder_init():
-    """
-    Test correct FixedPointEncoder initialisation.
-    """
+    """Test correct FixedPointEncoder initialisation."""
     fp_encoder = FixedPointEncoder(
         base=3,
         precision=8,
@@ -22,9 +18,7 @@ def test_fp_encoder_init():
 
 
 def test_fp_encoding():
-    """
-    Test correct encoding with FixedPointEncoder.
-    """
+    """Test correct encoding with FixedPointEncoder."""
     fp_encoder = FixedPointEncoder()
     # Test encoding with tensors.
     tensor = torch.Tensor([1, 2, 3])
@@ -44,9 +38,7 @@ def test_fp_encoding():
 
 
 def test_fp_decoding():
-    """
-    Test correct decoding with FixedPointEncoder.
-    """
+    """Test correct decoding with FixedPointEncoder."""
     fp_encoder = FixedPointEncoder()
     # Test decoding with tensors.
     # CaseA: throw a ValueError with floating point tensors.
@@ -69,9 +61,7 @@ def test_fp_decoding():
 
 
 def test_fp_precision_setter():
-    """
-    Test the precision setter for the FixedPointEncoder.
-    """
+    """Test the precision setter for the FixedPointEncoder."""
     fp_encoder = FixedPointEncoder()
     fp_encoder.precision = 3
     assert fp_encoder.precision == 3
@@ -79,9 +69,7 @@ def test_fp_precision_setter():
 
 
 def test_fp_base_setter():
-    """
-    Test the base setter for the FixedPointEncoder.
-    """
+    """Test the base setter for the FixedPointEncoder."""
     fp_encoder = FixedPointEncoder()
     fp_encoder.base = 3
     assert fp_encoder.base == 3
@@ -89,8 +77,6 @@ def test_fp_base_setter():
 
 
 def test_fp_string_representation():
-    """
-    Test the string representation of the FixedPointEncoder.
-    """
+    """Test the string representation of the FixedPointEncoder."""
     fp_encoder = FixedPointEncoder()
     assert str(fp_encoder) == "[FixedPointEncoder]: precision: 16, base: 2"
