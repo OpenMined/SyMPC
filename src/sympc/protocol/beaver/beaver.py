@@ -25,7 +25,7 @@ ttp_generator = csprng.create_random_device_generator()
 
 
 def _get_triples(
-    op_str: str, nr_parties: int, a_shape: Tuple[int], b_shape: Tuple[int]
+    op_str: str, nr_parties: int, a_shape: Tuple[int], b_shape: Tuple[int], **kwargs
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """The Trusted Third Party (TTP) or Crypto Provider should provide this
     triples Currently, the one that orchestrates the communication provides
@@ -51,9 +51,12 @@ def _get_triples(
         encoder_precision=0,
     )
 
-    cmd = getattr(operator, op_str)
+    if op_str == "conv2d":
+        cmd = torch.conv2d
+    else:
+        cmd = getattr(operator, op_str)
 
-    c_val = cmd(a_rand, b_rand)
+    c_val = cmd(a_rand, b_rand, **kwargs)
     c_shares = MPCTensor.generate_shares(
         secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
@@ -152,6 +155,53 @@ def matmul_store_add(
 
 @register_primitive_store_get("beaver_matmul")
 def matmul_store_get(
+    store: Dict[Tuple[int, int], List[Any]],
+    a_shape: Tuple[int],
+    b_shape: Tuple[int],
+    remove: bool = True,
+) -> Any:
+    config_key = (a_shape, b_shape)
+    primitives = store[config_key]
+
+    try:
+        primitive = primitives[0]
+    except:
+        raise ValueError("No primitive in the store for {config_key}")
+
+    if remove:
+        del primitives[0]
+
+    return primitive
+
+
+""" Beaver Operations defined for Convolution 2D """
+
+
+@register_primitive_generator("beaver_conv2d")
+def get_triples_conv2d(
+    *args: List[Any], **kwargs: Dict[Any, Any]
+) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
+    """Get the beaver triples for the mul operation."""
+    return _get_triples("conv2d", *args, **kwargs)
+
+
+@register_primitive_store_add("beaver_conv2d")
+def conv2d_store_add(
+    store: Any,
+    primitives: Iterable[Any],
+    a_shape: Tuple[int],
+    b_shape: Tuple[int],
+) -> None:
+
+    config_key = (a_shape, b_shape)
+    if config_key in store:
+        store[config_key].extend(primitives)
+    else:
+        store[config_key] = primitives
+
+
+@register_primitive_store_get("beaver_conv2d")
+def conv2d_store_get(
     store: Dict[Tuple[int, int], List[Any]],
     a_shape: Tuple[int],
     b_shape: Tuple[int],
