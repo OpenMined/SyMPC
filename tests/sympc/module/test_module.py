@@ -43,7 +43,7 @@ def test_run_simple_model(get_clients):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, atol=10e-5)
+    assert torch.allclose(res, expected, rtol=10e-4)
 
 
 def test_reconstruct_shared_model(get_clients):
