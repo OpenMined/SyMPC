@@ -1,5 +1,3 @@
-"""
-Beaver Generators Mechanism
-"""
+"""Beaver Generators Mechanism."""
 
 from .beaver import *  # noqa: F401
