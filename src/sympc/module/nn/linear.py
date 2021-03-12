@@ -9,6 +9,8 @@ from typing import Tuple
 # third party
 import torch
 
+from sympc.tensor import MPCTensor
+
 ATOL = 10e-5
 
 
@@ -18,11 +20,11 @@ class Linear:
     def __init__(self, session) -> None:
         self.in_features: Optional[Tuple[int]] = None
         self.out_features: Optional[Tuple[int]] = None
-        self.weight: List["MPCTensor"] = []
-        self.bias: Optional["MPCTensor"] = None
+        self.weight: List[MPCTensor] = []
+        self.bias: Optional[MPCTensor] = None
         self.session = session
 
-    def forward(self, x: "MPCTensor") -> "MPCTensor":
+    def forward(self, x: MPCTensor) -> MPCTensor:
         res = x @ self.weight.T
 
         if self.bias is not None:
