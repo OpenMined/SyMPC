@@ -1,7 +1,4 @@
-from sympc.tensor import MPCTensor
-
-
-def relu(x: MPCTensor) -> MPCTensor:
+def relu(x):
     session = x.session
     protocol = session.protocol
     return protocol.relu(x)

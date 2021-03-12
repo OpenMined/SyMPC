@@ -4,8 +4,6 @@ from typing import Callable
 from typing import Dict
 from typing import List
 
-from sympc.session import Session
-
 
 class CryptoPrimitiveProvider:
     """A trusted third party should use this class to generate crypto
@@ -53,7 +51,7 @@ class CryptoPrimitiveProvider:
     def _transfer_primitives_to_parties(
         op_str: str,
         primitives: List[Any],
-        sessions: List[Session],
+        sessions: List[Any],  # TODO: This should be FIXED to Session
         p_kwargs: Dict[str, Any],
     ) -> None:
         if not isinstance(primitives, list):
