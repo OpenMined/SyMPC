@@ -11,7 +11,7 @@ import torch
 
 from sympc.tensor import MPCTensor
 
-RTOL = 10e-4
+RTOL = 10e-3
 
 
 class Linear:

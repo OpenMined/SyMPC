@@ -2,6 +2,7 @@
 import syft as sy
 import torch
 
+from sympc.module.module import MAP_TORCH_TO_SYMPC
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -31,13 +32,13 @@ def test_run_simple_model(get_clients):
 
     mpc_module = module.share(session=session)
 
-    x = torch.randn(2, 3)
-    x_secret = MPCTensor(secret=x, session=session)
+    x_secret = torch.randn(2, 3)
+    x_mpc = MPCTensor(secret=x_secret, session=session)
 
     module.eval()
 
     # For the moment we have only inference
-    expected = module(x)
+    expected = module(x_secret)
 
     res_mpc = mpc_module(x_secret)
     assert isinstance(res_mpc, MPCTensor)
@@ -61,8 +62,11 @@ def test_reconstruct_shared_model(get_clients):
     assert isinstance(res, sy.Module)
 
     for name_res, name_expected in zip(res.modules, module.modules):
-        module_expected = module.modules[name_expected]
-
         assert name_res == name_expected
 
+        module_expected = module.modules[name_expected]
         module_res = res.modules[name_res]
+
+        assert MAP_TORCH_TO_SYMPC[type(module_expected)].eq_close(
+            module_expected, module_res
+        )

@@ -215,10 +215,6 @@ class FSS(metaclass=Protocol):
     def le(x1, x2):
         return fss_op(x1, x2, "comp")
 
-    @staticmethod
-    def relu(x):
-        return x * (x >= 0)
-
 
 """ Register Crypto Store capabilities for FSS """
 

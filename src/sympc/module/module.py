@@ -52,4 +52,7 @@ def reconstruct(_self):
 get = reconstruct
 
 for method in {share, reconstruct, get}:
+    if getattr(sy.Module, method.__name__, None) is not None:
+        raise ValueError(f"Method {method.__name__} already exists in the sy.Module")
+
     setattr(sy.Module, method.__name__, method)

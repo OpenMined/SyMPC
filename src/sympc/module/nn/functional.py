@@ -1,4 +1,3 @@
 def relu(x):
-    session = x.session
-    protocol = session.protocol
-    return protocol.relu(x)
+    res = x * (x >= 0)
+    return res
