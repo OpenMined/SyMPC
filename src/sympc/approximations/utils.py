@@ -4,7 +4,7 @@ def sign(data):
 
 def modulus(data):
     """Calculation of modulus for a given tensor."""
-    return data.signum() * data
+    return signum(data) * data
 
 
 def signum(data):

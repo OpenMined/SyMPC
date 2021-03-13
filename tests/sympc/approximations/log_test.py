@@ -8,7 +8,7 @@ from sympc.session import SessionManager
 from sympc.tensor.mpc_tensor import MPCTensor
 
 
-def test_exp(get_clients) -> None:
+def test_log(get_clients) -> None:
     clients = get_clients(2)
     session_one = Session(parties=clients)
     SessionManager.setup_mpc(session_one)
