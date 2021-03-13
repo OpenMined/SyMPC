@@ -1,6 +1,4 @@
-"""
-Custom MPC Tensors
-"""
+"""Custom MPC Tensors."""
 
 from .share_tensor import ShareTensor  # isort:skip
 from .mpc_tensor import METHODS_TO_ADD
