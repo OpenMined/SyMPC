@@ -541,7 +541,7 @@ class MPCTensor:
     # TODO: put back @lru_cache(maxsize=128)
     @staticmethod
     def __get_shape(
-        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], kwargs_: dict
+        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], kwargs_: dict = {}
     ) -> Tuple[int]:
 
         if x_shape is None or y_shape is None:
