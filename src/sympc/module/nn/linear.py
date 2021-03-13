@@ -73,7 +73,7 @@ class Linear:
         if (linear1.bias is None) != (linear2.bias is None):
             return False
 
-        if not torch.allclose(linear1.weight, linear2.weight, atol=ATOL):
+        if not torch.allclose(linear1.weight, linear2.weight, rtol=RTOL):
             return False
 
         if not torch.allclose(linear1.bias, linear2.bias, rtol=RTOL):
