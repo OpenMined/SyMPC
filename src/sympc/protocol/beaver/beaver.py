@@ -25,7 +25,11 @@ ttp_generator = csprng.create_random_device_generator()
 
 
 def _get_triples(
-    op_str: str, nr_parties: int, a_shape: Tuple[int], b_shape: Tuple[int], **kwargs
+    op_str: str,
+    nr_parties: int,
+    a_shape: Tuple[int],
+    b_shape: Tuple[int],
+    **kwargs: Dict[Any, Any]
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """The Trusted Third Party (TTP) or Crypto Provider should provide this
     triples Currently, the one that orchestrates the communication provides
@@ -181,7 +185,7 @@ def matmul_store_get(
 def get_triples_conv2d(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the mul operation."""
+    """Get the beaver triples for the conv2d operation."""
     return _get_triples("conv2d", *args, **kwargs)
 
 

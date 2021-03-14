@@ -6,6 +6,8 @@
 
 # stdlib
 import operator
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Union
 
@@ -25,7 +27,9 @@ EXPECTED_OPS = {"mul", "matmul", "conv2d"}
 """ Functions that are executed at the orchestrator """
 
 
-def mul_master(x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: dict) -> MPCTensor:
+def mul_master(
+    x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]
+) -> MPCTensor:
     """Function that is executed by the orchestrator to multiply two secret
     values.
 

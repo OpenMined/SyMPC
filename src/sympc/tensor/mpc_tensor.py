@@ -1,6 +1,7 @@
 """Class used to have orchestrate the computation on shared values."""
 
 # stdlib
+from functools import lru_cache
 import operator
 from typing import Any
 from typing import Dict
@@ -478,7 +479,7 @@ class MPCTensor:
         return result
 
     def __apply_private_op(
-        self, y: "MPCTensor", op_str: str, kwargs_: dict
+        self, y: "MPCTensor", op_str: str, kwargs_: Dict[Any, Any]
     ) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
 
@@ -511,7 +512,7 @@ class MPCTensor:
         return result
 
     def __apply_public_op(
-        self, y: Union[torch.Tensor, float, int], op_str: str, kwargs_: dict
+        self, y: Union[torch.Tensor, float, int], op_str: str, kwargs_: Dict[Any, Any]
     ) -> "MPCTensor":
         """Apply an operation on "self" which is a MPCTensor and a public
         value.
@@ -538,10 +539,10 @@ class MPCTensor:
         result = MPCTensor(shares=shares, session=self.session)
         return result
 
-    # TODO: put back @lru_cache(maxsize=128)
     @staticmethod
+    @lru_cache(maxsize=128)
     def __get_shape(
-        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], kwargs_: dict = {}
+        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], **kwargs_: Dict[Any, Any]
     ) -> Tuple[int]:
 
         if x_shape is None or y_shape is None:
@@ -564,7 +565,7 @@ class MPCTensor:
         self,
         y: Union["MPCTensor", torch.Tensor, float, int],
         op_str: str,
-        kwargs_: dict = {},
+        kwargs_: Dict[Any, Any] = {},
     ) -> "MPCTensor":
         """Apply an operation on "self" which is a MPCTensor "y" This function
         checks if "y" is private or public value.
@@ -590,7 +591,7 @@ class MPCTensor:
         else:
             y_shape = y.shape
 
-        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape, kwargs_)
+        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape, **kwargs_)
 
         if op_str in {"mul", "matmul", "conv2d"} and not (
             is_private and self.session.nr_parties == 2
