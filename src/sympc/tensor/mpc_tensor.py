@@ -301,7 +301,6 @@ class MPCTensor:
             return res
 
         request = _request_and_get
-
         request_wrap = parallel_execution(request)
 
         args = [[share] for share in self.share_ptrs]
@@ -391,6 +390,46 @@ class MPCTensor:
 
         return self.__apply_op(y, "matmul")
 
+    def conv2d(
+        self,
+        weight: Union["MPCTensor", torch.Tensor, float, int],
+        bias: Optional[torch.Tensor] = None,
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
+        groups: int = 1,
+    ) -> "MPCTensor":
+        """Apply the "conv2d" operation between "self" and "y".
+
+        Args:
+            weight: the convolution kernel
+            bias: optional bias
+            stride: stride
+            padding: padding
+            dilation: dilation
+            groups: groups
+
+        Returns:
+            MPCTensor. Result of the operation.
+        """
+
+        kwargs = {
+            "bias": bias,
+            "stride": stride,
+            "padding": padding,
+            "dilation": dilation,
+            "groups": groups,
+        }
+
+        bias = kwargs.pop("bias", None)
+
+        convolution = self.__apply_op(weight, "conv2d", kwargs_=kwargs)
+
+        if bias:
+            return convolution + bias
+        else:
+            return convolution
+
     def rmatmul(self, y: torch.Tensor) -> "MPCTensor":
         """Apply the "rmatmul" operation between "y" and "self".
 
@@ -438,12 +477,15 @@ class MPCTensor:
         result = spdz.public_divide(self, y)
         return result
 
-    def __apply_private_op(self, y: "MPCTensor", op_str: str) -> "MPCTensor":
+    def __apply_private_op(
+        self, y: "MPCTensor", op_str: str, kwargs_: Dict[Any, Any]
+    ) -> "MPCTensor":
         """Apply an operation on 2 MPCTensor (secret shared values)
 
         Args:
             y (MPCTensor): tensor to apply the operation
             op_str (str): the operation
+            kwargs_ (dict): kwargs for some operations like conv2d
 
         Returns:
             MPCTensor. The operation "op_str" applied on "self" and "y"
@@ -454,10 +496,10 @@ class MPCTensor:
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
             )
 
-        if op_str in {"mul", "matmul"}:
+        if op_str in {"mul", "matmul", "conv2d"}:
             from sympc.protocol.spdz import spdz
 
-            result = spdz.mul_master(self, y, op_str)
+            result = spdz.mul_master(self, y, op_str, kwargs_)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             shares = [
@@ -469,7 +511,7 @@ class MPCTensor:
         return result
 
     def __apply_public_op(
-        self, y: Union[torch.Tensor, float, int], op_str: str
+        self, y: Union[torch.Tensor, float, int], op_str: str, kwargs_: Dict[Any, Any]
     ) -> "MPCTensor":
         """Apply an operation on "self" which is a MPCTensor and a public
         value.
@@ -477,6 +519,7 @@ class MPCTensor:
         Args:
             y (Union[torch.Tensor, float, int]): tensor to apply the operation.
             op_str (str): the operation.
+            kwargs_ (dict): kwargs for some operations like conv2d
 
         Returns:
             MPCTensor. The operation "op_str" applied on "self" and "y"
@@ -498,7 +541,7 @@ class MPCTensor:
     @staticmethod
     @lru_cache(maxsize=128)
     def __get_shape(
-        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int]
+        op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], **kwargs_: Dict[Any, Any]
     ) -> Tuple[int]:
 
         if x_shape is None or y_shape is None:
@@ -506,15 +549,22 @@ class MPCTensor:
                 f"Shapes should not be None; x_shape {x_shape}, y_shape {y_shape}"
             )
 
-        op = getattr(operator, op_str)
+        if op_str == "conv2d":
+            op = torch.conv2d
+        else:
+            op = getattr(operator, op_str)
+
         x = torch.ones(size=x_shape)
         y = torch.ones(size=y_shape)
 
-        res = op(x, y)
+        res = op(x, y, **kwargs_)
         return res.shape
 
     def __apply_op(
-        self, y: Union["MPCTensor", torch.Tensor, float, int], op_str: str
+        self,
+        y: Union["MPCTensor", torch.Tensor, float, int],
+        op_str: str,
+        kwargs_: Dict[Any, Any] = {},
     ) -> "MPCTensor":
         """Apply an operation on "self" which is a MPCTensor "y" This function
         checks if "y" is private or public value.
@@ -522,6 +572,7 @@ class MPCTensor:
         Args:
             y: tensor to apply the operation.
             op_str: the operation.
+            kwargs_ (dict): kwargs for some operations like conv2d
 
         Returns:
             MPCTensor. the operation "op_str" applied on "self" and "y"
@@ -530,18 +581,18 @@ class MPCTensor:
         is_private = isinstance(y, MPCTensor)
 
         if is_private:
-            result = self.__apply_private_op(y, op_str)
+            result = self.__apply_private_op(y, op_str, kwargs_)
         else:
-            result = self.__apply_public_op(y, op_str)
+            result = self.__apply_public_op(y, op_str, kwargs_)
 
         if isinstance(y, (float, int)):
             y_shape = (1,)
         else:
             y_shape = y.shape
 
-        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape)
+        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape, **kwargs_)
 
-        if op_str in {"mul", "matmul"} and not (
+        if op_str in {"mul", "matmul", "conv2d"} and not (
             is_private and self.session.nr_parties == 2
         ):
             # For private op we do the division in the mul_parties function from spdz
@@ -574,6 +625,13 @@ class MPCTensor:
 
     def numel(self) -> int:
         return self.share_ptrs[0].numel()
+
+    @property
+    def T(self) -> int:
+        shares = [share.T for share in self.share_ptrs]
+        res = MPCTensor(shares=shares, session=self.session)
+        res.shape = torch.empty(self.shape).T.shape
+        return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
@@ -635,7 +693,7 @@ class MPCTensor:
 PARTIES_TO_SESSION: Dict[Any, Session] = {}
 
 
-def share(_self, **kwargs: Dict[Any, Any]):
+def share(_self, **kwargs: Dict[Any, Any]) -> MPCTensor:
     session = None
 
     if "parties" not in kwargs and "session" not in kwargs:

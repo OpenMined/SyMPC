@@ -13,6 +13,8 @@ from . import session  # noqa: 401
 from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 
+from . import module  # noqa: 401 isort: skip
+
 try:
     # third party
     import syft
