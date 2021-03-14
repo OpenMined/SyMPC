@@ -8,7 +8,8 @@ on:
       - "**.py"
       - "setup.cfg"
       - ".github/workflows/**.yml"
-      - "**.txt"
+      - "requirements_dev.txt"
+      - "requirements.txt"
 
   pull_request:
     types: [opened, synchronize, reopened]
