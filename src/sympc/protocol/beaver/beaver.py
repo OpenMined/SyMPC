@@ -1,4 +1,10 @@
-"""The Beaver Triples."""
+"""Beaver Triples Protocol.
+
+D. Beaver. *Efficient multiparty protocols using circuit randomization*.
+In J. Feigenbaum, editor, CRYPTO, volume **576** of Lecture Notes
+in Computer Science, pages 420–432. Springer, 1991.
+"""
+
 
 # stdlib
 import operator
@@ -27,10 +33,20 @@ ttp_generator = csprng.create_random_device_generator()
 def _get_triples(
     op_str: str, nr_parties: int, a_shape: Tuple[int], b_shape: Tuple[int]
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
-    """The Trusted Third Party (TTP) or Crypto Provider should provide this
-    triples Currently, the one that orchestrates the communication provides
-    those triples."""
+    """Get triples.
 
+    The Trusted Third Party (TTP) or Crypto Provider should provide this triples Currently,
+    the one that orchestrates the communication provides those triples.".
+
+    Args:
+        op_str (str): Operator string.
+        nr_parties (int): Number of parties
+        a_shape (Tuple[int]): shape of a from beaver triples protocol.
+        b_shape (Tuple[int]): shape of b part from beaver triples protocol.
+
+    Returns:
+        Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]: The generated triples a,b,c
+    """
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
@@ -85,7 +101,16 @@ def _get_triples(
 def get_triples_mul(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the matmul operation."""
+    """Get the beaver triples for the multiplication operation.
+
+    Args:
+        *args (List[ShareTensor]): Named arguments of :func:`beaver.__get_triples`.
+        **kwargs (List[ShareTensor]): Keyword arguments of :func:`beaver.__get_triples`.
+
+    Returns:
+        Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]: The generated triples a,b,c
+        for the mul operation.
+    """
     return _get_triples("mul", *args, **kwargs)
 
 
@@ -96,6 +121,7 @@ def mul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
+    """TODO: Add docstring."""
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -110,6 +136,7 @@ def mul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
+    """TODO: Add docstring."""
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -131,7 +158,16 @@ def mul_store_get(
 def get_triples_matmul(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the mul operation."""
+    """Get the beaver triples for the matmul  operation.
+
+    Args:
+        *args (List[ShareTensor]): Named arguments of :func:`beaver.__get_triples`.
+        **kwargs (List[ShareTensor]): Keyword arguments of :func:`beaver.__get_triples`.
+
+    Returns:
+        Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]: The generated triples a,b,c
+        for the matmul operation.
+    """
     return _get_triples("matmul", *args, **kwargs)
 
 
@@ -142,7 +178,7 @@ def matmul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-
+    """TODO: Add docstring."""
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -157,6 +193,7 @@ def matmul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
+    """TODO: Add docstring."""
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -178,13 +215,22 @@ def matmul_store_get(
 def count_wraps_rand(
     nr_parties: int, shape: Tuple[int]
 ) -> Tuple[List[ShareTensor], List[ShareTensor]]:
-    """The Trusted Third Party (TTP) or Crypto Provider should generate.
+    """Count wraps random.
+
+    The Trusted Third Party (TTP) or Crypto provider should generate:
 
     - a set of shares for a random number
     - a set of shares for the number of wraparounds for that number
 
     Those shares are used when doing a public division, such that the
     end result would be the correct one.
+
+    Args:
+        nr_parties (int): Number of parties
+        shape Tuple[int]: Todo: Add description
+
+    Returns:
+        Tuple[List[ShareTensor], List[ShareTensor]]: TODO: Add description
     """
     rand_val = torch.empty(size=shape, dtype=torch.long).random_(
         generator=ttp_generator
