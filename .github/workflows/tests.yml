@@ -17,7 +17,8 @@ on:
       - "**.py"
       - "setup.cfg"
       - ".github/workflows/**.yml"
-      - "**.txt"
+      - "requirements_dev.txt"
+      - "requirements.txt"
 
 jobs:
   python-tests:
