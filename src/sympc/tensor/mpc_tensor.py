@@ -301,7 +301,6 @@ class MPCTensor:
             return res
 
         request = _request_and_get
-
         request_wrap = parallel_execution(request)
 
         args = [[share] for share in self.share_ptrs]
@@ -575,6 +574,13 @@ class MPCTensor:
     def numel(self) -> int:
         return self.share_ptrs[0].numel()
 
+    @property
+    def T(self) -> int:
+        shares = [share.T for share in self.share_ptrs]
+        res = MPCTensor(shares=shares, session=self.session)
+        res.shape = torch.empty(self.shape).T.shape
+        return res
+
     def le(self, other: "MPCTensor") -> "MPCTensor":
         protocol = self.session.get_protocol()
         other = self.__check_or_convert(other, self.session)
@@ -635,7 +641,7 @@ class MPCTensor:
 PARTIES_TO_SESSION: Dict[Any, Session] = {}
 
 
-def share(_self, **kwargs: Dict[Any, Any]):
+def share(_self, **kwargs: Dict[Any, Any]) -> MPCTensor:
     session = None
 
     if "parties" not in kwargs and "session" not in kwargs:

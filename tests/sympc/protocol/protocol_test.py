@@ -6,6 +6,5 @@ class TestProtocol(metaclass=Protocol):
 
 
 def test_register_protocol() -> None:
-    print(Protocol.registered_protocols)
     assert "TestProtocol" in Protocol.registered_protocols
     assert Protocol.registered_protocols["TestProtocol"] == TestProtocol
