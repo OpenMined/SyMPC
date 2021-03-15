@@ -8,6 +8,8 @@ SPDZ mechanism used for multiplication Contains functions that are run at:
 
 # stdlib
 import operator
+from typing import Any
+from typing import Dict
 from typing import List
 from typing import Union
 
@@ -21,13 +23,13 @@ from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
 from sympc.utils import parallel_execution
 
-EXPECTED_OPS = {"mul", "matmul"}
+EXPECTED_OPS = {"mul", "matmul", "conv2d"}
 
 
 """ Functions that are executed at the orchestrator """
 
 
-def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
+def mul_master(x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]) -> MPCTensor:
     """Function that is executed by the orchestrator to multiply two secret values.
 
     Args:
@@ -56,6 +58,7 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
             "a_shape": shape_x,
             "b_shape": shape_y,
             "nr_parties": session.nr_parties,
+            **kwargs_,
         },
         p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
     )
@@ -77,14 +80,14 @@ def mul_master(x: MPCTensor, y: MPCTensor, op_str: str) -> MPCTensor:
     # Specific arguments to each party
     args = [[el] + common_args for el in session.session_ptrs]
 
-    shares = parallel_execution(mul_parties, session.parties)(args)
+    shares = parallel_execution(mul_parties, session.parties)(args, kwargs_)
     result = MPCTensor(shares=shares, shape=c_sh[0].shape, session=session)
 
     return result
 
 
 def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
-    """Function that is execute by the orchestrator to divide a secret by a public value.
+    """Function that is executed by the orchestrator to divide a secret by a public value.
 
     Args:
         x (MPCTensor): Private numerator.
@@ -175,10 +178,7 @@ def div_wraps(
 
 
 def mul_parties(
-    session: Session,
-    eps: torch.Tensor,
-    delta: torch.Tensor,
-    op_str: str,
+    session: Session, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
 ) -> ShareTensor:
     """SPDZ Multiplication.
 
@@ -200,14 +200,18 @@ def mul_parties(
     )
 
     a_share, b_share, c_share = primitives
-    op = getattr(operator, op_str)
 
-    eps_b = op(eps, b_share.tensor)
-    delta_a = op(a_share.tensor, delta)
+    if op_str == "conv2d":
+        op = torch.conv2d
+    else:
+        op = getattr(operator, op_str)
+
+    eps_b = op(eps, b_share.tensor, **kwargs)
+    delta_a = op(a_share.tensor, delta, **kwargs)
 
     share_tensor = c_share.tensor + eps_b + delta_a
     if session.rank == 0:
-        delta_eps = op(eps, delta)
+        delta_eps = op(eps, delta, **kwargs)
         share_tensor += delta_eps
 
     # Convert to our tensor type

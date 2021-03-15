@@ -288,6 +288,12 @@ class ShareTensor:
     def numel(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
         return self.tensor.numel(*args, **kwargs)
 
+    @property
+    def T(self) -> Any:
+        res = ShareTensor(session=self.session)
+        res.tensor = self.tensor.T
+        return res
+
     def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
         tensor = self.tensor.unsqueeze(*args, **kwargs)
         res = ShareTensor(session=self.session)

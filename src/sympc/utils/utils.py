@@ -118,7 +118,7 @@ def parallel_execution(
         ) as executor:
             for i in range(nr_parties):
                 _args = args[i]
-                _kwargs = kwargs.get(i, {})
+                _kwargs = kwargs
                 futures.append(executor.submit(funcs[i], *_args, **_kwargs))
 
         local_shares = [f.result() for f in futures]
