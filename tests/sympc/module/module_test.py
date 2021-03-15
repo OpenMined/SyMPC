@@ -8,9 +8,9 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 
 
-class SyNet(sy.Module):
+class LinearNet(sy.Module):
     def __init__(self, torch_ref):
-        super(SyNet, self).__init__(torch_ref=torch_ref)
+        super(LinearNet, self).__init__(torch_ref=torch_ref)
         self.fc1 = self.torch_ref.nn.Linear(3, 10)
         self.fc2 = self.torch_ref.nn.Linear(10, 1)
 
@@ -21,9 +21,28 @@ class SyNet(sy.Module):
         x = self.torch_ref.nn.functional.relu(x)
         return x
 
+class ConvNet(sy.Module):
+    def __init__(self, torch_ref):
+        super(ConvNet, self).__init__(torch_ref=torch_ref)
+        self.conv1 = self.torch_ref.nn.Conv2d(1, 10, kernel_size=5)
+        self.fc1 = self.torch_ref.nn.Linear(240, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 1)
 
-def test_run_simple_model(get_clients):
-    module = SyNet(torch)
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = x.view(-1, 240)
+        x = self.fc1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        return x
+
+
+
+
+def test_run_linear_model(get_clients):
+    module = LinearNet(torch)
 
     clients = get_clients(2)
 
@@ -40,15 +59,41 @@ def test_run_simple_model(get_clients):
     # For the moment we have only inference
     expected = module(x_secret)
 
-    res_mpc = mpc_module(x_secret)
+    res_mpc = mpc_module(x_mpc)
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, rtol=10e-4)
+    assert torch.allclose(res, expected, rtol=10e-3)
+
+def test_run_conv_model(get_clients):
+    module = ConvNet(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    mpc_module = module.share(session=session)
+
+    x_secret = torch.randn((1, 1, 28, 28))
+    x_mpc = MPCTensor(secret=x_secret, session=session)
+
+    module.eval()
+
+    # For the moment we have only inference
+    expected = module(x_secret)
+
+    res_mpc = mpc_module(x_mpc)
+    assert isinstance(res_mpc, MPCTensor)
+
+    res = res_mpc.reconstruct()
+    assert torch.allclose(res, expected, rtol=10e-3)
+
+
 
 
 def test_reconstruct_shared_model(get_clients):
-    module = SyNet(torch)
+    module = LinearNet(torch)
 
     clients = get_clients(2)
 

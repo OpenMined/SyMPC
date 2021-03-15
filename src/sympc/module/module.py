@@ -11,8 +11,12 @@ import torch
 import sympc.module as sympc_module
 
 from .nn import Linear
+from .nn import Conv2d
 
-MAP_TORCH_TO_SYMPC = {torch.nn.modules.linear.Linear: Linear}
+MAP_TORCH_TO_SYMPC = {
+    torch.nn.Linear: Linear,
+    torch.nn.Conv2d: Conv2d
+}
 
 
 def share(_self, **kwargs: Dict[Any, Any]) -> sy.Module:
@@ -25,6 +29,7 @@ def share(_self, **kwargs: Dict[Any, Any]) -> sy.Module:
     mpc_module._modules = OrderedDict()
     mpc_module.torch_ref = sympc_module
 
+    import pdb; pdb.set_trace()
     for name, module in _self.modules.items():
         local_state_dict = module.state_dict()
         sympc_type_layer = MAP_TORCH_TO_SYMPC[type(module)]
