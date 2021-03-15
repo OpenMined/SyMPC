@@ -233,7 +233,17 @@ def conv2d_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
+    """TODO: Add docstring.
 
+    Args:
+        store:
+        primitives:
+        a_shape:
+        b_shape:
+
+    Returns:
+
+    """
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -248,6 +258,17 @@ def conv2d_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
+    """TODO: Add docstring.
+
+    Args:
+        store:
+        primitives:
+        a_shape:
+        b_shape:
+
+    Returns:
+
+    """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 

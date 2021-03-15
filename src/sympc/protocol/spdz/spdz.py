@@ -29,13 +29,16 @@ EXPECTED_OPS = {"mul", "matmul", "conv2d"}
 """ Functions that are executed at the orchestrator """
 
 
-def mul_master(x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]) -> MPCTensor:
+def mul_master(
+    x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]
+) -> MPCTensor:
     """Function that is executed by the orchestrator to multiply two secret values.
 
     Args:
         x (MPCTensor): First value to multiply with.
         y (MPCTensor): Second value to multiply with.
         op_str (str): Operation string.
+        kwargs_ (dict): TODO:Add docstring.
 
     Raises:
         ValueError: If op_str not in EXPECTED_OPS.
