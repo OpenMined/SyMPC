@@ -14,7 +14,6 @@ from sympc.tensor import MPCTensor
 RTOL = 1e-3
 ATOL = 1e-4
 
-
 class Linear:
     __slots__ = ["weight", "bias", "session", "in_features", "out_features"]
 
@@ -64,7 +63,12 @@ class Linear:
         return module
 
     @staticmethod
-    def eq_close(linear1: torch.nn.Linear, linear2: torch.nn.Linear) -> bool:
+    def eq_close(
+        linear1: torch.nn.Linear,
+        linear2: torch.nn.Linear,
+        rtol: float = 1e-05,
+        atol: float = 1e-08,
+    ) -> bool:
         if not (
             isinstance(linear1, torch.nn.Linear)
             and isinstance(linear2, torch.nn.Linear)

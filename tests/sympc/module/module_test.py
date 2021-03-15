@@ -21,10 +21,13 @@ class LinearNet(sy.Module):
         x = self.torch_ref.nn.functional.relu(x)
         return x
 
+
 class ConvNet(sy.Module):
     def __init__(self, torch_ref):
         super(ConvNet, self).__init__(torch_ref=torch_ref)
-        self.conv1 = self.torch_ref.nn.Conv2d(1, 10, kernel_size=5)
+        self.conv1 = self.torch_ref.nn.Conv2d(
+            in_channels=1, out_channels=10, kernel_size=5
+        )
         self.fc1 = self.torch_ref.nn.Linear(240, 10)
         self.fc2 = self.torch_ref.nn.Linear(10, 1)
 
@@ -37,8 +40,6 @@ class ConvNet(sy.Module):
         x = self.fc2(x)
         x = self.torch_ref.nn.functional.relu(x)
         return x
-
-
 
 
 def test_run_linear_model(get_clients):
@@ -65,6 +66,7 @@ def test_run_linear_model(get_clients):
     res = res_mpc.reconstruct()
     assert torch.allclose(res, expected, rtol=10e-3)
 
+
 def test_run_conv_model(get_clients):
     module = ConvNet(torch)
 
@@ -90,9 +92,7 @@ def test_run_conv_model(get_clients):
     assert torch.allclose(res, expected, rtol=10e-3)
 
 
-
-
-def test_reconstruct_shared_model(get_clients):
+def test_reconstruct_linear_shared_model(get_clients):
     module = LinearNet(torch)
 
     clients = get_clients(2)
@@ -113,5 +113,30 @@ def test_reconstruct_shared_model(get_clients):
         module_res = res.modules[name_res]
 
         assert MAP_TORCH_TO_SYMPC[type(module_expected)].eq_close(
-            module_expected, module_res
+            module_expected, module_res, atol=1e-4
+        )
+
+
+def test_reconstruct_conv_shared_model(get_clients):
+    module = ConvNet(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    mpc_module = module.share(session=session)
+
+    res = mpc_module.reconstruct()
+
+    assert isinstance(res, sy.Module)
+
+    for name_res, name_expected in zip(res.modules, module.modules):
+        assert name_res == name_expected
+
+        module_expected = module.modules[name_expected]
+        module_res = res.modules[name_res]
+
+        assert MAP_TORCH_TO_SYMPC[type(module_expected)].eq_close(
+            module_expected, module_res, atol=1e-4
         )

@@ -11,8 +11,6 @@ import torch
 
 from sympc.tensor import MPCTensor
 
-RTOL = 10e-3
-
 
 class Conv2d:
     __slots__ = [
@@ -44,8 +42,6 @@ class Conv2d:
         self.groups = 1
 
     def forward(self, x: MPCTensor) -> MPCTensor:
-        print(self.weight.shape)
-        print(self.bias.shape)
         res = x.conv2d(
             weight=self.weight,
             bias=self.bias,
@@ -61,10 +57,8 @@ class Conv2d:
 
     def share_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.weight = state_dict["weight"].share(session=self.session)
-        print(state_dict["bias"])
 
         if "bias" in state_dict:
-            print("Share bias", state_dict["bias"].shape)
             self.bias = state_dict["bias"].share(session=self.session)
 
     def reconstruct_state_dict(self) -> Dict[str, Any]:
@@ -77,30 +71,50 @@ class Conv2d:
         return state_dict
 
     @staticmethod
-    def get_torch_module(linear_module: "Conv2d") -> torch.nn.Module:
-        bias = linear_module.bias is not None
-        module = torch.nn.Linear(
-            in_features=linear_module.in_features,
-            out_features=linear_module.out_features,
+    def get_torch_module(conv_module: "Conv2d") -> torch.nn.Module:
+        bias = conv_module.bias is not None
+
+        # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
+        # we have groups == 1
+        (
+            out_channels,
+            in_channels,
+            kernel_size_w,
+            kernel_size_h,
+        ) = conv_module.weight.shape
+
+        if kernel_size_w != kernel_size_h:
+            raise ValueError(
+                f"Kernel sizes mismatch {kernel_size_w} and {kernel_size_h}"
+            )
+
+        module = torch.nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size_w,
             bias=bias,
         )
         return module
 
     @staticmethod
-    def eq_close(conv1: torch.nn.Conv2d, conv2: torch.nn.Conv2d) -> bool:
+    def eq_close(
+        conv1: torch.nn.Conv2d,
+        conv2: torch.nn.Conv2d,
+        rtol: float = 1e-05,
+        atol: float = 1e-08,
+    ) -> bool:
         if not (
-            isinstance(linear1, torch.nn.Conv2d)
-            and isinstance(linear2, torch.nn.Conv2d)
+            isinstance(conv1, torch.nn.Conv2d) and isinstance(conv2, torch.nn.Conv2d)
         ):
             raise ValueError("linear1 and linear2 should be Conv2d layers")
 
-        if (conv1.bias is None) != (linear2.bias is None):
+        if (conv1.bias is None) != (conv2.bias is None):
             return False
 
-        if not torch.allclose(conv1.weight, linear2.weight, rtol=RTOL):
+        if not torch.allclose(conv1.weight, conv2.weight, rtol=rtol, atol=atol):
             return False
 
-        if not torch.allclose(conv1.bias, conv2.bias, rtol=RTOL):
+        if not torch.allclose(conv1.bias, conv2.bias, rtol=rtol, atol=atol):
             return False
 
         return True
