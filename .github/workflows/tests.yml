@@ -55,7 +55,7 @@ jobs:
           pip install -r requirements.dev.txt
           pip install -e .
 
-      - uses: pre-commit/action@v2.0.0
+#      - uses: pre-commit/action@v2.0.0  #temporal
 
       - name: Check docstring coverage
         run: |
