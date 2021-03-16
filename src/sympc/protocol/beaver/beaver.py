@@ -1,8 +1,8 @@
 """Beaver Triples Protocol.
 
 D. Beaver. *Efficient multiparty protocols using circuit randomization*.
-In J. Feigenbaum, editor, CRYPTO, volume **576** of Lecture Notes
-in Computer Science, pages 420–432. Springer, 1991.
+In J. Feigenbaum, editor, CRYPTO, volume **576** of Lecture Notes in
+Computer Science, pages 420–432. Springer, 1991.
 """
 
 
@@ -36,7 +36,7 @@ def _get_triples(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
     **kwargs: Dict[Any, Any]
-) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
+) -> List[List[List[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
 
     The Trusted Third Party (TTP) or Crypto Provider should provide this triples Currently,
@@ -49,7 +49,8 @@ def _get_triples(
         b_shape (Tuple[int]): shape of b part from beaver triples protocol.
 
     Returns:
-        Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]: The generated triples a,b,c
+        List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]:
+        The generated triples a,b,c for each party
     """
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
@@ -80,7 +81,10 @@ def _get_triples(
     c_shares = MPCTensor.generate_shares(
         secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
+
+    # We are always creating an instance
     triple_sequential = [(a_shares, b_shares, c_shares)]
+
     """
     Example -- for n_instances=2 and n_parties=2:
     For Beaver Triples the "res" would look like:
@@ -128,7 +132,14 @@ def mul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-    """TODO: Add docstring."""
+    """Add the primitives required for the "mul" operation to the CryptoStore.
+
+    Arguments:
+        store: the CryptoStore
+        primitives: the list of primitives
+        a_shape: the shape of the first operand
+        b_shape: the shape of the second operand
+    """
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -143,7 +154,19 @@ def mul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
-    """TODO: Add docstring."""
+    """Retrieve the primitives from the CryptoStore. Those are needed for
+    executing the "mul" operation.
+
+    Arguments:
+        store: the CryptoStore
+        a_shape: the shape of the first operand
+        b_shape: the shape of the second operand
+        remove: True if the primitives should be removed from the store
+
+    Returns:
+        The primitives required for the "mul" operation
+    """
+
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -185,7 +208,16 @@ def matmul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-    """TODO: Add docstring."""
+    """Add the primitives required for the "matmul" operation to the
+    CryptoStore.
+
+    Arguments:
+        store: the CryptoStore
+        primitives: the list of primitives
+        a_shape: the shape of the first operand
+        b_shape: the shape of the second operand
+    """
+
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -200,7 +232,18 @@ def matmul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
-    """TODO: Add docstring."""
+    """Retrieve the primitives from the CryptoStore. Those are needed for
+    executing the "matmul" operation.
+
+    Arguments:
+        store: the CryptoStore
+        a_shape: the shape of the first operand
+        b_shape: the shape of the second operand
+        remove: True if the primitives should be removed from the store
+
+    Returns:
+        The primitives required for the "matmul" operation
+    """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -233,16 +276,14 @@ def conv2d_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-    """TODO: Add docstring.
+    """Add the primitives required for the "conv2d" operation to the
+    CryptoStore.
 
-    Args:
-        store:
-        primitives:
-        a_shape:
-        b_shape:
-
-    Returns:
-
+    Arguments:
+        store: the CryptoStore
+        primitives: the list of primitives
+        a_shape: the shape of the first operand
+        b_shape: the shape of the second operand
     """
     config_key = (a_shape, b_shape)
     if config_key in store:
@@ -258,16 +299,17 @@ def conv2d_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
-    """TODO: Add docstring.
+    """Retrieve the primitives from the CryptoStore. Those are needed for
+    executing the "conv2d" operation.
 
-    Args:
-        store:
-        primitives:
-        a_shape:
-        b_shape:
+    Arguments:
+        store: the CryptoStore
+        a_shape: the shape of the first operand
+        b_shape: the shape of the second operand
+        remove: True if the primitives should be removed from the store
 
     Returns:
-
+        The primitives required for the "conv2d" operation
     """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
@@ -289,7 +331,7 @@ def conv2d_store_get(
 @register_primitive_generator("beaver_wraps")
 def count_wraps_rand(
     nr_parties: int, shape: Tuple[int]
-) -> Tuple[List[ShareTensor], List[ShareTensor]]:
+) -> List[List[List[ShareTensor, ShareTensor]]]:
     """Count wraps random.
 
     The Trusted Third Party (TTP) or Crypto provider should generate:
@@ -302,10 +344,12 @@ def count_wraps_rand(
 
     Args:
         nr_parties (int): Number of parties
-        shape Tuple[int]: Todo: Add description
+        shape (Tuple[int]): The shape for the random value
 
     Returns:
-        Tuple[List[ShareTensor], List[ShareTensor]]: TODO: Add description
+        List[List[List[ShareTensor, ShareTensor]]: a list of instaces with the shares
+        for a random integer value and shares for the number of wraparounds that are done when
+        reconstructing the random value
     """
     rand_val = torch.empty(size=shape, dtype=torch.long).random_(
         generator=ttp_generator
@@ -323,8 +367,11 @@ def count_wraps_rand(
         secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
 
+    # We are always creating only an instance
     primitives_sequential = [(r_shares, theta_r_shares)]
+
     primitives = list(
         map(list, zip(*map(lambda x: map(list, zip(*x)), primitives_sequential)))
     )
+
     return primitives
