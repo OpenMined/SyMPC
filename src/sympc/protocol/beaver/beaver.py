@@ -45,12 +45,14 @@ def _get_triples(
     Args:
         op_str (str): Operator string.
         nr_parties (int): Number of parties
-        a_shape (Tuple[int]): shape of a from beaver triples protocol.
-        b_shape (Tuple[int]): shape of b part from beaver triples protocol.
+        a_shape (Tuple[int]): Shape of a from beaver triples protocol.
+        b_shape (Tuple[int]): Shape of b part from beaver triples protocol.
+        kwargs: Arbitrary keyword arguments for commands.
+
 
     Returns:
         List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]:
-        The generated triples a,b,c for each party
+        The generated triples a,b,c for each party.
     """
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
@@ -154,19 +156,22 @@ def mul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
-    """Retrieve the primitives from the CryptoStore. Those are needed for
-    executing the "mul" operation.
+    """Retrieve the primitives from the CryptoStore.
 
-    Arguments:
-        store: the CryptoStore
-        a_shape: the shape of the first operand
-        b_shape: the shape of the second operand
-        remove: True if the primitives should be removed from the store
+    Those are needed for executing the "mul" operation.
+
+    Args:
+        store (Dict[Tuple[int, int], List[Any]]): The CryptoStore.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
 
     Returns:
-        The primitives required for the "mul" operation
-    """
+        Any: The primitives required for the "mul" operation.
 
+    Raises:
+        ValueError: If no primitive in the store for config_key.
+    """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -208,16 +213,15 @@ def matmul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-    """Add the primitives required for the "matmul" operation to the
-    CryptoStore.
+    """Add the primitives required for the "matmul" operation to the CryptoStore.
 
-    Arguments:
-        store: the CryptoStore
-        primitives: the list of primitives
-        a_shape: the shape of the first operand
-        b_shape: the shape of the second operand
+    Args:
+        store (Any): The CryptoStore.
+        primitives (Iterable[Any]): The list of primitives
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+
     """
-
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -232,17 +236,21 @@ def matmul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
-    """Retrieve the primitives from the CryptoStore. Those are needed for
-    executing the "matmul" operation.
+    """Retrieve the primitives from the CryptoStore.
 
-    Arguments:
-        store: the CryptoStore
-        a_shape: the shape of the first operand
-        b_shape: the shape of the second operand
-        remove: True if the primitives should be removed from the store
+    Those are needed for executing the "matmul" operation.
+
+    Args:
+        store (Dict[Tuple[int, int], List[Any]]): The CryptoStore.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
 
     Returns:
-        The primitives required for the "matmul" operation
+        Any: The primitives required for the "matmul" operation.
+
+    Raises:
+        ValueError: If no primitive in the store for config_key.
     """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
@@ -265,7 +273,16 @@ def matmul_store_get(
 def get_triples_conv2d(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the conv2d operation."""
+    """Get the beaver triples for the conv2d operation.
+
+    Args:
+        *args: Arguments for _get_triples.
+        **kwargs: Keyword arguments for _get_triples.
+
+    Returns:
+        Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]: The generated
+        triples a,b,c for each party.
+    """
     return _get_triples("conv2d", *args, **kwargs)
 
 
@@ -276,14 +293,13 @@ def conv2d_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-    """Add the primitives required for the "conv2d" operation to the
-    CryptoStore.
+    """Add the primitives required for the "conv2d" operation to the CryptoStore.
 
-    Arguments:
-        store: the CryptoStore
-        primitives: the list of primitives
-        a_shape: the shape of the first operand
-        b_shape: the shape of the second operand
+    Args:
+        store (Any): The CryptoStore.
+        primitives (Iterable[Any]): The list of primitives.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
     """
     config_key = (a_shape, b_shape)
     if config_key in store:
@@ -299,17 +315,21 @@ def conv2d_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
-    """Retrieve the primitives from the CryptoStore. Those are needed for
-    executing the "conv2d" operation.
+    """Retrieve the primitives from the CryptoStore.
 
-    Arguments:
+    Those are needed for executing the "conv2d" operation.
+
+    Args:
         store: the CryptoStore
-        a_shape: the shape of the first operand
-        b_shape: the shape of the second operand
-        remove: True if the primitives should be removed from the store
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
 
     Returns:
-        The primitives required for the "conv2d" operation
+        Any: The primitives required for the "conv2d" operation.
+
+    Raises:
+        ValueError: If no primitive in the store for config_key.
     """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
