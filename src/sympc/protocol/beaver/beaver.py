@@ -36,7 +36,7 @@ def _get_triples(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
     **kwargs: Dict[Any, Any]
-) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
+) -> List[List[List[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
 
     The Trusted Third Party (TTP) or Crypto Provider should provide this triples Currently,
@@ -49,7 +49,8 @@ def _get_triples(
         b_shape (Tuple[int]): shape of b part from beaver triples protocol.
 
     Returns:
-        List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]: The generated triples a,b,c for each party
+        List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]:
+        The generated triples a,b,c for each party
     """
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
@@ -161,6 +162,7 @@ def mul_store_get(
         a_shape: the shape of the first operand
         b_shape: the shape of the second operand
         remove: True if the primitives should be removed from the store
+
     Returns:
         The primitives required for the "mul" operation
     """
@@ -238,6 +240,7 @@ def matmul_store_get(
         a_shape: the shape of the first operand
         b_shape: the shape of the second operand
         remove: True if the primitives should be removed from the store
+
     Returns:
         The primitives required for the "matmul" operation
     """
@@ -304,6 +307,7 @@ def conv2d_store_get(
         a_shape: the shape of the first operand
         b_shape: the shape of the second operand
         remove: True if the primitives should be removed from the store
+
     Returns:
         The primitives required for the "conv2d" operation
     """
@@ -327,7 +331,7 @@ def conv2d_store_get(
 @register_primitive_generator("beaver_wraps")
 def count_wraps_rand(
     nr_parties: int, shape: Tuple[int]
-) -> Tuple[List[ShareTensor], List[ShareTensor]]:
+) -> List[List[List[ShareTensor, ShareTensor]]]:
     """Count wraps random.
 
     The Trusted Third Party (TTP) or Crypto provider should generate:
@@ -340,7 +344,7 @@ def count_wraps_rand(
 
     Args:
         nr_parties (int): Number of parties
-        shape Tuple[int]: Todo: Add description
+        shape (Tuple[int]): The shape for the random value
 
     Returns:
         List[List[List[ShareTensor, ShareTensor]]: a list of instaces with the shares
