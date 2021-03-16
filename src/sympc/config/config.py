@@ -11,7 +11,7 @@ class Config:
 
     Attributes:
         encoder_base (int): Base for the encoder.
-        encoder_precision: Precision for the encoder.
+        encoder_precision (int): Precision for the encoder.
     """
 
     encoder_precision: int = field()
@@ -25,7 +25,7 @@ class Config:
 
         Args:
             encoder_base (int): Base for the encoder.
-            encoder_precision: Precision for the encoder.
+            encoder_precision (int): Precision for the encoder.
         """
         self.encoder_base = encoder_base
         self.encoder_precision = encoder_precision
