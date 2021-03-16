@@ -32,7 +32,8 @@ EXPECTED_OPS = {"mul", "matmul", "conv2d"}
 def mul_master(
     x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]
 ) -> MPCTensor:
-    """Function that is executed by the orchestrator to multiply two secret values.
+    """Function that is executed by the orchestrator to multiply two secret
+    values.
 
     Args:
         x (MPCTensor): First value to multiply with.
@@ -90,7 +91,8 @@ def mul_master(
 
 
 def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
-    """Function that is executed by the orchestrator to divide a secret by a public value.
+    """Function that is executed by the orchestrator to divide a secret by a
+    public value.
 
     Args:
         x (MPCTensor): Private numerator.
@@ -143,7 +145,8 @@ def div_wraps(
     z_shares: List[torch.Tensor],
     y: Union[torch.Tensor, int],
 ) -> ShareTensor:
-    """From CrypTen Privately computes the number of wraparounds for a set a shares.
+    """From CrypTen Privately computes the number of wraparounds for a set a
+    shares.
 
     To do so, we note that:
         [theta_x] = theta_z + [beta_xr] - [theta_r] - [eta_xr]

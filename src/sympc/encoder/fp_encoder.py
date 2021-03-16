@@ -21,7 +21,8 @@ import torch
 
 
 class FixedPointEncoder:
-    """Class for encoding/decoding a tensor to/from a fixed precision representation.
+    """Class for encoding/decoding a tensor to/from a fixed precision
+    representation.
 
     This class was inspired from the Facebook Research - CrypTen project
 

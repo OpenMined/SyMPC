@@ -48,7 +48,8 @@ dif = sycret.LeFactory(n_threads=N_CORES)
 
 
 def keygen(n_values: int, op: str):
-    """Run FSS keygen in parallel to accelerate the offline part of the protocol.
+    """Run FSS keygen in parallel to accelerate the offline part of the
+    protocol.
 
     Args:
         n_values (int): Number of primitives to generate.
@@ -63,7 +64,8 @@ def keygen(n_values: int, op: str):
 
 
 def fss_op(x1: ShareTensor, x2: ShareTensor, op="eq"):
-    """Define the workflow for a binary operation using Function Secret Sharing.
+    """Define the workflow for a binary operation using Function Secret
+    Sharing.
 
     Currently supported operand are = & <=, respectively corresponding to
     op = 'eq' and 'comp'
