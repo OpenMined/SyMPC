@@ -363,7 +363,6 @@ def count_wraps_rand(
         secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
 
-
     # We are always creating only an instance
     primitives_sequential = [(r_shares, theta_r_shares)]
 
