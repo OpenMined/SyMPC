@@ -9,6 +9,7 @@ import operator
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Tuple
 from typing import Union
 
 # third party
@@ -46,7 +47,7 @@ def mul_master(
     shape_x = tuple(x.shape)
     shape_y = tuple(y.shape)
 
-    primitives = CryptoPrimitiveProvider.generate_primitives(
+    CryptoPrimitiveProvider.generate_primitives(
         f"beaver_{op_str}",
         sessions=session.session_ptrs,
         g_kwargs={
@@ -58,13 +59,16 @@ def mul_master(
         p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
     )
 
-    a_sh, b_sh, c_sh = list(zip(*list(zip(*primitives))[0]))
+    args = [
+        list(el) + [op_str]
+        for el in zip(session.session_ptrs, x.share_ptrs, y.share_ptrs)
+    ]
 
-    a_mpc = MPCTensor(shares=a_sh, shape=x.shape, session=session)
-    b_mpc = MPCTensor(shares=b_sh, shape=y.shape, session=session)
+    mask = parallel_execution(spdz_mask, session.parties)(args)
+    eps_shares, delta_shares = zip(*mask)
 
-    eps = x - a_mpc
-    delta = y - b_mpc
+    eps = MPCTensor(shares=eps_shares, session=session)
+    delta = MPCTensor(shares=delta_shares, session=session)
 
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
@@ -76,7 +80,8 @@ def mul_master(
     args = [[el] + common_args for el in session.session_ptrs]
 
     shares = parallel_execution(mul_parties, session.parties)(args, kwargs_)
-    result = MPCTensor(shares=shares, shape=c_sh[0].shape, session=session)
+
+    result = MPCTensor(shares=shares, session=session)
 
     return result
 
@@ -160,6 +165,20 @@ def div_wraps(
     x_share.tensor //= y
 
     return theta_x
+
+
+def spdz_mask(
+    session: Session, x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
+) -> Tuple[ShareTensor, ShareTensor]:
+    crypto_store = session.crypto_store
+
+    primitives = crypto_store.get_primitives_from_store(
+        f"beaver_{op_str}", x_sh.shape, y_sh.shape, remove=False
+    )
+
+    a_sh, b_sh, _ = primitives
+
+    return x_sh - a_sh, y_sh - b_sh
 
 
 def mul_parties(

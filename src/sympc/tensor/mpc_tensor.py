@@ -500,13 +500,14 @@ class MPCTensor:
             from sympc.protocol.spdz import spdz
 
             result = spdz.mul_master(self, y, op_str, kwargs_)
+            result.shape = MPCTensor.__get_shape(op_str, self.shape, y.shape)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
             ]
 
-            result = MPCTensor(shares=shares, session=self.session)
+            result = MPCTensor(shares=shares, shape=self.shape, session=self.session)
 
         return result
 
@@ -554,8 +555,8 @@ class MPCTensor:
         else:
             op = getattr(operator, op_str)
 
-        x = torch.ones(size=x_shape)
-        y = torch.ones(size=y_shape)
+        x = torch.empty(size=x_shape)
+        y = torch.empty(size=y_shape)
 
         res = op(x, y, **kwargs_)
         return res.shape

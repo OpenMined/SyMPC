@@ -11,6 +11,7 @@ class CryptoStore:
     _func_get_store: Dict[Any, Callable] = {}
 
     def __init__(self):
+        self.log_store: List[str] = []
         self.store: Dict[Any, Any] = {}
 
     def populate_store(
