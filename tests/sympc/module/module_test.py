@@ -2,7 +2,7 @@
 import syft as sy
 import torch
 
-from sympc.module.module import MAP_TORCH_TO_SYMPC
+from sympc.module import MAP_TORCH_TO_SYMPC
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -26,17 +26,16 @@ class ConvNet(sy.Module):
     def __init__(self, torch_ref):
         super(ConvNet, self).__init__(torch_ref=torch_ref)
         self.conv1 = self.torch_ref.nn.Conv2d(
-            in_channels=1, out_channels=10, kernel_size=5
+            in_channels=1, out_channels=5, kernel_size=5
         )
-        self.fc1 = self.torch_ref.nn.Linear(240, 10)
-        self.fc2 = self.torch_ref.nn.Linear(10, 1)
+        self.fc1 = self.torch_ref.nn.Linear(2880, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 5)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.torch_ref.nn.functional.relu(x)
-        x = x.view(-1, 240)
+        x = x.view(1, -1)
         x = self.fc1(x)
-        x = self.torch_ref.nn.functional.relu(x)
         x = self.fc2(x)
         x = self.torch_ref.nn.functional.relu(x)
         return x

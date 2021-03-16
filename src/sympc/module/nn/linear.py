@@ -10,18 +10,19 @@ from typing import Tuple
 import torch
 
 from sympc.tensor import MPCTensor
+from .smpc_module import SMPCModule
 
-RTOL = 1e-3
-ATOL = 1e-4
 
-class Linear:
+class Linear(SMPCModule):
     __slots__ = ["weight", "bias", "session", "in_features", "out_features"]
 
+    in_features: Tuple[int]
+    out_features: Tuple[int]
+    weight: MPCTensor
+    bias: Optional[MPCTensor]
+
     def __init__(self, session) -> None:
-        self.in_features: Optional[Tuple[int]] = None
-        self.out_features: Optional[Tuple[int]] = None
-        self.weight: List[MPCTensor] = []
-        self.bias: Optional[MPCTensor] = None
+        self.bias = None
         self.session = session
 
     def forward(self, x: MPCTensor) -> MPCTensor:
@@ -37,7 +38,6 @@ class Linear:
     def share_state_dict(self, state_dict: Dict[str, Any]) -> None:
         self.in_features = state_dict["weight"].shape[1]
         self.out_features = state_dict["weight"].shape[0]
-
         self.weight = state_dict["weight"].share(session=self.session)
 
         if "bias" in state_dict:
@@ -61,27 +61,3 @@ class Linear:
             bias=bias,
         )
         return module
-
-    @staticmethod
-    def eq_close(
-        linear1: torch.nn.Linear,
-        linear2: torch.nn.Linear,
-        rtol: float = 1e-05,
-        atol: float = 1e-08,
-    ) -> bool:
-        if not (
-            isinstance(linear1, torch.nn.Linear)
-            and isinstance(linear2, torch.nn.Linear)
-        ):
-            raise ValueError("linear1 and linear2 should be Linear layers")
-
-        if (linear1.bias is None) != (linear2.bias is None):
-            return False
-
-        if not torch.allclose(linear1.weight, linear2.weight, rtol=RTOL, atol=ATOL):
-            return False
-
-        if not torch.allclose(linear1.bias, linear2.bias, rtol=RTOL, atol=ATOL):
-            return False
-
-        return True

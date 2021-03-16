@@ -296,7 +296,7 @@ class MPCTensor:
             """
 
             if not islocal(share_ptr):
-                share_ptr.request(name="reconstruct", block=True)
+                share_ptr.request(block=True)
             res = share_ptr.get_copy()
             return res
 
