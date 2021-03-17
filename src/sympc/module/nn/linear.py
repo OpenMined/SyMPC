@@ -2,7 +2,6 @@
 from collections import OrderedDict
 from typing import Any
 from typing import Dict
-from typing import List
 from typing import Optional
 from typing import Tuple
 
@@ -10,6 +9,7 @@ from typing import Tuple
 import torch
 
 from sympc.tensor import MPCTensor
+
 from .smpc_module import SMPCModule
 
 
