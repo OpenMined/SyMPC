@@ -14,11 +14,21 @@ import torch
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 
-FORWARD_TENSOR_ATTRS = {"unsqueeze", "shape"}
+from .tensor import SyMPCTensor
 
+PROPERTIES_NEW_SHARE_TENSOR = {"T"}
+METHODS_NEW_SHARE_TENSOR = {"unsqueeze", "view"}
 
-class ShareTensor:
-    """This class represents 1 share that a party holds when doing secret sharing.
+class ShareTensor(metaclass=SyMPCTensor):
+    """This class represents 1 share that a party holds when doing secret
+    sharing.
+
+    Arguments:
+        data (Optional[Any]): the share a party holds
+        session (Optional[Any]): the session from which this shares belongs to
+        encoder_base (int): the base for the encoder
+        encoder_precision (int): the precision for the encoder
+        ring_size (int): field used for the operations applied on the shares
 
     Attributes:
         Syft Serializable Attributes
@@ -41,6 +51,10 @@ class ShareTensor:
         "session",
         "fp_encoder",
     }
+
+    # Used by the SyMPCTensor metaclass
+    METHODS_FORWARD = {"numel"}
+    PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(
         self,
@@ -353,58 +367,48 @@ class ShareTensor:
 
         return True
 
-    # Forward to tensor methods
+    @staticmethod
+    def hook_property(property_name: str):
+        def property_new_share_tensor_getter(_self: "ShareTensor") -> Any:
+            tensor = getattr(_self.tensor, property_name)
+            res = ShareTensor(session=_self.session)
+            res.tensor = tensor
+            return res
 
-    @property
-    def shape(self) -> Any:
-        """Shape of the tensor.
+        def property_getter(_self: "ShareTensor") -> Any:
+            prop = getattr(_self.tensor, property_name)
+            return prop
 
-        Returns:
-            Any: Shape of the tensor.
-        """
-        return self.tensor.shape
+        if property_name in PROPERTIES_NEW_SHARE_TENSOR:
+            res = property(property_new_share_tensor_getter, None)
+        else:
+            res = property(property_getter, None)
 
-    def numel(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """Total number of elements.
-
-        Args:
-            *args: Arguments passed to tensor.numel.
-            **kwargs: Keyword arguments passed to tensor.numel.
-
-        Returns:
-            Any: Total number of elements of the tensor.
-
-        """
-        return self.tensor.numel(*args, **kwargs)
-
-    @property
-    def T(self) -> Any:
-        """Transpose.
-
-        Returns:
-            Any: ShareTensor transposed.
-
-        """
-        res = ShareTensor(session=self.session)
-        res.tensor = self.tensor.T
         return res
 
-    def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """Tensor with a dimension of size one inserted at the specified position.
+    @staticmethod
+    def hook_method(method_name: str):
+        def method_new_share_tensor(
+            _self: "ShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+        ) -> Any:
+            method = getattr(_self.tensor, method_name)
+            tensor = method(*args, **kwargs)
+            res = ShareTensor(session=_self.session)
+            res.tensor = tensor
+            return res
 
-        Args:
-            *args: Arguments to tensor.unsqueeze
-            **kwargs: Keyword arguments passed to tensor.unsqueeze
+        def method(
+            _self: "ShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+        ) -> Any:
+            method = getattr(_self.tensor, method_name)
+            res = method(*args, **kwargs)
+            return res
 
-        Returns:
-            Any: ShareTensor unsqueezed.
+        if method_name in METHODS_NEW_SHARE_TENSOR:
+            res = method_new_share_tensor
+        else:
+            res = method
 
-        References:
-            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
-        """
-        tensor = self.tensor.unsqueeze(*args, **kwargs)
-        res = ShareTensor(session=self.session)
-        res.tensor = tensor
         return res
 
     def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
