@@ -6,7 +6,7 @@ class SMPCModule:
     @staticmethod
     def eq_close(
         layer1: "SMPCModule",
-        layer2: "SMPCModul",
+        layer2: "SMPCModule",
         rtol: float = 1e-05,
         atol: float = 1e-08,
     ) -> bool:
