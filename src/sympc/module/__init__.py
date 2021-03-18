@@ -1,3 +1,9 @@
+"""Add the share/reconstruct method to the Syft Module defined here:
+
+https://github.com/OpenMined/PySyft/blob/dev/src/syft/lib/torch/module.py
+"""
+
+
 # stdlib
 from collections import OrderedDict
 import copy

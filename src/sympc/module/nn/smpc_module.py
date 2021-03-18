@@ -1,3 +1,5 @@
+"""MPC Class that would serve as a base for the other layers."""
+
 # third party
 import torch
 
@@ -10,6 +12,17 @@ class SMPCModule:
         rtol: float = 1e-05,
         atol: float = 1e-08,
     ) -> bool:
+        """Compare two SMPC modules.
+
+        Args:
+            layer1 (SMPCModule): the first operand for the comparison
+            layer2 (SMPCModule): the second operand for the comparison
+            rtol (float): relative tolerance used
+            atol (float): the absolute tolerance
+
+        Returns:
+            True if the layers parameters are nearly equal or False if they are not
+        """
         if (layer1.bias is None) != (layer2.bias is None):
             return False
 
