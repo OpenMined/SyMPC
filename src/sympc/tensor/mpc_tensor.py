@@ -296,7 +296,7 @@ class MPCTensor:
             """
 
             if not islocal(share_ptr):
-                share_ptr.request(name="reconstruct", block=True)
+                share_ptr.request(block=True)
             res = share_ptr.get_copy()
             return res
 
@@ -426,7 +426,7 @@ class MPCTensor:
         convolution = self.__apply_op(weight, "conv2d", kwargs_=kwargs)
 
         if bias:
-            return convolution + bias
+            return convolution + bias.unsqueeze(1).unsqueeze(1)
         else:
             return convolution
 
@@ -632,6 +632,18 @@ class MPCTensor:
         shares = [share.T for share in self.share_ptrs]
         res = MPCTensor(shares=shares, session=self.session)
         res.shape = torch.empty(self.shape).T.shape
+        return res
+
+    def unsqueeze(self, *args, **kwargs) -> "MPCTensor":
+        shares = [share.unsqueeze(*args, **kwargs) for share in self.share_ptrs]
+        res = MPCTensor(shares=shares, session=self.session)
+        res.shape = torch.empty(self.shape).unsqueeze(*args, **kwargs).shape
+        return res
+
+    def view(self, *args, **kwargs) -> "MPCTensor":
+        shares = [share.view(*args, **kwargs) for share in self.share_ptrs]
+        res = MPCTensor(shares=shares, session=self.session)
+        res.shape = torch.empty(self.shape).view(*args, **kwargs).shape
         return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":

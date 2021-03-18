@@ -300,6 +300,12 @@ class ShareTensor:
         res.tensor = tensor
         return res
 
+    def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        tensor = self.tensor.view(*args, **kwargs)
+        res = ShareTensor(session=self.session)
+        res.tensor = tensor
+        return res
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
