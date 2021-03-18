@@ -63,7 +63,7 @@ def test_run_linear_model(get_clients):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, rtol=10e-3)
+    assert torch.allclose(res, expected, atol=1e-3)
 
 
 def test_run_conv_model(get_clients):
@@ -88,7 +88,7 @@ def test_run_conv_model(get_clients):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, rtol=10e-3)
+    assert torch.allclose(res, expected, atol=1e-3)
 
 
 def test_reconstruct_linear_shared_model(get_clients):
