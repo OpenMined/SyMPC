@@ -4,6 +4,7 @@
 from functools import lru_cache
 import operator
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -701,7 +702,23 @@ class MPCTensor(metaclass=SyMPCTensor):
             return value
 
     @staticmethod
-    def hook_property(property_name: str):
+    def hook_property(property_name: str) -> Any:
+        """Hook a framework property (only getter) such that we know how to
+        treat it given that we call it.
+
+        Ex:
+         * if we call "shape" we want to call it on the underlying share
+        and return the result
+         * if we call "T" we want to call it on all the underlying shares
+        and wrap the result in an MPCTensor
+
+        Args:
+            property_nam (str): property to hook
+
+        Returns:
+            A hooked property
+        """
+
         def property_all_share_getter(_self: "MPCTensor") -> "MPCTensor":
             shares = []
 
@@ -725,7 +742,23 @@ class MPCTensor(metaclass=SyMPCTensor):
         return res
 
     @staticmethod
-    def hook_method(method_name: str):
+    def hook_method(method_name: str) -> Callable[..., Any]:
+        """Hook a framework method such that we know how to treat it given that
+        we call it.
+
+        Ex:
+         * if we call "numel" we want to forward it only to one share an return
+        the result (without wrapping it in an MPCShare)
+         * if we call "unsqueeze" we want to call it on all the underlying shares
+        and we want to wrap those shares in a new MPCTensor
+
+        Args:
+            method_name (name): method to hook
+
+        Returns:
+            A hooked method
+        """
+
         def method_all_shares(
             _self: "MPCTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:

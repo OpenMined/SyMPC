@@ -1,5 +1,7 @@
-"""The Metaclass used for the Tensors from SyMPC We use this such that we can
-have a forward mechanism."""
+"""The Metaclass used for the Tensors from SyMPC.
+
+We use this such that we can have a forward mechanism.
+"""
 # stdlib
 from typing import Any
 from typing import Dict
@@ -15,6 +17,16 @@ class SyMPCTensor(type):
         bases: Tuple[Any],
         dic: Dict[str, Any],
     ) -> "SyMPCTensor":
+        """Add new methods and properties to the defined tensor classes.
+
+        Args:
+            cls (Type[SyMPCTensor]): type of the class
+            name (str): name of the class which has SyMPCTensor metaclass
+            bases (Tuple[Any]): classes from which our class inherits
+            dic (Dict[str, Any]): attributes of the class
+        Returns:
+            The new class with added methods
+        """
 
         res = super().__new__(cls, name, bases, dic)
 

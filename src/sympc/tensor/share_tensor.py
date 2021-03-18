@@ -3,9 +3,11 @@
 # stdlib
 import operator
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Set
 from typing import Union
 
 # third party
@@ -16,8 +18,8 @@ from sympc.session import Session
 
 from .tensor import SyMPCTensor
 
-PROPERTIES_NEW_SHARE_TENSOR = {"T"}
-METHODS_NEW_SHARE_TENSOR = {"unsqueeze", "view"}
+PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
 
 class ShareTensor(metaclass=SyMPCTensor):
     """This class represents 1 share that a party holds when doing secret
@@ -53,8 +55,8 @@ class ShareTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel"}
-    PROPERTIES_FORWARD = {"T", "shape"}
+    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze"}
+    PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
     def __init__(
         self,
@@ -368,7 +370,23 @@ class ShareTensor(metaclass=SyMPCTensor):
         return True
 
     @staticmethod
-    def hook_property(property_name: str):
+    def hook_property(property_name: str) -> Any:
+        """Hook a framework property (only getter) such that we know how to
+        treat it given that we call it.
+
+        Ex:
+         * if we call "shape" we want to call it on the underlying tensor
+        and return the result
+         * if we call "T" we want to call it on the underlying tensor
+        but we want to wrap it in the same tensor type
+
+        Args:
+            property_nam (str): property to hook
+
+        Returns:
+            A hooked property
+        """
+
         def property_new_share_tensor_getter(_self: "ShareTensor") -> Any:
             tensor = getattr(_self.tensor, property_name)
             res = ShareTensor(session=_self.session)
@@ -387,7 +405,23 @@ class ShareTensor(metaclass=SyMPCTensor):
         return res
 
     @staticmethod
-    def hook_method(method_name: str):
+    def hook_method(method_name: str) -> Callable[..., Any]:
+        """Hook a framework method such that we know how to treat it given that
+        we call it.
+
+        Ex:
+         * if we call "numel" we want to call it on the underlying tensor
+        and return the result
+         * if we call "unsqueeze" we want to call it on the underlying tensor
+        but we want to wrap it in the same tensor type
+
+        Args:
+            method_name (name): method to hook
+
+        Returns:
+            A hooked method
+        """
+
         def method_new_share_tensor(
             _self: "ShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
