@@ -1,3 +1,5 @@
+"""Crypto Primitives."""
+
 # stdlib
 from typing import Any
 from typing import Callable
@@ -8,12 +10,11 @@ from sympc.session import Session
 
 
 class CryptoPrimitiveProvider:
-    """A trusted third party should use this class to generate crypto
-    primitives."""
+    """A trusted third party should use this class to generate crypto primitives."""
 
     _func_providers: Dict[str, Callable] = {}
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
 
     @staticmethod
@@ -23,14 +24,21 @@ class CryptoPrimitiveProvider:
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
-        """Generate "op_str" primitives. The "g_kwargs" (generate kwargs) are
-        passed to the registered generator function The "p_kwargs" (populate
-        kwargs) are passed to the registered populate function.
+        """Generate "op_str" primitives.
 
-        :return: list of primitives
-        :rtype: list of Any Type
+        Args:
+            op_str (str): Operator.
+            sessions (Session): Session.
+            g_kwargs: Generate kwargs passed to the registered function.
+            p_kwargs: Populate kwargs passed to the registered populate function.
+
+        Returns:
+            List[Any]: List of primitives.
+
+        Raises:
+            ValueError: If op_str is not registered.
+
         """
-
         if op_str not in CryptoPrimitiveProvider._func_providers:
             raise ValueError(f"{op_str} not registered")
 
@@ -70,6 +78,11 @@ class CryptoPrimitiveProvider:
             )
 
     @staticmethod
-    def get_state() -> None:
+    def get_state() -> str:
+        """Get the state of a CryptoProvider.
+
+        Returns:
+            str: CrytoProvider
+        """
         res = f"Providers: {list(CryptoPrimitiveProvider._func_providers.keys())}\n"
         return res
