@@ -664,7 +664,6 @@ class MPCTensor:
             precision=self.session.config.encoder_precision,
         )
         one = fp_encoder.decode(1)
-        print("Hello")
         return protocol.le(self + one, other)
 
     def gt(self, other: "MPCTensor") -> "MPCTensor":
