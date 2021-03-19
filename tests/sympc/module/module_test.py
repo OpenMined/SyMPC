@@ -1,4 +1,11 @@
+# stdlib
+from typing import Any
+from typing import Callable
+from typing import List
+from typing import Type
+
 # third party
+import pytest
 import syft as sy
 import torch
 
@@ -41,101 +48,89 @@ class ConvNet(sy.Module):
         return x
 
 
-def test_run_linear_model(get_clients):
-    module = LinearNet(torch)
+def test_run_linear_model(get_clients: Callable[[int], List[Any]]):
+    model = LinearNet(torch)
 
     clients = get_clients(2)
 
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    mpc_module = module.share(session=session)
+    mpc_model = model.share(session=session)
 
     x_secret = torch.randn(2, 3)
     x_mpc = MPCTensor(secret=x_secret, session=session)
 
-    module.eval()
+    model.eval()
 
     # For the moment we have only inference
-    expected = module(x_secret)
+    expected = model(x_secret)
 
-    res_mpc = mpc_module(x_mpc)
+    res_mpc = mpc_model(x_mpc)
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
     assert torch.allclose(res, expected, atol=1e-3)
 
 
-def test_run_conv_model(get_clients):
-    module = ConvNet(torch)
+def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
+    model = ConvNet(torch)
 
     clients = get_clients(2)
 
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    mpc_module = module.share(session=session)
+    mpc_model = model.share(session=session)
 
     x_secret = torch.randn((1, 1, 28, 28))
     x_mpc = MPCTensor(secret=x_secret, session=session)
 
-    module.eval()
+    model.eval()
 
     # For the moment we have only inference
-    expected = module(x_secret)
+    expected = model(x_secret)
 
-    res_mpc = mpc_module(x_mpc)
+    res_mpc = mpc_model(x_mpc)
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
     assert torch.allclose(res, expected, atol=1e-3)
 
 
-def test_reconstruct_linear_shared_model(get_clients):
-    module = LinearNet(torch)
+@pytest.mark.parametrize("is_remote", [False, True])
+@pytest.mark.parametrize("model_type", [LinearNet, ConvNet])
+def test_reconstruct_shared_model(
+    is_remote: bool, model_type: Type[sy.Module], get_clients: Callable[[int], Any]
+):
+    net = model_type(torch)
 
     clients = get_clients(2)
 
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    mpc_module = module.share(session=session)
+    if is_remote:
+        model = net.send(clients[0])
+    else:
+        model = net
 
-    res = mpc_module.reconstruct()
-
-    assert isinstance(res, sy.Module)
-
-    for name_res, name_expected in zip(res.modules, module.modules):
-        assert name_res == name_expected
-
-        module_expected = module.modules[name_expected]
-        module_res = res.modules[name_res]
-
-        assert MAP_TORCH_TO_SYMPC[type(module_expected)].eq_close(
-            module_expected, module_res, atol=1e-4
-        )
-
-
-def test_reconstruct_conv_shared_model(get_clients):
-    module = ConvNet(torch)
-
-    clients = get_clients(2)
-
-    session = Session(parties=clients)
-    SessionManager.setup_mpc(session)
-
-    mpc_module = module.share(session=session)
-
-    res = mpc_module.reconstruct()
+    mpc_model = model.share(session=session)
+    res = mpc_model.reconstruct()
 
     assert isinstance(res, sy.Module)
 
-    for name_res, name_expected in zip(res.modules, module.modules):
+    if is_remote:
+        # If the model is remote fetch it such that we could compare it
+        model = model.get()
+
+    for name_res, name_expected in zip(res.modules, model.modules):
         assert name_res == name_expected
 
-        module_expected = module.modules[name_expected]
+        module_expected = model.modules[name_expected]
         module_res = res.modules[name_res]
 
-        assert MAP_TORCH_TO_SYMPC[type(module_expected)].eq_close(
+        name_module = type(module_expected).__name__
+        assert MAP_TORCH_TO_SYMPC[name_module].eq_close(
             module_expected, module_res, atol=1e-4
         )

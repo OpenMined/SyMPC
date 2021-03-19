@@ -11,6 +11,7 @@ from typing import Tuple
 import torch
 
 from sympc.tensor import MPCTensor
+from sympc.utils import ispointer
 
 from .smpc_module import SMPCModule
 
@@ -52,19 +53,35 @@ class Linear(SMPCModule):
 
     __call__ = forward
 
-    def share_state_dict(self, state_dict: Dict[str, Any]) -> None:
+    def share_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+    ) -> None:
         """Share the parameters of the normal Linear layer.
 
         Args:
             state_dict (Dict[str, Any]): the state dict that would be shared
         """
 
-        self.in_features = state_dict["weight"].shape[1]
-        self.out_features = state_dict["weight"].shape[0]
-        self.weight = state_dict["weight"].share(session=self.session)
+        bias = None
+        if ispointer(state_dict):
+            weight = state_dict["weight"].resolve_pointer_type()
+            if "bias" in state_dict.keys().get():
+                bias = state_dict["bias"].resolve_pointer_type()
+            shape = weight.client.python.Tuple(weight.shape)
+            shape = shape.get()
+        else:
+            weight = state_dict["weight"]
+            bias = state_dict.get("bias")
+            shape = state_dict["weight"].shape
 
-        if "bias" in state_dict:
-            self.bias = state_dict["bias"].share(session=self.session)
+        self.out_features, self.in_features = shape
+        self.weight = MPCTensor(secret=weight, session=self.session, shape=shape)
+
+        if bias is not None:
+            self.bias = MPCTensor(
+                secret=bias, session=self.session, shape=(self.out_features,)
+            )
 
     def reconstruct_state_dict(self) -> Dict[str, Any]:
         """Reconstruct the shared state dict.

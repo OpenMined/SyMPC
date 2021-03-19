@@ -7,23 +7,26 @@ https://github.com/OpenMined/PySyft/blob/dev/src/syft/lib/torch/module.py
 # stdlib
 from collections import OrderedDict
 import copy
-from typing import Any
-from typing import Dict
 
 # third party
 import syft as sy
 import torch
 
 import sympc.module as sympc_module
+from sympc.session import Session
 
 from .nn import Conv2d
 from .nn import Linear
 
-MAP_TORCH_TO_SYMPC = {torch.nn.Linear: Linear, torch.nn.Conv2d: Conv2d}
+MAP_TORCH_TO_SYMPC = {
+    "Linear": Linear,
+    "Conv2d": Conv2d,
+    "Conv2dPointer": Conv2d,
+    "LinearPointer": Linear,
+}
 
 
-def share(_self, **kwargs: Dict[Any, Any]) -> sy.Module:
-    session = kwargs["session"]
+def share(_self, session: Session) -> sy.Module:
     parties = session.parties
     nr_parties = session.nr_parties
 
@@ -33,10 +36,11 @@ def share(_self, **kwargs: Dict[Any, Any]) -> sy.Module:
     mpc_module.torch_ref = sympc_module
 
     for name, module in _self.modules.items():
-        local_state_dict = module.state_dict()
-        sympc_type_layer = MAP_TORCH_TO_SYMPC[type(module)]
+        state_dict = module.state_dict()
+        name_layer = type(module).__name__
+        sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
         sympc_layer = sympc_type_layer(session=session)
-        sympc_layer.share_state_dict(local_state_dict)
+        sympc_layer.share_state_dict(state_dict)
         mpc_module._modules[name] = sympc_layer
 
     return mpc_module
@@ -44,6 +48,10 @@ def share(_self, **kwargs: Dict[Any, Any]) -> sy.Module:
 
 def reconstruct(_self):
     syft_module = copy.copy(_self)
+
+    # For this we will need to fetch the syft_module locally
+    # even if it was created at another party
+    syft_module.real_module = None
     syft_module.torch_ref = torch
 
     for name, module in _self.modules.items():
