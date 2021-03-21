@@ -306,7 +306,7 @@ class MPCTensor:
 
             """
             if not islocal(share_ptr):
-                share_ptr.request(name="reconstruct", block=True)
+                share_ptr.request(block=True)
             res = share_ptr.get_copy()
             return res
 
@@ -434,7 +434,7 @@ class MPCTensor:
         convolution = self.__apply_op(weight, "conv2d", kwargs_=kwargs)
 
         if bias:
-            return convolution + bias
+            return convolution + bias.unsqueeze(1).unsqueeze(1)
         else:
             return convolution
 
@@ -456,7 +456,7 @@ class MPCTensor:
             y_shape = y.shape
 
         result = MPCTensor(shares=shares, session=self.session)
-        result.shape = MPCTensor.__get_shape("matmul", y_shape, self.shape)
+        result.shape = MPCTensor._get_shape("matmul", y_shape, self.shape)
 
         scale = (
             self.session.config.encoder_base ** self.session.config.encoder_precision
@@ -511,7 +511,7 @@ class MPCTensor:
             from sympc.protocol.spdz import spdz
 
             result = spdz.mul_master(self, y, op_str, kwargs_)
-            result.shape = MPCTensor.__get_shape(op_str, self.shape, y.shape)
+            result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             shares = [
@@ -553,7 +553,7 @@ class MPCTensor:
 
     @staticmethod
     @lru_cache(maxsize=128)
-    def __get_shape(
+    def _get_shape(
         op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], **kwargs_: Dict[Any, Any]
     ) -> Tuple[int]:
 
@@ -603,7 +603,7 @@ class MPCTensor:
         else:
             y_shape = y.shape
 
-        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape, **kwargs_)
+        result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
         if op_str in {"mul", "matmul", "conv2d"} and not (
             is_private and self.session.nr_parties == 2
@@ -663,6 +663,18 @@ class MPCTensor:
         shares = [share.T for share in self.share_ptrs]
         res = MPCTensor(shares=shares, session=self.session)
         res.shape = torch.empty(self.shape).T.shape
+        return res
+
+    def unsqueeze(self, *args, **kwargs) -> "MPCTensor":
+        shares = [share.unsqueeze(*args, **kwargs) for share in self.share_ptrs]
+        res = MPCTensor(shares=shares, session=self.session)
+        res.shape = torch.empty(self.shape).unsqueeze(*args, **kwargs).shape
+        return res
+
+    def view(self, *args, **kwargs) -> "MPCTensor":
+        shares = [share.view(*args, **kwargs) for share in self.share_ptrs]
+        res = MPCTensor(shares=shares, session=self.session)
+        res.shape = torch.empty(self.shape).view(*args, **kwargs).shape
         return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":

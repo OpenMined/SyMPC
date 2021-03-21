@@ -83,12 +83,8 @@ def fss_op(x1: ShareTensor, x2: ShareTensor, op="eq"):
     session = x1.session
     dtype = session.tensor_type
 
-    # FIXME: ideally just x1.numel().get() would be sufficient but when x1 is a singular
-    # FIXME: value, its shape will be inferior to x1 - x2. Idea: use the shape of both
-    # FIXME: which should be available to deduce numel, to avoid extra communication
-    diff = x1 - x2
-    shape = diff.shape
-    n_values = diff.numel().get()
+    shape = MPCTensor._get_shape("sub", x1.shape, x2.shape)
+    n_values = shape.numel()
 
     CryptoPrimitiveProvider.generate_primitives(
         f"fss_{op}",
