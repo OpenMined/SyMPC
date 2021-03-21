@@ -50,6 +50,11 @@ repos:
         args:
           - --convention=google
 
+  - repo: https://github.com/terrencepreilly/darglint
+    rev: master
+    hooks:
+      - id: darglint
+
 
 
 
