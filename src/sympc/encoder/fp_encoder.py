@@ -21,8 +21,7 @@ import torch
 
 
 class FixedPointEncoder:
-    """Class for encoding/decoding a tensor to/from a fixed precision
-    representation.
+    """Encoding/decoding a tensor to/from a fixed precision representation.
 
     This class was inspired from the Facebook Research - CrypTen project
 
@@ -35,7 +34,7 @@ class FixedPointEncoder:
     __slots__ = {"_precision", "_base", "_scale"}
 
     def __init__(self, base: int = 2, precision: int = 16):
-        """Initializer for the FP Encoder.
+        """Initialize FP Encoder.
 
         Args:
             base (int): The base for the encoder.
@@ -108,7 +107,7 @@ class FixedPointEncoder:
         self._scale = self._base ** precision
 
     @property
-    def base(self) -> int:
+    def base(self) -> int:  # noqa
         """Base for the FixedPrecision Encoder.
 
         Returns:
@@ -132,10 +131,10 @@ class FixedPointEncoder:
         return self._scale
 
     def __str__(self) -> str:
-        """String representation.
+        """Representation.
 
         Returns:
-            str: the representation.
+            str: The representation.
         """
         type_name = type(self).__name__
         out = f"[{type_name}]: precision: {self._precision}, base: {self._base}"
