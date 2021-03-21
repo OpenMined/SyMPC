@@ -36,7 +36,7 @@ def _get_triples(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
     **kwargs: Dict[Any, Any]
-) -> List[List[List[ShareTensor, ShareTensor, ShareTensor]]]:
+) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
 
     The Trusted Third Party (TTP) or Crypto Provider should provide this triples Currently,
@@ -351,7 +351,7 @@ def conv2d_store_get(
 @register_primitive_generator("beaver_wraps")
 def count_wraps_rand(
     nr_parties: int, shape: Tuple[int]
-) -> List[List[List[ShareTensor, ShareTensor]]]:
+) -> Tuple[List[ShareTensor], List[ShareTensor]]:
     """Count wraps random.
 
     The Trusted Third Party (TTP) or Crypto provider should generate:
