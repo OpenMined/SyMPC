@@ -666,12 +666,36 @@ class MPCTensor:
         return res
 
     def unsqueeze(self, *args, **kwargs) -> "MPCTensor":
+        """Tensor with a dimension of size one inserted at the specified position.
+
+        Args:
+            *args: Arguments to tensor.unsqueeze
+            **kwargs: Keyword arguments passed to tensor.unsqueeze
+
+        Returns:
+            MPCTensor: Tensor unsqueezed.
+
+        References:
+            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
+        """
         shares = [share.unsqueeze(*args, **kwargs) for share in self.share_ptrs]
         res = MPCTensor(shares=shares, session=self.session)
         res.shape = torch.empty(self.shape).unsqueeze(*args, **kwargs).shape
         return res
 
     def view(self, *args, **kwargs) -> "MPCTensor":
+        """Tensor with the same data but new dimensions/view.
+
+        Args:
+            *args: Arguments to tensor.view.
+            **kwargs: Keyword arguments passed to tensor.view.
+
+        Returns:
+            MPCTensor: Tensor with new view.
+
+        References:
+            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
+        """
         shares = [share.view(*args, **kwargs) for share in self.share_ptrs]
         res = MPCTensor(shares=shares, session=self.session)
         res.shape = torch.empty(self.shape).view(*args, **kwargs).shape
