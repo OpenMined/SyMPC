@@ -48,12 +48,17 @@ dif = sycret.LeFactory(n_threads=N_CORES)
 
 
 def keygen(n_values: int, op: str):
-    """Run FSS keygen in parallel to accelerate the offline part of the
-    protocol.
+    """Run FSS keygen in parallel to accelerate the offline part of the protocol.
 
     Args:
         n_values (int): Number of primitives to generate.
         op (str): Operator eq or comp <=> DPF or DIF.
+
+    Returns:
+        noqa: DAR201
+
+    Raises:
+        ValueError: if "op" is not "eq" or "comp".
     """
     if op == "eq":
         return DPF.keygen(n_values=n_values)
@@ -64,15 +69,16 @@ def keygen(n_values: int, op: str):
 
 
 def fss_op(x1: ShareTensor, x2: ShareTensor, op="eq"):
-    """Define the workflow for a binary operation using Function Secret
-    Sharing.
+    """Define the workflow for a binary operation using Function Secret Sharing.
 
     Currently supported operand are = & <=, respectively corresponding to
-    op = 'eq' and 'comp'
+        op = 'eq' and 'comp'
+
     Args:
-        x1: First AST.
-        x2: Second AST.
-        op: Type of operation to perform, should be 'eq' or 'comp'
+        x1 (ShareTensor): First AST.
+        x2 (ShareTensor): Second AST.
+        op: Type of operation to perform, should be 'eq' or 'comp'. Defaults to eq.
+
     Returns:
         MPCTensor: Shares of the comparison.
     """
@@ -149,13 +155,16 @@ def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
 
     Args:
         session (Session): MPC Session.
-        b:
-        x_masked:
-        op:
-        dtype:
+        b: noqa: DAR101
+        x_masked: noqa: DAR101
+        op: noqa: DAR101
+        dtype: noqa: DAR101
 
     Returns:
+        ShareTensor: TODO.
 
+    Raises:
+        ValueError: If "op" is not "eq" or "comp".
     """
     if op == "eq":
         return eq_evaluate(session, b, x_masked)
@@ -171,8 +180,8 @@ def eq_evaluate(session: Session, b, x_masked) -> ShareTensor:
 
     Args:
         session (Session): MPC Session.
-        b:
-        x_masked:
+        b: noqa: DAR101
+        x_masked: noqa: DAR101
 
     Returns:
         ShareTensor
@@ -197,12 +206,12 @@ def comp_evaluate(session: Session, b, x_masked, dtype=None) -> ShareTensor:
 
     Args:
         session (Session): MPC Session.
-        b:
-        x_masked:
-        dtype:
+        b: noqa: DAR101
+        x_masked: noqa: DAR101
+        dtype: noqa: DAR101
 
     Returns:
-
+        ShareTensor: TODO
     """
     numel = x_masked.numel()
     keys = session.crypto_store.get_primitives_from_store(
@@ -242,12 +251,12 @@ class DPF:
         """TODO: Add docstring.
 
         Args:
-            b:
-            x:
-            k_b:
+            b: noqa: DAR101
+            x: noqa: DAR101
+            k_b: noqa: DAR101
 
         Returns:
-
+            noqa: DAR201
         """
         original_shape = x.shape
         x = x.reshape(-1)
@@ -272,7 +281,16 @@ class DIF:
 
     @staticmethod
     def eval(b, x, k_b):
-        """TODO: Add docstring."""
+        """TODO: Add docstring.
+
+        Args:
+            b: noqa: DAR101
+            x: noqa: DAR101
+            k_b: noqa: DAR101
+
+        Returns:
+            # noqa: DAR201
+        """
         # x = x.astype(np.uint64)
         original_shape = x.shape
         x = x.reshape(-1)
@@ -326,13 +344,27 @@ def _generate_primitive(op: str, n_values: int) -> List[Any]:
 
 @register_primitive_generator("fss_eq")
 def generate_primitive(n_values: int) -> List[Any]:
-    """TODO: Add docstring."""
+    """TODO: Add docstring.
+
+    Args:
+        n_values (int): Number of values.
+
+    Returns:
+        List[Any]: TODO.
+    """
     return _generate_primitive("eq", n_values)
 
 
 @register_primitive_generator("fss_comp")
 def generate_primitive(n_values: int) -> List[Any]:
-    """TODO: Add docstring."""  # Seems almost the same than previous one, can they be unified?
+    """TODO: Add docstring.
+
+    Args:
+        n_values (int): Number of values.
+
+    Returns:
+        List[Any]: TODO.
+    """  # Seems almost the same than previous one, can they be unified?
     return _generate_primitive("comp", n_values)
 
 
@@ -340,7 +372,14 @@ def _add_primitive(
     op: str,
     store: Dict[Any, Any],
     primitives: Iterable[Any],
-) -> None:
+):
+    """TODO: Add docstring.
+
+    Args:
+        op (str): Operator.
+        store (Dict[Any,Any]): TODO
+        primitives (Iterable[Any]): TODO
+    """
     _ensure_fss_store(store)
     current_primitives = store[op]
 
@@ -358,16 +397,29 @@ def add_primitive(
     store: Dict[Any, Any],
     primitives: Iterable[Any],
 ) -> None:
-    """Add docstring."""
+    """TODO: Add docstring.
+
+    Args:
+        store (Dict[Any,Any]): TODO
+        primitives (Iterable[Any]): TODO
+
+    Returns:
+        # noqa: DAR201
+    """
     return _add_primitive("fss_eq", store, primitives)
 
 
 @register_primitive_store_add("fss_comp")
-def add_primitive(
-    store: Dict[Any, Any],
-    primitives: Iterable[Any],
-) -> None:
-    """TODO: Add docstring."""  # Seems almost the same than previous one, can they be unified?
+def add_primitive(store: Dict[Any, Any], primitives: Iterable[Any]):
+    """TODO: Add docstring.
+
+    Args:
+        store (Dict[Any,Any]): TODO
+        primitives (Iterable[Any]): TODO
+
+    Returns:
+        # noqa: DAR201
+    """  # Seems almost the same than previous one, can they be unified?
     return _add_primitive("fss_comp", store, primitives)
 
 
@@ -396,13 +448,13 @@ def _get_primitive(
         )
 
 
-@register_primitive_store_get("fss_eq")
+@register_primitive_store_get("fss_eq")  # noqa
 def get_primitive(
     store: Dict[Tuple[int, int], List[Any]],
     nr_instances: int,
     remove: bool = True,
     **kwargs,
-) -> Any:
+) -> Any:  # noqa
     return _get_primitive("fss_eq", store, nr_instances, remove, **kwargs)
 
 
@@ -412,5 +464,5 @@ def get_primitive(
     nr_instances: int,
     remove: bool = True,
     **kwargs,
-) -> Any:
+) -> Any:  # noqa
     return _get_primitive("fss_comp", store, nr_instances, remove, **kwargs)

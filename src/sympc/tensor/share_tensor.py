@@ -50,7 +50,7 @@ class ShareTensor:
         encoder_precision: int = 16,
         ring_size: int = 2 ** 64,
     ) -> None:
-        """Initializer for the ShareTensor.
+        """Initialize ShareTensor.
 
         Args:
             data (Optional[Any]): The share a party holds. Defaults to None
@@ -312,7 +312,7 @@ class ShareTensor:
         return res
 
     def __str__(self) -> str:
-        """String representation.
+        """Representation.
 
         Returns:
             str: Return the string representation of ShareTensor.
@@ -365,7 +365,7 @@ class ShareTensor:
         return self.tensor.shape
 
     def numel(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """Number of elements.
+        """Total number of elements.
 
         Args:
             *args: Arguments passed to tensor.numel.
@@ -390,7 +390,7 @@ class ShareTensor:
         return res
 
     def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """New tensor with a dimension of size one inserted at the specified position.
+        """Tensor with a dimension of size one inserted at the specified position.
 
         Args:
             *args: Arguments to tensor.unsqueeze
@@ -408,6 +408,18 @@ class ShareTensor:
         return res
 
     def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        """Tensor with the same data but new dimensions/view.
+
+        Args:
+            *args: Arguments to tensor.view.
+            **kwargs: Keyword arguments passed to tensor.view.
+
+        Returns:
+            Any: Tensor with new view.
+
+        References:
+            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
+        """
         tensor = self.tensor.view(*args, **kwargs)
         res = ShareTensor(session=self.session)
         res.tensor = tensor

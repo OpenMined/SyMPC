@@ -33,8 +33,7 @@ EXPECTED_OPS = {"mul", "matmul", "conv2d"}
 def mul_master(
     x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]
 ) -> MPCTensor:
-    """Function that is executed by the orchestrator to multiply two secret
-    values.
+    """Function that is executed by the orchestrator to multiply two secret values.
 
     Args:
         x (MPCTensor): First value to multiply with.
@@ -96,8 +95,7 @@ def mul_master(
 
 
 def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
-    """Function that is executed by the orchestrator to divide a secret by a
-    public value.
+    """Function that is executed by the orchestrator to divide a secret by a public value.
 
     Args:
         x (MPCTensor): Private numerator.
@@ -150,8 +148,7 @@ def div_wraps(
     z_shares: List[torch.Tensor],
     y: Union[torch.Tensor, int],
 ) -> ShareTensor:
-    """From CrypTen Privately computes the number of wraparounds for a set a
-    shares.
+    """From CrypTen Privately computes the number of wraparounds for a set a shares.
 
     To do so, we note that:
         [theta_x] = theta_z + [beta_xr] - [theta_r] - [eta_xr]
@@ -191,6 +188,17 @@ def div_wraps(
 def spdz_mask(
     session: Session, x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
 ) -> Tuple[ShareTensor, ShareTensor]:
+    """Spdz mask.
+
+    Args:
+        session (Session): The session.
+        x_sh (ShareTensor): X share.
+        y_sh (ShareTensor): Y share.
+        op_str (str): Operator.
+
+    Returns:
+        Tuple[ShareTensor, ShareTensor]
+    """
     crypto_store = session.crypto_store
 
     primitives = crypto_store.get_primitives_from_store(
@@ -212,6 +220,7 @@ def mul_parties(
         eps (torch:tensor): Epsilon value of the protocol.
         delta (torch.Tensor): Delta value of the protocol.
         op_str (str): Operator string.
+        kwargs: Keywords arguments for the operator.
 
     Returns:
         ShareTensor: Shared result of the division.
