@@ -55,7 +55,14 @@ jobs:
           pip install -r requirements.dev.txt
           pip install -e .
 
-#      - uses: pre-commit/action@v2.0.0  #temporal
+      - id: file_changes
+        uses: trilom/file-changes-action@v1.2.3
+        with:
+          output: ' '
+
+      - uses: pre-commit/action@v2.0.0
+        with:
+          extra_args: --files ${{ steps.file_changes.outputs.files}}
 
       - name: Check docstring coverage
         run: |
