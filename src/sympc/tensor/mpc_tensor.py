@@ -449,7 +449,7 @@ class MPCTensor:
             y_shape = y.shape
 
         result = MPCTensor(shares=shares, session=self.session)
-        result.shape = MPCTensor.__get_shape("matmul", y_shape, self.shape)
+        result.shape = MPCTensor._get_shape("matmul", y_shape, self.shape)
 
         scale = (
             self.session.config.encoder_base ** self.session.config.encoder_precision
@@ -500,7 +500,7 @@ class MPCTensor:
             from sympc.protocol.spdz import spdz
 
             result = spdz.mul_master(self, y, op_str, kwargs_)
-            result.shape = MPCTensor.__get_shape(op_str, self.shape, y.shape)
+            result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
         elif op_str in {"sub", "add"}:
             op = getattr(operator, op_str)
             shares = [
@@ -541,7 +541,7 @@ class MPCTensor:
 
     @staticmethod
     @lru_cache(maxsize=128)
-    def __get_shape(
+    def _get_shape(
         op_str: str, x_shape: Tuple[int], y_shape: Tuple[int], **kwargs_: Dict[Any, Any]
     ) -> Tuple[int]:
 
@@ -591,7 +591,7 @@ class MPCTensor:
         else:
             y_shape = y.shape
 
-        result.shape = MPCTensor.__get_shape(op_str, self.shape, y_shape, **kwargs_)
+        result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
         if op_str in {"mul", "matmul", "conv2d"} and not (
             is_private and self.session.nr_parties == 2
