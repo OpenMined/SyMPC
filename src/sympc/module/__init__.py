@@ -21,9 +21,9 @@ from .nn import Linear
 MAP_TORCH_TO_SYMPC = {
     "Linear": Linear,
     "Conv2d": Conv2d,
-    "Conv2dPointer": Conv2d,
-    "LinearPointer": Linear,
 }
+
+MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items()})
 
 
 def share(_self, session: Session) -> sy.Module:
