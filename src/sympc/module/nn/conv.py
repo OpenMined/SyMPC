@@ -13,6 +13,7 @@ import torch
 
 from sympc.session import Session
 from sympc.tensor import MPCTensor
+from sympc.utils import ispointer
 
 from .smpc_module import SMPCModule
 
@@ -74,12 +75,28 @@ class Conv2d(SMPCModule):
 
     __call__ = forward
 
-    def share_state_dict(self, state_dict: Dict[str, Any]) -> None:
+    def share_state_dict(
+        self,
+        state_dict: Dict[str, Any],
+    ) -> None:
         """Share the parameters of the normal Conv2d layer.
 
         Args:
             state_dict (Dict[str, Any]): the state dict that would be shared
         """
+
+        bias = None
+        if ispointer(state_dict):
+            weight = state_dict["weight"].resolve_pointer_type()
+            if "bias" in state_dict.keys().get():
+                bias = state_dict["bias"].resolve_pointer_type()
+            shape = weight.client.python.Tuple(weight.shape)
+            shape = shape.get()
+        else:
+            weight = state_dict["weight"]
+            bias = state_dict.get("bias")
+            shape = state_dict["weight"].shape
+
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
         (
@@ -87,7 +104,7 @@ class Conv2d(SMPCModule):
             self.in_channels,
             kernel_size_w,
             kernel_size_h,
-        ) = state_dict["weight"].shape
+        ) = shape
 
         if kernel_size_w != kernel_size_h:
             raise ValueError(
@@ -96,10 +113,12 @@ class Conv2d(SMPCModule):
 
         self.kernel_size = kernel_size_w
 
-        self.weight = state_dict["weight"].share(session=self.session)
+        self.weight = MPCTensor(secret=weight, session=self.session, shape=shape)
 
-        if "bias" in state_dict:
-            self.bias = state_dict["bias"].share(session=self.session)
+        if bias is not None:
+            self.bias = MPCTensor(
+                secret=bias, session=self.session, shape=(self.out_channels,)
+            )
 
     def reconstruct_state_dict(self) -> Dict[str, Any]:
         """Reconstruct the shared state dict.
