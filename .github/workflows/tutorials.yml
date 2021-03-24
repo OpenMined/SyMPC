@@ -7,14 +7,14 @@ on:
     paths:
       - "**.py"
       - "**.ipynb"
-      - "requirements*.txt"
+      - "requirements_dev.txt"
 
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
       - "**.py"
       - "**.ipynb"
-      - "requirements*.txt"
+      - "requirements_dev.txt"
 
 jobs:
   tutorial-tests:
