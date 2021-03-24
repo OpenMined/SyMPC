@@ -520,6 +520,7 @@ class MPCTensor:
     def __apply_private_op(
         self, y: "MPCTensor", op_str: str, kwargs_: Dict[Any, Any]
     ) -> "MPCTensor":
+
         """Apply an operation on 2 MPCTensor (secret shared values).
 
         Args:
