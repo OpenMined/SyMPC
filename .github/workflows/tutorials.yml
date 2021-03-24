@@ -12,6 +12,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
     paths:
+      - "setup.cfg"
       - "**.py"
       - "**.ipynb"
       - "requirements_dev.txt"
