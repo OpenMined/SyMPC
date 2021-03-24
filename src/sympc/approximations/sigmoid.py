@@ -1,12 +1,8 @@
 # third party
 import torch
 
-from sympc.approximations.exponential import exp
-from sympc.approximations.utils import reciprocal
-from sympc.approximations.utils import sign
 
-
-def sigmoid(tensor, method):
+def sigmoid(tensor, method: str = "exp"):
     """
     Approximates the sigmoid function using a given method
     Args:
@@ -14,17 +10,8 @@ def sigmoid(tensor, method):
         method (str): (default = "chebyshev")
             Possible values: "exp", "maclaurin", "chebyshev"
     """
-    if method == "exp":
-        _sign = sign(tensor)
 
-        # Make sure the elements are all positive
-        x = tensor * _sign
-        ones = tensor * 0 + 1
-        half = ones.div(2)
-        result = reciprocal(ones + exp(-ones * x), method="division")
-        return (result - half) * sign + half
-
-    elif method == "maclaurin":
+    if method == "maclaurin":
         weights = torch.tensor([0.5, 1.91204779e-01, -4.58667307e-03, 4.20690803e-05])
         degrees = [0, 1, 3, 5]
 
@@ -35,6 +22,3 @@ def sigmoid(tensor, method):
             result += (tensor ** d) * weights[i + 1]
 
         return result
-
-    # to be implemented
-    # elif method=="chebyshev":
