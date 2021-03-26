@@ -84,7 +84,7 @@ class Conv2d(SMPCModule):
             state_dict (Dict[str, Any]): the state dict that would be shared.
 
         Raises:
-            ValueError: If Kenel sizes mismatch "kernel_size_w" and "kernel_size_h"
+            ValueError: If kernel sizes mismatch "kernel_size_w" and "kernel_size_h"
         """
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
