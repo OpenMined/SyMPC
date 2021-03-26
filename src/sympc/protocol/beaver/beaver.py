@@ -137,10 +137,10 @@ def mul_store_add(
     """Add the primitives required for the "mul" operation to the CryptoStore.
 
     Arguments:
-        store: the CryptoStore
-        primitives: the list of primitives
-        a_shape: the shape of the first operand
-        b_shape: the shape of the second operand
+        store (Dict[Any, Any]): the CryptoStore
+        primitives (Iterable[Any]): the list of primitives
+        a_shape (Tuple[int]): the shape of the first operand
+        b_shape (Tuple[int]): the shape of the second operand
     """
     config_key = (a_shape, b_shape)
     if config_key in store:
