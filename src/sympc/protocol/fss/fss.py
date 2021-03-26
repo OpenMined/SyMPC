@@ -252,7 +252,7 @@ class DPF:
 
     @staticmethod
     def eval(b, x, k_b):
-        """TODO: Add docstring.
+        """Sycret DPF eval.
 
         Args:
             b: noqa: DAR101
