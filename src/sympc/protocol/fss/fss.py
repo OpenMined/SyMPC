@@ -348,7 +348,7 @@ def _generate_primitive(op: str, n_values: int) -> List[Any]:
 
 @register_primitive_generator("fss_eq")
 def generate_primitive(n_values: int) -> List[Any]:
-    """TODO: Add docstring.
+    """Generate primitives for the FSS equality protocol.
 
     Args:
         n_values (int): Number of values.
