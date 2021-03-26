@@ -273,7 +273,7 @@ class DIF:
 
     @staticmethod
     def keygen(n_values=1):
-        """Sysecret DIF keygen.
+        """Sycret DIF keygen.
 
         Args:
             n_values (int): Number of values. Defaults to 1
