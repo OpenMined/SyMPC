@@ -285,7 +285,7 @@ class DIF:
 
     @staticmethod
     def eval(b, x, k_b):
-        """TODO: Add docstring.
+        """Sycret DIF eval.
 
         Args:
             b: noqa: DAR101
