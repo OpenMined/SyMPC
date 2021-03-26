@@ -401,7 +401,7 @@ def add_primitive(
     store: Dict[Any, Any],
     primitives: Iterable[Any],
 ) -> None:
-    """TODO: Add docstring.
+    """Add FSS primitives for equality to the crypto store.
 
     Args:
         store (Dict[Any,Any]): TODO
