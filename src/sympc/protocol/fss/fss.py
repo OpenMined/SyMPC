@@ -72,7 +72,7 @@ def fss_op(x1: ShareTensor, x2: ShareTensor, op="eq"):
     """Define the workflow for a binary operation using Function Secret Sharing.
 
     Currently supported operand are = & <=, respectively corresponding to
-        op = 'eq' and 'comp'
+    op = 'eq' and 'comp'.
 
     Args:
         x1 (ShareTensor): First AST.
@@ -124,9 +124,10 @@ def fss_op(x1: ShareTensor, x2: ShareTensor, op="eq"):
 def mask_builder(
     session: Session, x1: ShareTensor, x2: ShareTensor, op: str
 ) -> ShareTensor:
-    """Add the share of alpha (the mask) that is held in the crypto store to the 
-    difference x1 - x2.
-    
+    """Mask the private inputs.
+
+    Add the share of alpha (the mask) that is held in the crypto store to
+    the difference x1 - x2.
     As we aim at comparing x1 <= x2, we actually compare x1 - x2 <= 0 and we hide
     x1 - x2 with alpha that is a random mask.
 
@@ -138,7 +139,6 @@ def mask_builder(
 
     Returns:
         ShareTensor
-
     """
     x = x1 - x2
 
@@ -155,7 +155,7 @@ def mask_builder(
 
 # share level
 def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
-    """Evaluate the FSS protocol on the masked and public input `x_masked`
+    """Evaluate the FSS protocol on the masked and public input `x_masked`.
 
     Args:
         session (Session): MPC Session.
