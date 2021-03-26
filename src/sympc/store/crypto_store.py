@@ -1,4 +1,4 @@
-"""CrypStore manages the needed crypto primitives."""
+"""CryptoStore manages the needed crypto primitives."""
 
 # stdlib
 from typing import Any
