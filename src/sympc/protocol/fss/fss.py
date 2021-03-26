@@ -240,7 +240,7 @@ class DPF:
 
     @staticmethod
     def keygen(n_values=1):
-        """Sysecret DPF keygen.
+        """Sycret DPF keygen.
 
         Args:
             n_values (int): Number of values. Defaults to 1
