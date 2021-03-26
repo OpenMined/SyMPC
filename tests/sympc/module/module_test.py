@@ -8,6 +8,7 @@ from typing import Type
 import pytest
 import syft as sy
 import torch
+import numpy as np
 
 from sympc.module import MAP_TORCH_TO_SYMPC
 from sympc.session import Session
@@ -70,7 +71,7 @@ def test_run_linear_model(get_clients: Callable[[int], List[Any]]):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, atol=1e-3)
+    assert np.allclose(res, expected.detach(), atol=1e-3)
 
 
 def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
@@ -95,7 +96,7 @@ def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
     assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
-    assert torch.allclose(res, expected, atol=1e-3)
+    assert np.allclose(res, expected.detach(), atol=1e-3)
 
 
 @pytest.mark.parametrize("is_remote", [False, True])
