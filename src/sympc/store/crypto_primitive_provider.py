@@ -82,7 +82,7 @@ class CryptoPrimitiveProvider:
         """Get the state of a CryptoProvider.
 
         Returns:
-            str: CrytoProvider
+            str: CryptoProvider
         """
         res = f"Providers: {list(CryptoPrimitiveProvider._func_providers.keys())}\n"
         return res
