@@ -5,10 +5,10 @@ from typing import List
 from typing import Type
 
 # third party
+import numpy as np
 import pytest
 import syft as sy
 import torch
-import numpy as np
 
 from sympc.module import MAP_TORCH_TO_SYMPC
 from sympc.session import Session
