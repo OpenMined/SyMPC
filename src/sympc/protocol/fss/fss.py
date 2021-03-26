@@ -155,7 +155,7 @@ def mask_builder(
 
 # share level
 def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
-    """TODO: Add docstring.
+    """Evaluate the FSS protocol on the masked and public input `x_masked`
 
     Args:
         session (Session): MPC Session.
