@@ -48,12 +48,12 @@ def parallel_execution(
     parties: Union[None, List[Any]] = None,
     cpu_bound: bool = False,
 ) -> Callable[..., List[Any]]:
-    """Wrap a function such tat it can be run in parallel at multiple parties.
+    """Wrap a function such that it can be run in parallel at multiple parties.
 
     Args:
         fn (Callable): The function to run.
-        parties (Union[None, List[Any]]): Clients from syft. If this is set, then the f
-            unction should be run remotely. Defaults to None.
+        parties (Union[None, List[Any]]): Clients from syft. If this is set, then the
+            function should be run remotely. Defaults to None.
         cpu_bound (bool): Because of the GIL (global interpreter lock) sometimes
             it makes more sense to use processes than threads if it is set then
             processes should be used since they really run in parallel if not then
@@ -86,7 +86,7 @@ def parallel_execution(
             kwargs (Optional[Dict[Any, Dict[Any, Any]]]): Kwargs. Default to None.
 
         Returns:
-            List[Any]
+            List[Any]: Results from the parties
         """
         Executor: Union[Type[ProcessPoolExecutor], Type[ThreadPoolExecutor]]
         if cpu_bound:
