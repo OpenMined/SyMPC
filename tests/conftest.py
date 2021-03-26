@@ -12,7 +12,8 @@ import syft as sy
 def get_clients() -> Callable[[int], List[Any]]:
     def _helper_get_clients(nr_clients: int) -> List[Any]:
         return [
-            sy.VirtualMachine(name=f"P_{i}").get_client() for i in range(nr_clients)
+            sy.VirtualMachine(name=f"P_{i}").get_root_client()
+            for i in range(nr_clients)
         ]
 
     return _helper_get_clients
