@@ -415,7 +415,7 @@ def add_primitive(
 
 @register_primitive_store_add("fss_comp")
 def add_primitive(store: Dict[Any, Any], primitives: Iterable[Any]):
-    """TODO: Add docstring.
+    """Add FSS primitives for comparison to the crypto store.
 
     Args:
         store (Dict[Any,Any]): TODO
