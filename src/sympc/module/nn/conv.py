@@ -88,7 +88,7 @@ class Conv2d(SMPCModule):
         bias = None
         if ispointer(state_dict):
             weight = state_dict["weight"].resolve_pointer_type()
-            if "bias" in state_dict.keys().get():
+            if "bias" in weight.client.python.List(state_dict).get():
                 bias = state_dict["bias"].resolve_pointer_type()
             shape = weight.client.python.Tuple(weight.shape)
             shape = shape.get()
