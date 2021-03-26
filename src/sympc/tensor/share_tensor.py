@@ -171,7 +171,7 @@ class ShareTensor:
         """Apply the "sub" operation between "y" and "self".
 
         Args:
-            y (Union[int, float, torch.Tensor, "ShareTensor"]): self - y
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): y - self
 
         Returns:
             ShareTensor. Result of the operation.
@@ -204,7 +204,7 @@ class ShareTensor:
         """Apply the "xor" operation between "self" and "y".
 
         Args:
-            y (Union[int, torch.Tensor, "ShareTensor"]): self @ y
+            y (Union[int, torch.Tensor, "ShareTensor"]): self xor y
 
         Returns:
             ShareTensor: Result of the operation.
@@ -397,7 +397,7 @@ class ShareTensor:
             **kwargs: Keyword arguments passed to tensor.unsqueeze
 
         Returns:
-            Any: Tensor unsqueezed.
+            Any: ShareTensor unsqueezed.
 
         References:
             https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
@@ -415,10 +415,10 @@ class ShareTensor:
             **kwargs: Keyword arguments passed to tensor.view.
 
         Returns:
-            Any: Tensor with new view.
+            Any: ShareTensor with new view.
 
         References:
-            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
+            https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         """
         tensor = self.tensor.view(*args, **kwargs)
         res = ShareTensor(session=self.session)
