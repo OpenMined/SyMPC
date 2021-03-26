@@ -361,7 +361,7 @@ def generate_primitive(n_values: int) -> List[Any]:
 
 @register_primitive_generator("fss_comp")
 def generate_primitive(n_values: int) -> List[Any]:
-    """TODO: Add docstring.
+    """Generate primitives for the FSS comparison protocol.
 
     Args:
         n_values (int): Number of values.
