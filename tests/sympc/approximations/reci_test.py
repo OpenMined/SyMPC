@@ -18,7 +18,7 @@ def test_reciprocal(get_clients) -> None:
     x_secret_reciprocal = torch.reciprocal(x_secret)
 
     x_reciprocal = reciprocal(x, method="nr")
-    assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-2)
+    assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
 
     x_reciprocal = reciprocal(x, method="log")
-    assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-2)
+    assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
