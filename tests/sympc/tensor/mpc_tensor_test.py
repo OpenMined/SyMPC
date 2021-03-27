@@ -393,7 +393,7 @@ def test_pow(get_clients) -> None:
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    x_secret = torch.Tensor([5.0])
+    x_secret = torch.Tensor([5.0, -3])
     x = MPCTensor(secret=x_secret, session=session)
 
     power_secret = x_secret ** 2
