@@ -90,7 +90,6 @@ class Conv2d(SMPCModule):
         Raises:
             ValueError: If kernel sizes mismatch "kernel_size_w" and "kernel_size_h"
         """
-
         bias = None
         if ispointer(state_dict):
             weight = state_dict["weight"].resolve_pointer_type()
