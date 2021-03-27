@@ -1,4 +1,4 @@
-def exp(value, iterations=16):
+def exp(value, iterations=8):
     r"""
     Approximates the exponential function using a limit approximation:
     exp(x) = \lim_{n -> infty} (1 + x / n) ^ n
