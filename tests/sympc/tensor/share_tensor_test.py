@@ -2,6 +2,7 @@
 import operator
 
 # third party
+import numpy as np
 import pytest
 import torch
 
@@ -52,7 +53,7 @@ def test_ops_share_share_local(op_str, precision, base) -> None:
     res = op(x_share, y_share)
     tensor_decoded = res.fp_encoder.decode(res.tensor)
 
-    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
@@ -69,7 +70,7 @@ def test_ops_share_tensor_local(op_str, precision, base) -> None:
     res = op(x_share, y)
     tensor_decoded = res.fp_encoder.decode(res.tensor)
 
-    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
@@ -86,7 +87,7 @@ def test_reverse_ops_share_tensor_local(op_str, precision, base) -> None:
     res = op(y, x_share)
     tensor_decoded = res.fp_encoder.decode(res.tensor)
 
-    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
@@ -103,7 +104,7 @@ def test_ops_share_integer_local(op_str, precision, base) -> None:
     res = op(x_share, y)
     tensor_decoded = res.fp_encoder.decode(res.tensor)
 
-    assert torch.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
 @pytest.mark.parametrize("op_str", ["lt", "gt"])
