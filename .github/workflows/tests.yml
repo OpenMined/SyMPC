@@ -66,7 +66,7 @@ jobs:
 
       - name: Check docstring coverage
         run: |
-          interrogate -mvp src/ -f 52.5
+          interrogate -mvp src/ -f 80
 
       - name: Scan for security issues
         run: |
