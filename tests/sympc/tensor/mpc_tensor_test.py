@@ -388,7 +388,8 @@ def test_share_get_method_session(get_clients) -> None:
     assert all(res.get() == expected_res)
 
 
-def test_pow(get_clients) -> None:
+@pytest.mark.parametrize("power", [4, 7])
+def test_pow(get_clients, power) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -396,8 +397,8 @@ def test_pow(get_clients) -> None:
     x_secret = torch.Tensor([5.0, -3])
     x = MPCTensor(secret=x_secret, session=session)
 
-    power_secret = x_secret ** 2
-    power = x ** 2
+    power_secret = x_secret ** power
+    power = x ** power
 
     assert torch.allclose(power_secret, power.reconstruct())
 
