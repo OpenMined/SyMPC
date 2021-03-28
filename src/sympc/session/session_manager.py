@@ -17,17 +17,7 @@ from sympc.session.session import Session
 class SessionManager:
     """Class used to manage sessions.
 
-    Arguments:
-        uuid (Optional[UUID]): used to identify a session manager instance.
-
     Attributes:
-        Syft Serializable Attributes
-
-        id (UID): the id to store the session
-        tags (Optional[List[str]): an optional list of strings that are tags used at search
-        description (Optional[str]): an optional string used to describe the session
-
-
         uuid (Optional[UUID]): used to identify a session
     """
 
@@ -39,8 +29,11 @@ class SessionManager:
         self,
         uuid: Optional[UUID] = None,
     ) -> None:
-        """Initializer for the Session."""
+        """Initializer for the Session Manager.
 
+        Args:
+            uuid (Optional[UUID]): Universal identifier of a session manager instance.
+        """
         self.uuid = uuid4() if uuid is None else uuid
 
         # Each worker will have the rank as the index in the list
@@ -49,8 +42,14 @@ class SessionManager:
 
     @staticmethod
     def setup_mpc(session: Session) -> None:
-        """Must be called to send the session to all other parties involved in
-        the computation."""
+        """Setup MPC.
+
+        Must be called to send the session to all other parties involved in
+        the computation.
+
+        Args:
+            session (Session): Session to send.
+        """
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party
             session.rank = rank
@@ -60,7 +59,9 @@ class SessionManager:
 
     @staticmethod
     def _setup_przs(session: Session) -> None:
-        """Setup the Pseudo-Random-Zero-Share generators to the parties
+        """PRZS generator.
+
+        Setup the Pseudo-Random-Zero-Share generators to the parties
         involved in the communication.
 
         Assume there are 3 parties:
@@ -79,6 +80,9 @@ class SessionManager:
                          PRZS: 0
 
         Step 3: The party that has the secret will add it to their own share
+
+        Args:
+            session (Session): Session involved in the communication.
         """
         nr_parties = len(session.parties)
 
@@ -100,11 +104,13 @@ class SessionManager:
             session.przs_generators[next_rank][0] = gen_next
 
     def __eq__(self, other: Any) -> bool:
-        """Check if "self" is equal with another object given a set of
-        attributes to compare.
+        """Check if "self" is equal with another object given a set of attributes to compare.
 
-        :return: if self and other are equal
-        :rtype: bool
+        Args:
+            other (Any): Session to compare.
+
+        Returns:
+            Bool. True if equal False if not.
         """
         if not isinstance(other, self.__class__):
             return False

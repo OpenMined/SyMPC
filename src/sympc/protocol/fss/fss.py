@@ -1,4 +1,8 @@
-"""Implementation of the Function Secret Sharing Protocol."""
+"""Function Secret Sharing Protocol.
+
+ARIANN: Low-Interaction Privacy-Preserving Deep Learning via Function Secret Sharing
+arXiv:2006.04593 [cs.LG]
+"""
 # stdlib
 import math
 import multiprocessing
@@ -43,12 +47,18 @@ dpf = sycret.EqFactory(n_threads=N_CORES)
 dif = sycret.LeFactory(n_threads=N_CORES)
 
 
-def keygen(n_values, op):
-    """
-    Run FSS keygen in parallel to accelerate the offline part of the protocol
+def keygen(n_values: int, op: str):
+    """Run FSS keygen in parallel to accelerate the offline part of the protocol.
+
     Args:
-        n_values (int): number of primitives to generate
-        op (str): eq or comp <=> DPF or DIF
+        n_values (int): Number of primitives to generate.
+        op (str): Operator eq or comp <=> DPF or DIF.
+
+    Returns:
+        noqa: DAR201
+
+    Raises:
+        ValueError: if "op" is not "eq" or "comp".
     """
     if op == "eq":
         return DPF.keygen(n_values=n_values)
@@ -58,19 +68,20 @@ def keygen(n_values, op):
     raise ValueError(f"{op} is an unsupported operation.")
 
 
-def fss_op(x1, x2, op="eq"):
-    """
-    Define the workflow for a binary operation using Function Secret Sharing
-    Currently supported operand are = & <=, respectively corresponding to
-    op = 'eq' and 'comp'
-    Args:
-        x1: first AST
-        x2: second AST
-        op: type of operation to perform, should be 'eq' or 'comp'
-    Returns:
-        shares of the comparison
-    """
+def fss_op(x1: ShareTensor, x2: ShareTensor, op="eq"):
+    """Define the workflow for a binary operation using Function Secret Sharing.
 
+    Currently supported operand are = & <=, respectively corresponding to
+    op = 'eq' and 'comp'.
+
+    Args:
+        x1 (ShareTensor): First AST.
+        x2 (ShareTensor): Second AST.
+        op: Type of operation to perform, should be 'eq' or 'comp'. Defaults to eq.
+
+    Returns:
+        MPCTensor: Shares of the comparison.
+    """
     assert not th.cuda.is_available()  # nosec
 
     # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
@@ -113,6 +124,22 @@ def fss_op(x1, x2, op="eq"):
 def mask_builder(
     session: Session, x1: ShareTensor, x2: ShareTensor, op: str
 ) -> ShareTensor:
+    """Mask the private inputs.
+
+    Add the share of alpha (the mask) that is held in the crypto store to
+    the difference x1 - x2.
+    As we aim at comparing x1 <= x2, we actually compare x1 - x2 <= 0 and we hide
+    x1 - x2 with alpha that is a random mask.
+
+    Args:
+        session (Session): MPC Session.
+        x1 (ShareTensor): First AST.
+        x2 (ShareTensor): Second AST.
+        op (str): Type of operation to perform.
+
+    Returns:
+        ShareTensor
+    """
     x = x1 - x2
 
     keys = session.crypto_store.get_primitives_from_store(
@@ -128,6 +155,21 @@ def mask_builder(
 
 # share level
 def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
+    """Evaluate the FSS protocol on the masked and public input `x_masked`.
+
+    Args:
+        session (Session): MPC Session.
+        b: noqa: DAR101
+        x_masked: noqa: DAR101
+        op: noqa: DAR101
+        dtype: noqa: DAR101
+
+    Returns:
+        ShareTensor: TODO.
+
+    Raises:
+        ValueError: If "op" is not "eq" or "comp".
+    """
     if op == "eq":
         return eq_evaluate(session, b, x_masked)
     elif op == "comp":
@@ -138,7 +180,16 @@ def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
 
 # process level
 def eq_evaluate(session: Session, b, x_masked) -> ShareTensor:
+    """TODO: Add docstring.
 
+    Args:
+        session (Session): MPC Session.
+        b: noqa: DAR101
+        x_masked: noqa: DAR101
+
+    Returns:
+        ShareTensor
+    """
     numel = x_masked.numel()
     keys = session.crypto_store.get_primitives_from_store(
         "fss_eq", nr_instances=numel, remove=True
@@ -155,7 +206,17 @@ def eq_evaluate(session: Session, b, x_masked) -> ShareTensor:
 
 # process level
 def comp_evaluate(session: Session, b, x_masked, dtype=None) -> ShareTensor:
+    """TODO: Add docstring.
 
+    Args:
+        session (Session): MPC Session.
+        b: noqa: DAR101
+        x_masked: noqa: DAR101
+        dtype: noqa: DAR101
+
+    Returns:
+        ShareTensor: TODO
+    """
     numel = x_masked.numel()
     keys = session.crypto_store.get_primitives_from_store(
         "fss_comp", nr_instances=numel, remove=True
@@ -172,14 +233,35 @@ def comp_evaluate(session: Session, b, x_masked, dtype=None) -> ShareTensor:
 
 
 class DPF:
-    """Distributed Point Function - used for equality"""
+    """Distributed Point Function - used for equality."""
+
+    # third party
+    from sycret.fss import FSSFactory
 
     @staticmethod
     def keygen(n_values=1):
+        """Sycret DPF keygen.
+
+        Args:
+            n_values (int): Number of values. Defaults to 1
+
+        Returns:
+            TODO: Add return type
+        """
         return dpf.keygen(n_values=n_values)
 
     @staticmethod
     def eval(b, x, k_b):
+        """Sycret DPF eval.
+
+        Args:
+            b: noqa: DAR101
+            x: noqa: DAR101
+            k_b: noqa: DAR101
+
+        Returns:
+            noqa: DAR201
+        """
         original_shape = x.shape
         x = x.reshape(-1)
         flat_result = dpf.eval(b, x, k_b)
@@ -187,14 +269,32 @@ class DPF:
 
 
 class DIF:
-    """Distributed Interval Function - used for comparison"""
+    """Distributed Interval Function - used for comparison."""
 
     @staticmethod
     def keygen(n_values=1):
+        """Sycret DIF keygen.
+
+        Args:
+            n_values (int): Number of values. Defaults to 1
+
+        Returns:
+            TODO: Add return type
+        """
         return dif.keygen(n_values=n_values)
 
     @staticmethod
     def eval(b, x, k_b):
+        """Sycret DIF eval.
+
+        Args:
+            b: noqa: DAR101
+            x: noqa: DAR101
+            k_b: noqa: DAR101
+
+        Returns:
+            # noqa: DAR201
+        """
         # x = x.astype(np.uint64)
         original_shape = x.shape
         x = x.reshape(-1)
@@ -203,12 +303,32 @@ class DIF:
 
 
 class FSS(metaclass=Protocol):
+    """Function Secret Sharing."""
+
     @staticmethod
-    def eq(x1, x2):
+    def eq(x1: ShareTensor, x2: ShareTensor):
+        """Equal operator.
+
+        Args:
+            x1 (ShareTensor): First AST.
+            x2 (ShareTensor): Second AST.
+
+        Returns:
+            MPCTensor: Shares of the equality.
+        """
         return fss_op(x1, x2, "eq")
 
     @staticmethod
     def le(x1, x2):
+        """Lower equal operator.
+
+        Args:
+            x1 (ShareTensor): First AST.
+            x2 (ShareTensor): Second AST.
+
+        Returns:
+            MPCTensor: Shares of the comparison.
+        """
         return fss_op(x1, x2, "comp")
 
 
@@ -228,11 +348,27 @@ def _generate_primitive(op: str, n_values: int) -> List[Any]:
 
 @register_primitive_generator("fss_eq")
 def generate_primitive(n_values: int) -> List[Any]:
+    """Generate primitives for the FSS equality protocol.
+
+    Args:
+        n_values (int): Number of values.
+
+    Returns:
+        List[Any]: TODO.
+    """
     return _generate_primitive("eq", n_values)
 
 
 @register_primitive_generator("fss_comp")
 def generate_primitive(n_values: int) -> List[Any]:
+    """Generate primitives for the FSS comparison protocol.
+
+    Args:
+        n_values (int): Number of values.
+
+    Returns:
+        List[Any]: TODO.
+    """  # Seems almost the same than previous one, can they be unified?
     return _generate_primitive("comp", n_values)
 
 
@@ -240,7 +376,14 @@ def _add_primitive(
     op: str,
     store: Dict[Any, Any],
     primitives: Iterable[Any],
-) -> None:
+):
+    """Add FSS primitives to the crypto store.
+
+    Args:
+        op (str): Operator.
+        store (Dict[Any,Any]): TODO
+        primitives (Iterable[Any]): TODO
+    """
     _ensure_fss_store(store)
     current_primitives = store[op]
 
@@ -258,14 +401,29 @@ def add_primitive(
     store: Dict[Any, Any],
     primitives: Iterable[Any],
 ) -> None:
+    """Add FSS primitives for equality to the crypto store.
+
+    Args:
+        store (Dict[Any,Any]): TODO
+        primitives (Iterable[Any]): TODO
+
+    Returns:
+        # noqa: DAR201
+    """
     return _add_primitive("fss_eq", store, primitives)
 
 
 @register_primitive_store_add("fss_comp")
-def add_primitive(
-    store: Dict[Any, Any],
-    primitives: Iterable[Any],
-) -> None:
+def add_primitive(store: Dict[Any, Any], primitives: Iterable[Any]):
+    """Add FSS primitives for comparison to the crypto store.
+
+    Args:
+        store (Dict[Any,Any]): TODO
+        primitives (Iterable[Any]): TODO
+
+    Returns:
+        # noqa: DAR201
+    """  # Seems almost the same than previous one, can they be unified?
     return _add_primitive("fss_comp", store, primitives)
 
 
@@ -294,13 +452,13 @@ def _get_primitive(
         )
 
 
-@register_primitive_store_get("fss_eq")
+@register_primitive_store_get("fss_eq")  # noqa
 def get_primitive(
     store: Dict[Tuple[int, int], List[Any]],
     nr_instances: int,
     remove: bool = True,
     **kwargs,
-) -> Any:
+) -> Any:  # noqa
     return _get_primitive("fss_eq", store, nr_instances, remove, **kwargs)
 
 
@@ -310,5 +468,5 @@ def get_primitive(
     nr_instances: int,
     remove: bool = True,
     **kwargs,
-) -> Any:
+) -> Any:  # noqa
     return _get_primitive("fss_comp", store, nr_instances, remove, **kwargs)
