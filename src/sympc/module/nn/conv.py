@@ -19,6 +19,8 @@ from .smpc_module import SMPCModule
 
 
 class Conv2d(SMPCModule):
+    """Convolutional 2D."""
+
     __slots__ = [
         "session",
         "weight",
@@ -41,8 +43,9 @@ class Conv2d(SMPCModule):
     bias: Optional[MPCTensor]
 
     def __init__(self, session: Session) -> None:
-        """The initializer for the Conv2d layer The stride, padding, dilation
-        and groups are hardcoded for the moment.
+        """Initialize Conv2d layer.
+
+        The stride, padding, dilation and groups are hardcoded for the moment.
 
         Args:
             session (Session): the session used to identify the layer
@@ -82,9 +85,11 @@ class Conv2d(SMPCModule):
         """Share the parameters of the normal Conv2d layer.
 
         Args:
-            state_dict (Dict[str, Any]): the state dict that would be shared
-        """
+            state_dict (Dict[str, Any]): the state dict that would be shared.
 
+        Raises:
+            ValueError: If kernel sizes mismatch "kernel_size_w" and "kernel_size_h"
+        """
         bias = None
         if ispointer(state_dict):
             weight = state_dict["weight"].resolve_pointer_type()
@@ -124,7 +129,7 @@ class Conv2d(SMPCModule):
         """Reconstruct the shared state dict.
 
         Returns:
-            The reconstructed state dict (Dict[str, Any])
+            Dict[str, Any]: The reconstructed state dict.
         """
         state_dict = OrderedDict()
         state_dict["weight"] = self.weight.reconstruct()
@@ -136,14 +141,15 @@ class Conv2d(SMPCModule):
 
     @staticmethod
     def get_torch_module(conv_module: "Conv2d") -> torch.nn.Module:
-        """Get a torch module from a given MPC Conv2d module The parameters of
-        the models are not set.
+        """Get a torch module from a given MPC Conv2d module.
+
+        The parameters of the models are not set.
 
         Args:
             conv_module (Conv2d): the MPC Conv2d layer
 
         Returns:
-            A torch Conv2d module
+            torch.nn.Module: A torch Conv2d module.
         """
         bias = conv_module.bias is not None
         module = torch.nn.Conv2d(

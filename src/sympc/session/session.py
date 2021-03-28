@@ -1,5 +1,6 @@
-"""The implementation for the Session. It is used to identify a MPC computation
-done between multiple parties.
+"""The implementation for the Session.
+
+It is used to identify a MPC computation done between multiple parties.
 
 Example:
     Alice Bob and John wants to do some computation
@@ -33,22 +34,10 @@ from sympc.utils import get_type_from_ring
 class Session:
     """Class used to keep information about computation done in SMPC.
 
-    Arguments:
-        parties (Optional[List[Any]): used to send/receive messages
-        ring_size (int): field used for the operations applied on the shares
-        config (Optional[Config]): configuration used for information needed
-            by the Fixed Point Encoder
-        ttp (Optional[Any]): trusted third party
-        uuid (Optional[UUID]): used to identify a session
-
     Attributes:
-        Syft Serializable Attributes
-
-        id (UID): the id to store the session
+        id (UID): The id to store the session
         tags (Optional[List[str]): an optional list of strings that are tags used at search
         description (Optional[str]): an optional string used to describe the session
-
-
         uuid (Optional[UUID]): used to identify a session
         parties (Optional[List[Any]): used to send/receive messages
         nr_parties (int): number of parties
@@ -101,8 +90,20 @@ class Session:
         ttp: Optional[Any] = None,
         uuid: Optional[UUID] = None,
     ) -> None:
-        """Initializer for the Session."""
+        """Initializer for the Session.
 
+        Args:
+            parties (Optional[List[Any]): Used to send/receive messages:
+            ring_size (int): Field used for the operations applied on the shares
+            config (Optional[Config]): Configuration used for information needed
+                by the Fixed Point Encoder. Defaults None
+            protocol (Optional[str]): Protocol. Defaults None
+            ttp (Optional[Any]): Trusted third party. Defaults None.
+            uuid (Optional[UUID]): Universal Identifier for the session. Defaults None
+
+        Raises:
+            ValueError: If protocol is not registered.
+        """
         self.uuid = uuid4() if uuid is None else uuid
 
         # Each worker will have the rank as the index in the list
@@ -148,6 +149,11 @@ class Session:
         self.max_value = (ring_size - 1) // 2
 
     def get_protocol(self) -> Protocol:
+        """Get protocol.
+
+        Returns:
+            Protocol
+        """
         return self.protocol
 
     def przs_generate_random_share(
@@ -155,9 +161,16 @@ class Session:
         shape: Union[tuple, torch.Size],
         generators: List[torch.Generator],
     ) -> Any:
-        """Generate a random share using the two generators that are hold by a
-        party."""
+        """Generate a random share using the two generators hold by a party.
 
+        Args:
+            shape (Union[tuple, torch.Size]): Shape.
+            generators (List[torch.Generator]): Torch generator.
+
+        Returns:
+            Any: ShareTensor
+
+        """
         from sympc.tensor import ShareTensor
 
         gen0, gen1 = generators
@@ -180,11 +193,13 @@ class Session:
         return share
 
     def __eq__(self, other: Any) -> bool:
-        """Check if "self" is equal with another object given a set of
-        attributes to compare.
+        """Check if "self" is equal with another object given a set of attributes to compare.
 
-        :return: if self and other are equal
-        :rtype: bool
+        Args:
+            other (Any): Session to compare.
+
+        Returns:
+            Bool. True if equal False if not.
         """
         if not isinstance(other, self.__class__):
             return False

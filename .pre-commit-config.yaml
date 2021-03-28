@@ -41,8 +41,22 @@ repos:
       - id: bandit
         args: ["--exclude", "tests"]
 
-  - repo: https://github.com/myint/docformatter
-    rev: v1.4
+
+
+  - repo: https://github.com/pycqa/pydocstyle
+    rev: 5.1.1  # pick a git hash / tag to point to
     hooks:
-      - id: docformatter
-        args: [--in-place]
+      - id: pydocstyle
+        args:
+          - --convention=google
+        exclude: ^tests/
+
+  - repo: https://github.com/terrencepreilly/darglint
+    rev: master
+    hooks:
+      - id: darglint
+        exclude: ^tests/
+
+
+
+
