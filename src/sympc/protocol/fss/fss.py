@@ -64,7 +64,7 @@ def mask_builder(
         f"fss_{op}", nr_instances=x.numel(), remove=False
     )
 
-    n_bytes = int(n / 8)  # keys contains bytes not bits
+    n_bytes = n // 8  # keys contains bytes not bits
     alpha = np.frombuffer(np.ascontiguousarray(keys[:, 0:n_bytes]), dtype=np.uint32)
 
     x.tensor += th.tensor(alpha.astype(np.int64)).reshape(x.shape)
@@ -157,7 +157,7 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 
     shares = parallel_execution(evaluate, session.parties)(args)
 
-    response = MPCTensor(session=session, shares=shares)
+    response = MPCTensor(session=session, shares=shares, shape=shape)
     response.shape = shape
     return response
 
