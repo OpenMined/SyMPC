@@ -487,8 +487,7 @@ class MPCTensor:
         return result
 
     def pow(self, power: int) -> "MPCTensor":
-        """Compute integer power of a number by recursion using mul This uses
-        the following trick:
+        """Compute integer power of a number by recursion using mul.
 
         - Divide power by 2 and multiply base to itself (if the power is even)
         - Decrement power by 1 to make it even and then follow the first step
@@ -498,6 +497,9 @@ class MPCTensor:
 
         Returns:
              MPCTensor: Result of the pow operation
+
+        Raises:
+            RuntimeError: if negative power is given
         """
         if power < 0:
             raise RuntimeError("Negative integer powers are not allowed.")
@@ -520,7 +522,6 @@ class MPCTensor:
     def __apply_private_op(
         self, y: "MPCTensor", op_str: str, kwargs_: Dict[Any, Any]
     ) -> "MPCTensor":
-
         """Apply an operation on 2 MPCTensor (secret shared values).
 
         Args:
