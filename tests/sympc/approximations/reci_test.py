@@ -1,4 +1,5 @@
 # third party
+import pytest
 import torch
 
 from sympc.approximations.reci import reciprocal
@@ -22,3 +23,6 @@ def test_reciprocal(get_clients) -> None:
 
     x_reciprocal = reciprocal(x, method="log")
     assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
+
+    with pytest.raises(ValueError):
+        x_reciprocal = reciprocal(x, method="exp")

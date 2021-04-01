@@ -1,4 +1,5 @@
 # third party
+import pytest
 import torch
 
 from sympc.approximations.tanh import tanh
@@ -16,6 +17,9 @@ def test_tanh(get_clients) -> None:
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
     x = MPCTensor(secret=x_secret, session=session)
-    x_tanh = tanh(x)
+    x_tanh = tanh(x, method="sigmoid")
 
     assert torch.allclose(x_secret_tanh, x_tanh.reconstruct(), atol=1e-2)
+
+    with pytest.raises(ValueError):
+        x_tanh = tanh(x, method="exp")
