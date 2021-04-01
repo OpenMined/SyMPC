@@ -32,4 +32,4 @@ def tanh(tensor, method="sigmoid"):
     if method == "sigmoid":
         return _tanh_sigmoid(tensor)
     else:
-        raise ValueError("The request method does not exists")
+        raise ValueError(f"Invalid method {method} given for tanh function")

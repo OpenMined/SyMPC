@@ -3,7 +3,7 @@
 from sympc.approximations.exponential import exp
 from sympc.approximations.log import log
 from sympc.approximations.utils import modulus
-from sympc.approximations.utils import signum
+from sympc.approximations.utils import sign
 
 
 def reciprocal(self, method: str = "NR", nr_iters: int = 10):
@@ -34,9 +34,9 @@ def reciprocal(self, method: str = "NR", nr_iters: int = 10):
         result = 3 * exp(0.5 - new_self) + 0.003
         for i in range(nr_iters):
             result = 2 * result - result * result * new_self
-        return result * signum(self)
+        return result * sign(self)
     elif method == "log":
         new_self = modulus(self)
-        return exp(-1 * log(new_self)) * signum(self)
+        return exp(-1 * log(new_self)) * sign(self)
     else:
         raise ValueError(f"Invalid method {method} given for reciprocal function")

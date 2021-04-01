@@ -23,18 +23,4 @@ def modulus(data):
         MPCTensor: the required modulus
 
     """
-    return signum(data) * data
-
-
-def signum(data):
-    """Calculation of signum function for a given tensor.
-
-    Args:
-        data(MPCTensor): tensor whose ssignum has to be calculated
-
-    Returns:
-        MPCTensor: the required signum
-
-    """
-    sgn = (data > 0) - (data < 0)
-    return sgn
+    return sign(data) * data
