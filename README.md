@@ -10,3 +10,7 @@ SyMPC **/ˈsɪmpəθi/** is a library which extends [PySyft](https://github.com/
 ## Get started
 
 You can learn how to use SyMPC by discovering our [Introduction](./examples/introduction.ipynb) notebook!
+
+## Disclaimer
+
+This library should not be used in a production environment because it is still a prototype.
