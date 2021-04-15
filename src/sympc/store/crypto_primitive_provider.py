@@ -49,12 +49,8 @@ class CryptoPrimitiveProvider:
         generator = CryptoPrimitiveProvider._func_providers[op_str]
         primitives = generator(**g_kwargs)
 
-        if CryptoPrimitiveProvider._logging and (
-            p_kwargs.get("a_shape") and p_kwargs.get("b_shape")
-        ):
-            CryptoPrimitiveProvider._ops_list[op_str].append(
-                {"a_shape": p_kwargs.get("a_shape"), "b_shape": p_kwargs.get("b_shape")}
-            )
+        if CryptoPrimitiveProvider._logging:
+            CryptoPrimitiveProvider._ops_list[op_str].append(p_kwargs)
 
         if p_kwargs is not None:
             """Do not transfer the primitives if there is not specified a
