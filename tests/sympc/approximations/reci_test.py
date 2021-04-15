@@ -8,7 +8,8 @@ from sympc.session import SessionManager
 from sympc.tensor.mpc_tensor import MPCTensor
 
 
-def test_reciprocal(get_clients) -> None:
+@pytest.mark.parametrize("method", ["nr", "log"])
+def test_reciprocal(method, get_clients) -> None:
     clients = get_clients(2)
     session_one = Session(parties=clients)
     SessionManager.setup_mpc(session_one)
@@ -18,10 +19,7 @@ def test_reciprocal(get_clients) -> None:
     x = MPCTensor(secret=x_secret, session=session_one)
     x_secret_reciprocal = torch.reciprocal(x_secret)
 
-    x_reciprocal = reciprocal(x, method="nr")
-    assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
-
-    x_reciprocal = reciprocal(x, method="log")
+    x_reciprocal = reciprocal(x, method=method)
     assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
 
     with pytest.raises(ValueError):
