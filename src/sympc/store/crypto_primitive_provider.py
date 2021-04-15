@@ -15,8 +15,9 @@ class CryptoPrimitiveProvider:
     """A trusted third party should use this class to generate crypto primitives."""
 
     _func_providers: Dict[str, Callable] = {}
-    _logging = False
     _ops_list: DefaultDict[str, List] = DefaultDict(list)
+    _logging = False
+    _generate_file = False
 
     def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
@@ -94,12 +95,17 @@ class CryptoPrimitiveProvider:
         return res
 
     @staticmethod
-    def start_logging() -> None:
-        """Sets the variable to True to start primitive logging."""
+    def start_logging(generate_file: bool = False) -> None:
+        """Sets the variable to True to start primitive logging.
+
+        Args:
+            generate_file: when set to True generates a seperate primitive_log.json file
+        """
         CryptoPrimitiveProvider._logging = True
+        CryptoPrimitiveProvider._generate_file = generate_file
 
     @staticmethod
-    def stop_logging() -> json:
+    def stop_logging():
         """Sets the varible to False to stop primitive logging.
 
         Returns:
@@ -108,4 +114,10 @@ class CryptoPrimitiveProvider:
         CryptoPrimitiveProvider._logging = False
         log_json = json.dumps(CryptoPrimitiveProvider._ops_list)
         CryptoPrimitiveProvider._ops_list.clear()
+
+        if CryptoPrimitiveProvider._generate_file:
+            CryptoPrimitiveProvider._generate_file = False
+            with open("primitive_log.json", "w") as f:
+                f.write(log_json)
+
         return log_json
