@@ -15,7 +15,7 @@ class CryptoPrimitiveProvider:
 
     _func_providers: Dict[str, Callable] = {}
     _logging = False
-    _ops_list = {}
+    _ops_list: Dict[str, List] = {}
 
     def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
