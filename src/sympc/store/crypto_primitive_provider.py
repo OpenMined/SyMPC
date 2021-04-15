@@ -1,6 +1,7 @@
 """Crypto Primitives."""
 
 # stdlib
+import json
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -13,6 +14,8 @@ class CryptoPrimitiveProvider:
     """A trusted third party should use this class to generate crypto primitives."""
 
     _func_providers: Dict[str, Callable] = {}
+    _logging = False
+    _ops_list = {}
 
     def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
@@ -43,8 +46,17 @@ class CryptoPrimitiveProvider:
             raise ValueError(f"{op_str} not registered")
 
         generator = CryptoPrimitiveProvider._func_providers[op_str]
-
         primitives = generator(**g_kwargs)
+
+        if CryptoPrimitiveProvider._logging and (
+            p_kwargs.get("a_shape") and p_kwargs.get("b_shape")
+        ):
+            if op_str not in CryptoPrimitiveProvider._ops_list:
+                CryptoPrimitiveProvider._ops_list[op_str] = []
+
+            CryptoPrimitiveProvider._ops_list[op_str].append(
+                {"a_shape": p_kwargs.get("a_shape"), "b_shape": p_kwargs.get("b_shape")}
+            )
 
         if p_kwargs is not None:
             """Do not transfer the primitives if there is not specified a
@@ -86,3 +98,20 @@ class CryptoPrimitiveProvider:
         """
         res = f"Providers: {list(CryptoPrimitiveProvider._func_providers.keys())}\n"
         return res
+
+    @staticmethod
+    def start_logging() -> None:
+        """Sets the variable to True to start primitive logging."""
+        CryptoPrimitiveProvider._logging = True
+
+    @staticmethod
+    def stop_logging() -> json:
+        """Sets the varible to False to stop primitive logging.
+
+        Returns:
+            json: returns the json object containing ops details.
+        """
+        CryptoPrimitiveProvider._logging = False
+        log_json = json.dumps(CryptoPrimitiveProvider._ops_list)
+        CryptoPrimitiveProvider._ops_list.clear()
+        return log_json
