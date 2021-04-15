@@ -4,6 +4,7 @@
 import json
 from typing import Any
 from typing import Callable
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 
@@ -15,7 +16,7 @@ class CryptoPrimitiveProvider:
 
     _func_providers: Dict[str, Callable] = {}
     _logging = False
-    _ops_list: Dict[str, List] = {}
+    _ops_list: DefaultDict[str, List] = DefaultDict(list)
 
     def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
@@ -51,9 +52,6 @@ class CryptoPrimitiveProvider:
         if CryptoPrimitiveProvider._logging and (
             p_kwargs.get("a_shape") and p_kwargs.get("b_shape")
         ):
-            if op_str not in CryptoPrimitiveProvider._ops_list:
-                CryptoPrimitiveProvider._ops_list[op_str] = []
-
             CryptoPrimitiveProvider._ops_list[op_str].append(
                 {"a_shape": p_kwargs.get("a_shape"), "b_shape": p_kwargs.get("b_shape")}
             )
