@@ -7,6 +7,7 @@ from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor.mpc_tensor import MPCTensor
 
+
 @pytest.mark.parametrize("method", ["nr", "log"])
 def test_reciprocal(method, get_clients) -> None:
     clients = get_clients(2)
