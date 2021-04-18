@@ -22,8 +22,7 @@ PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
 METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
 
 class ShareTensor(metaclass=SyMPCTensor):
-    """This class represents 1 share that a party holds when doing secret
-    sharing.
+    """Single Share representation.
 
     Arguments:
         data (Optional[Any]): the share a party holds
@@ -371,8 +370,7 @@ class ShareTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
-        """Hook a framework property (only getter) such that we know how to
-        treat it given that we call it.
+        """Hook a framework property (only getter).
 
         Ex:
          * if we call "shape" we want to call it on the underlying tensor
@@ -381,7 +379,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         but we want to wrap it in the same tensor type
 
         Args:
-            property_nam (str): property to hook
+            property_name (str): property to hook
 
         Returns:
             A hooked property
@@ -406,8 +404,7 @@ class ShareTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def hook_method(method_name: str) -> Callable[..., Any]:
-        """Hook a framework method such that we know how to treat it given that
-        we call it.
+        """Hook a framework method such that we know how to treat it given that we call it.
 
         Ex:
          * if we call "numel" we want to call it on the underlying tensor
@@ -416,7 +413,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         but we want to wrap it in the same tensor type
 
         Args:
-            method_name (name): method to hook
+            method_name (str): method to hook
 
         Returns:
             A hooked method

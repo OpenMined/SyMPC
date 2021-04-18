@@ -30,8 +30,7 @@ METHODS_FORWARD_ALL_SHARES = {}
 
 
 class MPCTensor(metaclass=SyMPCTensor):
-    """This class is used by an orchestrator that wants to do computation on
-    data it does not see.
+    """Used by the orchestrator to compute on the shares.
 
     Arguments:
         session (Session): the session
@@ -67,7 +66,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
         shares: Optional[List[ShareTensor]] = None,
     ) -> None:
-        """Initializer for the MPCTensor. It can be used in two ways:
+        """Initializer for the MPCTensor. It can be used in two ways.
 
         ShareTensorControlCenter can be used in two ways:
         - secret is known by the orchestrator.
@@ -703,8 +702,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
-        """Hook a framework property (only getter) such that we know how to
-        treat it given that we call it.
+        """Hook a framework property (only getter).
 
         Ex:
          * if we call "shape" we want to call it on the underlying share
@@ -713,7 +711,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         and wrap the result in an MPCTensor
 
         Args:
-            property_nam (str): property to hook
+            property_name (str): property to hook
 
         Returns:
             A hooked property
@@ -743,8 +741,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def hook_method(method_name: str) -> Callable[..., Any]:
-        """Hook a framework method such that we know how to treat it given that
-        we call it.
+        """Hook a framework method.
 
         Ex:
          * if we call "numel" we want to forward it only to one share an return
@@ -753,7 +750,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         and we want to wrap those shares in a new MPCTensor
 
         Args:
-            method_name (name): method to hook
+            method_name (str): method to hook
 
         Returns:
             A hooked method

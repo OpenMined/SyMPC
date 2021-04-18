@@ -11,23 +11,25 @@ from typing import cast
 
 
 class SyMPCTensor(type):
+    """Metaclass for the MPCTensor and ShareTensors."""
+
+    @classmethod
     def __new__(
-        cls: Type["SyMPCTensor"],
-        name: str,
-        bases: Tuple[Any],
-        dic: Dict[str, Any],
+        cls: Type["SyMPCTensor"], name: str, bases: Tuple[Any], dic: Dict[str, Any]
     ) -> "SyMPCTensor":
         """Add new methods and properties to the defined tensor classes.
 
         Args:
-            cls (Type[SyMPCTensor]): type of the class
             name (str): name of the class which has SyMPCTensor metaclass
             bases (Tuple[Any]): classes from which our class inherits
             dic (Dict[str, Any]): attributes of the class
+
         Returns:
             The new class with added methods
-        """
 
+        Raises:
+            ValueError: the method we try to add is already defined in the class
+        """
         res = super().__new__(cls, name, bases, dic)
 
         forward_methods = getattr(res, "METHODS_FORWARD")
