@@ -16,8 +16,8 @@ class CryptoPrimitiveProvider:
 
     _func_providers: Dict[str, Callable] = {}
     _ops_list: DefaultDict[str, List] = DefaultDict(list)
-    _logging = False
-    _generate_file = False
+    _LOGGING = False
+    _FILENAME = "primitive_log.json"
 
     def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
@@ -50,7 +50,7 @@ class CryptoPrimitiveProvider:
         generator = CryptoPrimitiveProvider._func_providers[op_str]
         primitives = generator(**g_kwargs)
 
-        if CryptoPrimitiveProvider._logging:
+        if CryptoPrimitiveProvider._LOGGING:
             CryptoPrimitiveProvider._ops_list[op_str].append(p_kwargs)
 
         if p_kwargs is not None:
@@ -95,29 +95,26 @@ class CryptoPrimitiveProvider:
         return res
 
     @staticmethod
-    def start_logging(generate_file: bool = False) -> None:
-        """Sets the variable to True to start primitive logging.
+    def start_logging() -> None:
+        """Sets the variable to True to start primitive logging."""
+        CryptoPrimitiveProvider._LOGGING = True
+
+    @staticmethod
+    def stop_logging(generate_file: bool = False):
+        """Sets the variable to False to stop primitive logging.
 
         Args:
             generate_file: when set to True generates a seperate primitive_log.json file
-        """
-        CryptoPrimitiveProvider._logging = True
-        CryptoPrimitiveProvider._generate_file = generate_file
-
-    @staticmethod
-    def stop_logging():
-        """Sets the varible to False to stop primitive logging.
 
         Returns:
             json: returns the json object containing ops details.
         """
-        CryptoPrimitiveProvider._logging = False
+        CryptoPrimitiveProvider._LOGGING = False
         log_json = json.dumps(CryptoPrimitiveProvider._ops_list)
         CryptoPrimitiveProvider._ops_list.clear()
 
-        if CryptoPrimitiveProvider._generate_file:
-            CryptoPrimitiveProvider._generate_file = False
-            with open("primitive_log.json", "w") as f:
+        if generate_file:
+            with open(CryptoPrimitiveProvider._FILENAME, "w") as f:
                 f.write(log_json)
 
         return log_json
