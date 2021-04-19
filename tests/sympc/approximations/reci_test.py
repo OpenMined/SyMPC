@@ -22,5 +22,15 @@ def test_reciprocal(method, get_clients) -> None:
     x_reciprocal = reciprocal(x, method=method)
     assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
 
+
+def test_exception(get_clients) -> None:
+    clients = get_clients(2)
+    session_one = Session(parties=clients)
+    SessionManager.setup_mpc(session_one)
+
+    x_secret = torch.Tensor([-2.0, 6.0, 2.0, 3.0, -5.0, -0.5])
+
+    x = MPCTensor(secret=x_secret, session=session_one)
+
     with pytest.raises(ValueError):
         x_reciprocal = reciprocal(x, method="exp")
