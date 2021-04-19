@@ -8,6 +8,8 @@ from typing import Tuple
 
 # third party
 import pytest
+import syft as sy
+import torch
 
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -15,8 +17,23 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
+from sympc.tensor import MPCTensor
 
 PRIMITIVE_NR_ELEMS = 4
+
+
+class LinearNet(sy.Module):
+    def __init__(self, torch_ref):
+        super(LinearNet, self).__init__(torch_ref=torch_ref)
+        self.fc1 = self.torch_ref.nn.Linear(3, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        return x
 
 
 @register_primitive_generator("test")
@@ -139,3 +156,32 @@ def test_generate_and_transfer_primitive(
             tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
             for _ in range(nr_instances_retrieve)
         ]
+
+
+def test_primitive_logging(get_clients) -> None:
+    model = LinearNet(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    mpc_model = model.share(session=session)
+
+    x_secret = torch.randn(2, 3)
+    x_mpc = MPCTensor(secret=x_secret, session=session)
+
+    model.eval()
+
+    expected_primitive_log = (
+        '{"beaver_matmul": [{"a_shape": [2, 3], "b_shape": [3, 10]}, '
+        '{"a_shape": [2, 10], "b_shape": [10, 1]}], "fss_comp": [{}, {}], '
+        '"beaver_mul": [{"a_shape": [2, 10], "b_shape": [2, 10]}, {"a_shape": '
+        '[2, 1], "b_shape": [2, 1]}]}'
+    )
+
+    CryptoPrimitiveProvider.start_logging()
+    res_mpc = mpc_model(x_mpc)
+    primitive_log = CryptoPrimitiveProvider.stop_logging()
+
+    assert expected_primitive_log == primitive_log
