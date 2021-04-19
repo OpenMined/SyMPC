@@ -1,8 +1,10 @@
 """Crypto Primitives."""
 
 # stdlib
+import json
 from typing import Any
 from typing import Callable
+from typing import DefaultDict
 from typing import Dict
 from typing import List
 
@@ -13,6 +15,9 @@ class CryptoPrimitiveProvider:
     """A trusted third party should use this class to generate crypto primitives."""
 
     _func_providers: Dict[str, Callable] = {}
+    _ops_list: DefaultDict[str, List] = DefaultDict(list)
+    _LOGGING = False
+    _FILENAME = "primitive_log.json"
 
     def __init__(self) -> None:  # noqa
         raise ValueError("This class should not be initialized")
@@ -43,8 +48,10 @@ class CryptoPrimitiveProvider:
             raise ValueError(f"{op_str} not registered")
 
         generator = CryptoPrimitiveProvider._func_providers[op_str]
-
         primitives = generator(**g_kwargs)
+
+        if CryptoPrimitiveProvider._LOGGING:
+            CryptoPrimitiveProvider._ops_list[op_str].append(p_kwargs)
 
         if p_kwargs is not None:
             """Do not transfer the primitives if there is not specified a
@@ -86,3 +93,28 @@ class CryptoPrimitiveProvider:
         """
         res = f"Providers: {list(CryptoPrimitiveProvider._func_providers.keys())}\n"
         return res
+
+    @staticmethod
+    def start_logging() -> None:
+        """Sets the variable to True to start primitive logging."""
+        CryptoPrimitiveProvider._LOGGING = True
+
+    @staticmethod
+    def stop_logging(generate_file: bool = False):
+        """Sets the variable to False to stop primitive logging.
+
+        Args:
+            generate_file: when set to True generates a seperate primitive_log.json file
+
+        Returns:
+            json: returns the json object containing ops details.
+        """
+        CryptoPrimitiveProvider._LOGGING = False
+        log_json = json.dumps(CryptoPrimitiveProvider._ops_list)
+        CryptoPrimitiveProvider._ops_list.clear()
+
+        if generate_file:
+            with open(CryptoPrimitiveProvider._FILENAME, "w") as f:
+                f.write(log_json)
+
+        return log_json
