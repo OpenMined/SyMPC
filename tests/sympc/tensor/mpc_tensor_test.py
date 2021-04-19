@@ -23,6 +23,28 @@ def test_mpc_tensor_exception(get_clients) -> None:
         x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
 
 
+def test_mpc_tensor_nosession_exception(get_clients) -> None:
+    alice_client, bob_client = get_clients(2)
+
+    with pytest.raises(ValueError):
+        MPCTensor(secret=42)
+
+    with pytest.raises(ValueError):
+        x = MPCTensor(secret=torch.Tensor([1, -2]))
+
+
+def test_mpc_share_nosession_exception(get_clients)->None:
+    alice_client, bob_client = get_clients(2)
+
+    x_secret = torch.Tensor([[0.1, -1], [-4, 4]])
+    y_secret = torch.Tensor([[4.0, -2.5], [5, 2]])
+
+    with pytest.raises(ValueError):
+         x_secret.share()
+
+    with pytest.raises(ValueError):
+         y_secret.share()
+
 def test_reconstruct(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
