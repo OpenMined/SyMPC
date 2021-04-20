@@ -1,4 +1,5 @@
 # stdlib
+import json
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -158,7 +159,7 @@ def test_generate_and_transfer_primitive(
         ]
 
 
-def test_primitive_logging(get_clients) -> None:
+def test_primitive_logging_model(get_clients) -> None:
     model = LinearNet(torch)
 
     clients = get_clients(2)
@@ -185,3 +186,45 @@ def test_primitive_logging(get_clients) -> None:
     primitive_log = CryptoPrimitiveProvider.stop_logging()
 
     assert expected_primitive_log == primitive_log
+
+
+@pytest.mark.parametrize(
+    "ops",
+    [
+        ["beaver_mul", {"a_shape": [1, 5], "b_shape": [1, 5]}],
+        ["beaver_matmul", {"a_shape": [1, 2880], "b_shape": [2880, 10]}],
+        ["beaver_conv2d", {"a_shape": [1, 1, 28, 28], "b_shape": [5, 1, 5, 5]}],
+        ["fss_comp", {}],
+    ],
+)
+def test_primitive_logging_ops(ops, get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    if ops[0] != "fss_comp":
+        g_kwargs = {
+            "a_shape": tuple(ops[1].get("a_shape")),
+            "b_shape": tuple(ops[1].get("b_shape")),
+            "nr_parties": session.nr_parties,
+        }
+
+        p_kwargs = {
+            "a_shape": tuple(ops[1].get("a_shape")),
+            "b_shape": tuple(ops[1].get("b_shape")),
+        }
+    else:
+        g_kwargs = {"n_values": 4}
+        p_kwargs = {}
+
+    CryptoPrimitiveProvider.start_logging()
+    CryptoPrimitiveProvider.generate_primitives(
+        sessions=session.session_ptrs,
+        op_str=ops[0],
+        p_kwargs=p_kwargs,
+        g_kwargs=g_kwargs,
+    )
+    primitive_log = CryptoPrimitiveProvider.stop_logging()
+    expected_log = json.dumps({ops[0]: [ops[1]]})
+
+    assert expected_log == primitive_log
