@@ -4,14 +4,13 @@ import operator
 # third party
 import numpy as np
 import pytest
+import syft as sy
 import torch
 
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
-
-import syft as sy
 
 
 def test_mpc_tensor_exception(get_clients) -> None:
@@ -203,6 +202,7 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     result = op(x, y_secret).reconstruct()
     assert np.allclose(result, expected_result, atol=10e-4)
 
+
 def test_ops_divfloat_exception() -> None:
     # Define the virtual machines that would be use in the computation
     alice_vm = sy.VirtualMachine(name="alice")
@@ -228,9 +228,11 @@ def test_ops_divfloat_exception() -> None:
     y = MPCTensor(secret=y_secret, session=session)
 
     with pytest.raises(NotImplementedError):
-        z = x/y
+        z = x / y
+
 
 test_ops_divfloat_exception()
+
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
