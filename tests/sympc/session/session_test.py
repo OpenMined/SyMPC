@@ -5,6 +5,7 @@ from uuid import UUID
 from uuid import uuid4
 
 # third party
+import pytest
 import torch
 
 from sympc.config import Config
@@ -77,3 +78,8 @@ def test_eq():
     assert session != other1
     # Test equal sessions:
     assert session == other2
+
+
+def test_protocol_exception():
+    with pytest.raises(ValueError):
+        session = Session(protocol="fs")
