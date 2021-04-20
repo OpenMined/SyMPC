@@ -231,8 +231,6 @@ def test_ops_divfloat_exception() -> None:
         z = x / y
 
 
-test_ops_divfloat_exception()
-
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
