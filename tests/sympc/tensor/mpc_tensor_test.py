@@ -11,6 +11,8 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 
+import syft as sy
+
 
 def test_mpc_tensor_exception(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
@@ -193,6 +195,7 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
         y_secret = torch.Tensor([[2, 3], [4, 5]]).long()
     else:
         y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
     x = MPCTensor(secret=x_secret, session=session)
 
     op = getattr(operator, op_str)
@@ -200,6 +203,34 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     result = op(x, y_secret).reconstruct()
     assert np.allclose(result, expected_result, atol=10e-4)
 
+def test_ops_divfloat_exception() -> None:
+    # Define the virtual machines that would be use in the computation
+    alice_vm = sy.VirtualMachine(name="alice")
+    bob_vm = sy.VirtualMachine(name="bob")
+    charlie_vm = sy.VirtualMachine(name="charlie")
+
+    # Get clients from each VM
+    alice = alice_vm.get_root_client()
+    bob = bob_vm.get_root_client()
+    charlie = charlie_vm.get_root_client()
+
+    parties = [alice, bob, charlie]
+
+    # Setup the session for the computation
+    session = Session(parties=parties)
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.Tensor([[0.1, -1], [-4, 4]])
+    y_secret = torch.Tensor([[4.0, -2.5], [5, 2]])
+
+    # 3. Share the secret building an MPCTensor
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+
+    with pytest.raises(NotImplementedError):
+        z = x/y
+
+test_ops_divfloat_exception()
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
