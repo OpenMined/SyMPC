@@ -231,7 +231,6 @@ def test_ops_divfloat_exception() -> None:
         z = x / y
 
 
-
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
 def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
