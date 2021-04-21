@@ -21,6 +21,7 @@ from .tensor import SyMPCTensor
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
 METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
 
+
 class ShareTensor(metaclass=SyMPCTensor):
     """Single Share representation.
 
