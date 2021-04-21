@@ -87,9 +87,11 @@ class MPCTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If session is not provided as argument or in the ShareTensor.
         """
-        if session is None and secret.session is None:
+        if session is None and (
+            not isinstance(secret, ShareTensor) or secret.session is None
+        ):
             raise ValueError(
-                "Need to provide a session, as argument or in the ShareTensor"
+                "Need to provide a session, as argument or the secret should be a ShareTensor"
             )
 
         self.session = session if session is not None else secret.session
