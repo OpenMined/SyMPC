@@ -13,7 +13,6 @@ from typing import cast
 class SyMPCTensor(type):
     """Metaclass for the MPCTensor and ShareTensors."""
 
-    @classmethod
     def __new__(
         cls: Type["SyMPCTensor"], name: str, bases: Tuple[Any], dic: Dict[str, Any]
     ) -> "SyMPCTensor":
