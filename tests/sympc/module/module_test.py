@@ -31,10 +31,10 @@ class LinearNet(sy.Module):
 
 
 class ConvNet(sy.Module):
-    def __init__(self, torch_ref):
+    def __init__(self, torch_ref, kernel_size=5):
         super(ConvNet, self).__init__(torch_ref=torch_ref)
         self.conv1 = self.torch_ref.nn.Conv2d(
-            in_channels=1, out_channels=5, kernel_size=5
+            in_channels=1, out_channels=5, kernel_size=kernel_size
         )
         self.fc1 = self.torch_ref.nn.Linear(2880, 10)
         self.fc2 = self.torch_ref.nn.Linear(10, 5)
@@ -73,6 +73,19 @@ def test_run_linear_model(get_clients: Callable[[int], List[Any]]):
     res = res_mpc.reconstruct()
     expected = expected.detach().numpy()
     assert np.allclose(res, expected, atol=1e-3)
+
+
+def test_exception_conv2d_kernel_mismatch(get_clients):
+
+    clients = get_clients(2)
+
+    model = ConvNet(torch, kernel_size=(5, 4))
+    # Setup the session for the computation
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    with pytest.raises(ValueError):
+        mpc_model = model.share(session=session)
 
 
 def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
