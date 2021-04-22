@@ -1,4 +1,5 @@
 # stdlib
+import json
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -8,6 +9,8 @@ from typing import Tuple
 
 # third party
 import pytest
+import syft as sy
+import torch
 
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -15,8 +18,23 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
+from sympc.tensor import MPCTensor
 
 PRIMITIVE_NR_ELEMS = 4
+
+
+class LinearNet(sy.Module):
+    def __init__(self, torch_ref):
+        super(LinearNet, self).__init__(torch_ref=torch_ref)
+        self.fc1 = self.torch_ref.nn.Linear(3, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        return x
 
 
 @register_primitive_generator("test")
@@ -139,3 +157,74 @@ def test_generate_and_transfer_primitive(
             tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
             for _ in range(nr_instances_retrieve)
         ]
+
+
+def test_primitive_logging_model(get_clients) -> None:
+    model = LinearNet(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    mpc_model = model.share(session=session)
+
+    x_secret = torch.randn(2, 3)
+    x_mpc = MPCTensor(secret=x_secret, session=session)
+
+    model.eval()
+
+    expected_primitive_log = (
+        '{"beaver_matmul": [{"a_shape": [2, 3], "b_shape": [3, 10]}, '
+        '{"a_shape": [2, 10], "b_shape": [10, 1]}], "fss_comp": [{}, {}], '
+        '"beaver_mul": [{"a_shape": [2, 10], "b_shape": [2, 10]}, {"a_shape": '
+        '[2, 1], "b_shape": [2, 1]}]}'
+    )
+
+    CryptoPrimitiveProvider.start_logging()
+    res_mpc = mpc_model(x_mpc)
+    primitive_log = CryptoPrimitiveProvider.stop_logging()
+
+    assert expected_primitive_log == primitive_log
+
+
+@pytest.mark.parametrize(
+    "ops",
+    [
+        ["beaver_mul", {"a_shape": [1, 5], "b_shape": [1, 5]}],
+        ["beaver_matmul", {"a_shape": [1, 2880], "b_shape": [2880, 10]}],
+        ["beaver_conv2d", {"a_shape": [1, 1, 28, 28], "b_shape": [5, 1, 5, 5]}],
+        ["fss_comp", {}],
+    ],
+)
+def test_primitive_logging_ops(ops, get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    if ops[0] != "fss_comp":
+        g_kwargs = {
+            "a_shape": tuple(ops[1].get("a_shape")),
+            "b_shape": tuple(ops[1].get("b_shape")),
+            "nr_parties": session.nr_parties,
+        }
+
+        p_kwargs = {
+            "a_shape": tuple(ops[1].get("a_shape")),
+            "b_shape": tuple(ops[1].get("b_shape")),
+        }
+    else:
+        g_kwargs = {"n_values": 4}
+        p_kwargs = {}
+
+    CryptoPrimitiveProvider.start_logging()
+    CryptoPrimitiveProvider.generate_primitives(
+        sessions=session.session_ptrs,
+        op_str=ops[0],
+        p_kwargs=p_kwargs,
+        g_kwargs=g_kwargs,
+    )
+    primitive_log = CryptoPrimitiveProvider.stop_logging()
+    expected_log = json.dumps({ops[0]: [ops[1]]})
+
+    assert expected_log == primitive_log
