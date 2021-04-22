@@ -746,7 +746,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         """Hook a framework method.
 
         Ex:
-         * if we call "numel" we want to forward it only to one share an return
+         * if we call "numel" we want to forward it only to one share and return
         the result (without wrapping it in an MPCShare)
          * if we call "unsqueeze" we want to call it on all the underlying shares
         and we want to wrap those shares in a new MPCTensor
