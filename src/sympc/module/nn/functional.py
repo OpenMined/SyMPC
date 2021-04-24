@@ -14,3 +14,7 @@ def relu(x: MPCTensor) -> MPCTensor:
     """
     res = x * (x >= 0)
     return res
+
+
+def sigmoid(x: MPCTensor) -> MPCTensor:
+    return 0.5 + 0.197 * x - 0.004 * (x ** 3)
