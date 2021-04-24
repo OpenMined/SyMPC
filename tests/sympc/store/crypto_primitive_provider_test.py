@@ -1,5 +1,4 @@
 # stdlib
-import json
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -27,12 +26,9 @@ class LinearNet(sy.Module):
     def __init__(self, torch_ref):
         super(LinearNet, self).__init__(torch_ref=torch_ref)
         self.fc1 = self.torch_ref.nn.Linear(3, 10)
-        self.fc2 = self.torch_ref.nn.Linear(10, 1)
 
     def forward(self, x):
         x = self.fc1(x)
-        x = self.torch_ref.nn.functional.relu(x)
-        x = self.fc2(x)
         x = self.torch_ref.nn.functional.relu(x)
         return x
 
@@ -174,15 +170,14 @@ def test_primitive_logging_model(get_clients) -> None:
 
     model.eval()
 
-    expected_primitive_log = (
-        '{"beaver_matmul": [{"a_shape": [2, 3], "b_shape": [3, 10]}, '
-        '{"a_shape": [2, 10], "b_shape": [10, 1]}], "fss_comp": [{}, {}], '
-        '"beaver_mul": [{"a_shape": [2, 10], "b_shape": [2, 10]}, {"a_shape": '
-        '[2, 1], "b_shape": [2, 1]}]}'
-    )
+    expected_primitive_log = {
+        "beaver_matmul": [{"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2}],
+        "fss_comp": [{"n_values": 20}],
+        "beaver_mul": [{"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2}],
+    }
 
     CryptoPrimitiveProvider.start_logging()
-    res_mpc = mpc_model(x_mpc)
+    mpc_model(x_mpc)
     primitive_log = CryptoPrimitiveProvider.stop_logging()
 
     assert expected_primitive_log == primitive_log
@@ -191,10 +186,16 @@ def test_primitive_logging_model(get_clients) -> None:
 @pytest.mark.parametrize(
     "ops",
     [
-        ["beaver_mul", {"a_shape": [1, 5], "b_shape": [1, 5]}],
-        ["beaver_matmul", {"a_shape": [1, 2880], "b_shape": [2880, 10]}],
-        ["beaver_conv2d", {"a_shape": [1, 1, 28, 28], "b_shape": [5, 1, 5, 5]}],
-        ["fss_comp", {}],
+        ["beaver_mul", {"a_shape": [1, 5], "b_shape": [1, 5], "nr_parties": 2}],
+        [
+            "beaver_matmul",
+            {"a_shape": [1, 2880], "b_shape": [2880, 10], "nr_parties": 2},
+        ],
+        [
+            "beaver_conv2d",
+            {"a_shape": [1, 1, 28, 28], "b_shape": [5, 1, 5, 5], "nr_parties": 2},
+        ],
+        ["fss_comp", {"n_values": 4}],
     ],
 )
 def test_primitive_logging_ops(ops, get_clients) -> None:
@@ -203,18 +204,11 @@ def test_primitive_logging_ops(ops, get_clients) -> None:
     SessionManager.setup_mpc(session)
 
     if ops[0] != "fss_comp":
-        g_kwargs = {
-            "a_shape": tuple(ops[1].get("a_shape")),
-            "b_shape": tuple(ops[1].get("b_shape")),
-            "nr_parties": session.nr_parties,
-        }
-
         p_kwargs = {
             "a_shape": tuple(ops[1].get("a_shape")),
             "b_shape": tuple(ops[1].get("b_shape")),
         }
     else:
-        g_kwargs = {"n_values": 4}
         p_kwargs = {}
 
     CryptoPrimitiveProvider.start_logging()
@@ -222,9 +216,9 @@ def test_primitive_logging_ops(ops, get_clients) -> None:
         sessions=session.session_ptrs,
         op_str=ops[0],
         p_kwargs=p_kwargs,
-        g_kwargs=g_kwargs,
+        g_kwargs=ops[1],
     )
     primitive_log = CryptoPrimitiveProvider.stop_logging()
-    expected_log = json.dumps({ops[0]: [ops[1]]})
+    expected_log = {ops[0]: [ops[1]]}
 
     assert expected_log == primitive_log

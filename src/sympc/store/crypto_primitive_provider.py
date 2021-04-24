@@ -1,6 +1,7 @@
 """Crypto Primitives."""
 
 # stdlib
+from copy import copy
 import json
 from typing import Any
 from typing import Callable
@@ -51,7 +52,7 @@ class CryptoPrimitiveProvider:
         primitives = generator(**g_kwargs)
 
         if CryptoPrimitiveProvider._LOGGING:
-            CryptoPrimitiveProvider._ops_list[op_str].append(p_kwargs)
+            CryptoPrimitiveProvider._ops_list[op_str].append(g_kwargs)
 
         if p_kwargs is not None:
             """Do not transfer the primitives if there is not specified a
@@ -110,11 +111,40 @@ class CryptoPrimitiveProvider:
             json: returns the json object containing ops details.
         """
         CryptoPrimitiveProvider._LOGGING = False
-        log_json = json.dumps(CryptoPrimitiveProvider._ops_list)
+        log = copy(CryptoPrimitiveProvider._ops_list)
         CryptoPrimitiveProvider._ops_list.clear()
 
         if generate_file:
             with open(CryptoPrimitiveProvider._FILENAME, "w") as f:
-                f.write(log_json)
+                f.write(json.dumps(log))
+        return dict(log)
 
-        return log_json
+    @staticmethod
+    def generate_primitive_from_dict(primitive_log: dict, session: Session) -> None:
+        """Generates primitives from the log provided.
+
+        Args:
+            primitive_log (dict): the dict log created with primitive logging.
+            session (Session): Session.
+
+        Raises:
+            ValueError: If primitive_log is None.
+        """
+        if primitive_log is None:
+            raise ValueError("The provided log is cannot be None")
+
+        for op_str, args in primitive_log.items():
+            for arg in args:
+                if op_str != "fss_comp":
+                    shape_x = tuple(arg.get("a_shape"))
+                    shape_y = tuple(arg.get("b_shape"))
+                    p_kwargs = {"a_shape": shape_x, "b_shape": shape_y}
+                else:
+                    p_kwargs = {}
+
+                CryptoPrimitiveProvider.generate_primitives(
+                    op_str=op_str,
+                    sessions=session.session_ptrs,
+                    g_kwargs=arg,
+                    p_kwargs=p_kwargs,
+                )
