@@ -1,9 +1,10 @@
-"""Class used to have orchestrate the computation on shared values."""
+"""Class used to orchestrate the computation on shared values."""
 
 # stdlib
 from functools import lru_cache
 import operator
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -22,9 +23,26 @@ from sympc.utils import islocal
 from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
+from .tensor import SyMPCTensor
 
-class MPCTensor:
-    """MultiPartyComputationTensor.
+PROPERTIES_FORWARD_ALL_SHARES = {"T"}
+METHODS_FORWARD_ALL_SHARES = {}
+
+
+class MPCTensor(metaclass=SyMPCTensor):
+    """Used by the orchestrator to compute on the shares.
+
+    Arguments:
+        session (Session): the session
+        secret (Optional[Union[torch.Tensor, float, int]): in case the secret is
+            known by the orchestrator it is split in shares and given to multiple
+            parties
+        shape (Optional[Union[torch.Size, tuple]): the shape of the secret in case
+            the secret is not known by the orchestrator
+            this is needed when a multiplication is needed between two secret values
+            (need the shapes to be able to generate random elements in the proper way)
+        shares (Optional[List[ShareTensor]]): in case the shares are already at the
+             parties involved in the computation
 
     This class is used by an orchestrator that wants to do computation on
     data it does not see.
@@ -37,6 +55,10 @@ class MPCTensor:
 
     __slots__ = {"share_ptrs", "session", "shape"}
 
+    # Used by the SyMPCTensor metaclass
+    METHODS_FORWARD = {"numel"}
+    PROPERTIES_FORWARD = {"T"}
+
     def __init__(
         self,
         session: Optional[Session] = None,
@@ -44,7 +66,7 @@ class MPCTensor:
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
         shares: Optional[List[ShareTensor]] = None,
     ) -> None:
-        """Initializer for the MPCTensor.
+        """Initializer for the MPCTensor. It can be used in two ways.
 
         ShareTensorControlCenter can be used in two ways:
         - secret is known by the orchestrator.
@@ -680,24 +702,87 @@ class MPCTensor:
         else:
             return value
 
-    def numel(self) -> int:
-        """Number of elements.
+    @staticmethod
+    def hook_property(property_name: str) -> Any:
+        """Hook a framework property (only getter).
+
+        Ex:
+         * if we call "shape" we want to call it on the underlying share
+        and return the result
+         * if we call "T" we want to call it on all the underlying shares
+        and wrap the result in an MPCTensor
+
+        Args:
+            property_name (str): property to hook
 
         Returns:
-            int: Number of elements.
+            A hooked property
         """
-        return self.share_ptrs[0].numel()
 
-    @property
-    def T(self) -> "MPCTensor":
-        """Transpose.
+        def property_all_share_getter(_self: "MPCTensor") -> "MPCTensor":
+            shares = []
+
+            for share in _self.share_ptrs:
+                prop = getattr(share, property_name)
+                shares.append(prop)
+
+            new_shape = getattr(torch.empty(_self.shape), property_name).shape
+            res = MPCTensor(shares=shares, shape=new_shape, session=_self.session)
+            return res
+
+        def property_share_getter(_self: "MPCTensor") -> Any:
+            prop = getattr(_self.share_ptrs[0], property_name)
+            return prop
+
+        if property_name in PROPERTIES_FORWARD_ALL_SHARES:
+            res = property(property_all_share_getter, None)
+        else:
+            res = property(property_share_getter, None)
+
+        return res
+
+    @staticmethod
+    def hook_method(method_name: str) -> Callable[..., Any]:
+        """Hook a framework method.
+
+        Ex:
+         * if we call "numel" we want to forward it only to one share and return
+        the result (without wrapping it in an MPCShare)
+         * if we call "unsqueeze" we want to call it on all the underlying shares
+        and we want to wrap those shares in a new MPCTensor
+
+        Args:
+            method_name (str): method to hook
 
         Returns:
-            MPCTensor: Transpose Tensor.
+            A hooked method
         """
-        shares = [share.T for share in self.share_ptrs]
-        res = MPCTensor(shares=shares, session=self.session)
-        res.shape = torch.empty(self.shape).T.shape
+
+        def method_all_shares(
+            _self: "MPCTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+        ) -> Any:
+            shares = []
+
+            for share in _self.share_ptrs:
+                method = getattr(share, method_name)
+                shares.append(method(*args, **kwargs))
+
+            new_shape = getattr(torch.empty(_self.shape), method_name).shape
+            res = MPCTensor(shares=shares, shape=new_shape, session=_self.session)
+            return res
+
+        def method_share(
+            _self: "MPCTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+        ) -> Any:
+            method = getattr(_self.share_ptrs[0], method_name)
+            res = method(*args, **kwargs)
+            return res
+
+        if method_name in METHODS_FORWARD_ALL_SHARES:
+            res = method_all_shares
+        else:
+            res = method_share
+
         return res
 
     def unsqueeze(self, *args, **kwargs) -> "MPCTensor":
