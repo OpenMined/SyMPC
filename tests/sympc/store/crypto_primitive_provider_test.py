@@ -198,7 +198,7 @@ def test_primitive_logging_model(get_clients) -> None:
         ["fss_comp", {"n_values": 4}],
     ],
 )
-def test_primitive_logging_ops(ops, get_clients) -> None:
+def test_primitive_logging_ops(ops: list, get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -222,3 +222,101 @@ def test_primitive_logging_ops(ops, get_clients) -> None:
     expected_log = {ops[0]: [ops[1]]}
 
     assert expected_log == primitive_log
+
+
+def test_generate_primitive_from_dict_beaver_matmul(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    primitive_log = {
+        "beaver_matmul": [{"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2}]
+    }
+
+    CryptoPrimitiveProvider.generate_primitive_from_dict(
+        primitive_log=primitive_log, session=session
+    )
+
+    a_shape = (2, 3)
+    b_shape = (3, 10)
+
+    key = f"beaver_matmul_{a_shape}_{b_shape}"
+
+    store_client_1 = session.session_ptrs[0].crypto_store.store.get()
+    store_client_2 = session.session_ptrs[1].crypto_store.store.get()
+
+    shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
+    shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+
+    expected_shape = (2, 3)
+
+    assert expected_shape == shape_client_1
+    assert expected_shape == shape_client_2
+
+
+def test_generate_primitive_from_dict_beaver_mul(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    primitive_log = {
+        "beaver_mul": [
+            {"a_shape": (1, 5), "b_shape": (1, 5), "nr_parties": 2},
+            {"a_shape": (1, 8), "b_shape": (1, 8), "nr_parties": 2},
+        ]
+    }
+
+    CryptoPrimitiveProvider.generate_primitive_from_dict(
+        primitive_log=primitive_log, session=session
+    )
+
+    args = primitive_log.popitem()[1]
+
+    for arg in args:
+        a_shape = arg.get("a_shape")
+        b_shape = arg.get("b_shape")
+
+        key = f"beaver_mul_{a_shape}_{b_shape}"
+
+        store_client_1 = session.session_ptrs[0].crypto_store.store.get()
+        store_client_2 = session.session_ptrs[1].crypto_store.store.get()
+
+        shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
+        shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+
+        expected_shape = a_shape
+
+        assert expected_shape == shape_client_1
+        assert expected_shape == shape_client_2
+
+
+def test_generate_primitive_from_dict_beaver_conv2d(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    primitive_log = {
+        "beaver_conv2d": [
+            {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5), "nr_parties": 2}
+        ]
+    }
+
+    CryptoPrimitiveProvider.generate_primitive_from_dict(
+        primitive_log=primitive_log, session=session
+    )
+
+    a_shape = (1, 1, 28, 28)
+    b_shape = (5, 1, 5, 5)
+
+    key = f"beaver_conv2d_{a_shape}_{b_shape}"
+
+    store_client_1 = session.session_ptrs[0].crypto_store.store.get()
+    store_client_2 = session.session_ptrs[1].crypto_store.store.get()
+
+    shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
+    shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+
+    expected_shape = (1, 1, 28, 28)
+
+    assert expected_shape == shape_client_1
+    assert expected_shape == shape_client_2
