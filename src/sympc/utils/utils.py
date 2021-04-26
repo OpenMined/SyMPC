@@ -118,3 +118,12 @@ def parallel_execution(
         return local_shares
 
     return wrapper
+
+
+def get_session():
+    """Gets the current session for a party as defined in the global space.
+
+    :returns: Session
+    """
+    session = globals()["session"]
+    return session

@@ -22,6 +22,7 @@ from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
+from sympc.utils import get_session
 from sympc.utils import parallel_execution
 
 ttp_generator = csprng.create_random_device_generator()
@@ -88,7 +89,7 @@ def fss_op(x1, x2, op="eq"):
         p_kwargs={},
     )
 
-    args = zip(session.session_ptrs, x1.share_ptrs, x2.share_ptrs)
+    args = zip(x1.share_ptrs, x2.share_ptrs)
     args = [list(el) + [op] for el in args]
 
     shares = parallel_execution(mask_builder, session.parties)(args)
@@ -98,9 +99,7 @@ def fss_op(x1, x2, op="eq"):
     mask_value = mask_value.reconstruct(decode=False) % 2 ** n
 
     # TODO: add dtype to args
-    args = [
-        (session.session_ptrs[i], th.IntTensor([i]), mask_value, op) for i in range(2)
-    ]
+    args = [(th.IntTensor([i]), mask_value, op) for i in range(2)]
 
     shares = parallel_execution(evaluate, session.parties)(args)
 
@@ -110,10 +109,10 @@ def fss_op(x1, x2, op="eq"):
 
 
 # share level
-def mask_builder(
-    session: Session, x1: ShareTensor, x2: ShareTensor, op: str
-) -> ShareTensor:
+def mask_builder(x1: ShareTensor, x2: ShareTensor, op: str) -> ShareTensor:
     x = x1 - x2
+
+    session = get_session()
 
     keys = session.crypto_store.get_primitives_from_store(
         f"fss_{op}", nr_instances=x.numel(), remove=False
@@ -127,7 +126,9 @@ def mask_builder(
 
 
 # share level
-def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
+def evaluate(b, x_masked, op, dtype="long") -> ShareTensor:
+    session = get_session()
+
     if op == "eq":
         return eq_evaluate(session, b, x_masked)
     elif op == "comp":
