@@ -27,7 +27,7 @@ from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
-from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_session
 from sympc.utils import parallel_execution
 
 ttp_generator = csprng.create_random_device_generator()
@@ -153,7 +153,7 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
         p_kwargs={},
     )
 
-    args = zip(session.session_ptrs, x1.share_ptrs, x2.share_ptrs)
+    args = zip(x1.share_ptrs, x2.share_ptrs)
     args = [list(el) + [op] for el in args]
 
     shares = parallel_execution(mask_builder, session.parties)(args)
@@ -163,14 +163,61 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     mask_value = mask_value.reconstruct(decode=False) % 2 ** n
 
     # TODO: add dtype to args
-    args = [
-        (session.session_ptrs[i], th.IntTensor([i]), mask_value, op) for i in range(2)
-    ]
+    args = [(th.IntTensor([i]), mask_value, op) for i in range(2)]
 
     shares = parallel_execution(evaluate, session.parties)(args)
 
     response = MPCTensor(session=session, shares=shares, shape=shape)
     response.shape = shape
+
+    return response
+
+
+# share level
+def mask_builder(x1: ShareTensor, x2: ShareTensor, op: str) -> ShareTensor:
+    x = x1 - x2
+
+    session = get_session()
+
+    keys = session.crypto_store.get_primitives_from_store(
+        f"fss_{op}", nr_instances=x.numel(), remove=False
+    )
+
+    alpha = np.frombuffer(np.ascontiguousarray(keys[:, 0:N]), dtype=np.uint32)
+
+    x.tensor += th.tensor(alpha.astype(np.int64)).reshape(x.shape)
+
+    return x
+
+
+# share level
+def evaluate(b, x_masked, op, dtype="long") -> ShareTensor:
+    session = get_session()
+
+    if op == "eq":
+        return eq_evaluate(session, b, x_masked)
+    elif op == "comp":
+        return comp_evaluate(session, b, x_masked, dtype=dtype)
+    else:
+        raise ValueError
+
+
+# process level
+def eq_evaluate(session: Session, b, x_masked) -> ShareTensor:
+
+    numel = x_masked.numel()
+    keys = session.crypto_store.get_primitives_from_store(
+        "fss_eq", nr_instances=numel, remove=True
+    )
+
+    result = DPF.eval(b.numpy().item(), x_masked.numpy(), keys)
+
+    share_result = ShareTensor(
+        data=th.tensor(result), session=session
+    )  # TODO add dtype like in comp_evaluate
+
+    return share_result
+>>>>>>> ebbbf49... - add get_session function to utils.py
 
     if cuda_visible_devices is not None:
         os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
