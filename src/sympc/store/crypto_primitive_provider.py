@@ -1,7 +1,6 @@
 """Crypto Primitives."""
 
 # stdlib
-from copy import copy
 import json
 from typing import Any
 from typing import Callable
@@ -111,7 +110,7 @@ class CryptoPrimitiveProvider:
             json: returns the json object containing ops details.
         """
         CryptoPrimitiveProvider._LOGGING = False
-        log = copy(CryptoPrimitiveProvider._ops_list)
+        log = CryptoPrimitiveProvider._ops_list.copy()
         CryptoPrimitiveProvider._ops_list.clear()
 
         if generate_file:
