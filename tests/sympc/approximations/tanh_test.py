@@ -25,7 +25,7 @@ def test_tanh(get_clients) -> None:
         x_tanh = tanh(x, method="exp")
 
 
-def test_exception(get_clients) -> None:
+def test_exception_value_error(get_clients) -> None:
     clients = get_clients(2)
 
     x_secret = torch.Tensor([0.0, 1, -2, 3, -4])

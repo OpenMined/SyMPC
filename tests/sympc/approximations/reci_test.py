@@ -23,7 +23,7 @@ def test_reciprocal(method, get_clients) -> None:
     assert torch.allclose(x_secret_reciprocal, x_reciprocal.reconstruct(), atol=1e-1)
 
 
-def test_exception(get_clients) -> None:
+def test_exception_value_error(get_clients) -> None:
     clients = get_clients(2)
     session_one = Session(parties=clients)
     SessionManager.setup_mpc(session_one)
