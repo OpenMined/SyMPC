@@ -4,13 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - "**.py"
-      - "**.ipynb"
-      - "setup.cfg"
-      - ".github/workflows/**.yml"
-      - "requirements_dev.txt"
-      - "requirements.txt"
 
 jobs:
   python-tests:
