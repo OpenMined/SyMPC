@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "**.py"
+      - ".github/workflows/**.yml"
 
 jobs:
   python-tests:
