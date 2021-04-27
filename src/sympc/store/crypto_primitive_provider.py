@@ -135,10 +135,10 @@ class CryptoPrimitiveProvider:
             raise ValueError("The provided log is cannot be None")
 
         for op_str, args in primitive_log.items():
-            for arg in args:
+            for (p_kwargs, g_kwargs) in args:
                 CryptoPrimitiveProvider.generate_primitives(
                     op_str=op_str,
                     sessions=session.session_ptrs,
-                    g_kwargs=arg[1],
-                    p_kwargs=arg[0],
+                    g_kwargs=g_kwargs,
+                    p_kwargs=p_kwargs,
                 )
