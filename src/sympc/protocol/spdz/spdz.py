@@ -168,7 +168,7 @@ def div_wraps(
         ShareTensor: Shared result of the division.
     """
     session = get_session()
-    
+
     beta_xr = count_wraps([x_share.tensor, r_share.tensor])
     theta_x = ShareTensor(encoder_precision=0)
     theta_x.tensor = beta_xr - theta_r.tensor
@@ -196,7 +196,7 @@ def spdz_mask(
         Tuple[ShareTensor, ShareTensor]
     """
     session = get_session()
-    
+
     crypto_store = session.crypto_store
 
     primitives = crypto_store.get_primitives_from_store(
@@ -223,7 +223,7 @@ def mul_parties(
         ShareTensor: Shared result of the division.
     """
     session = get_session()
-  
+
     crypto_store = session.crypto_store
     eps_shape = tuple(eps.shape)
     delta_shape = tuple(delta.shape)
