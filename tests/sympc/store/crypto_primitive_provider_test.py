@@ -171,9 +171,19 @@ def test_primitive_logging_model(get_clients) -> None:
     model.eval()
 
     expected_primitive_log = {
-        "beaver_matmul": [{"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2}],
-        "fss_comp": [{"n_values": 20}],
-        "beaver_mul": [{"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2}],
+        "beaver_matmul": [
+            (
+                {"a_shape": (2, 3), "b_shape": (3, 10)},
+                {"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2},
+            )
+        ],
+        "fss_comp": [({}, {"n_values": 20})],
+        "beaver_mul": [
+            (
+                {"a_shape": (2, 10), "b_shape": (2, 10)},
+                {"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2},
+            )
+        ],
     }
 
     CryptoPrimitiveProvider.start_logging()
@@ -183,43 +193,65 @@ def test_primitive_logging_model(get_clients) -> None:
     assert expected_primitive_log == primitive_log
 
 
-@pytest.mark.parametrize(
-    "ops",
-    [
-        ["beaver_mul", {"a_shape": [1, 5], "b_shape": [1, 5], "nr_parties": 2}],
-        [
-            "beaver_matmul",
-            {"a_shape": [1, 2880], "b_shape": [2880, 10], "nr_parties": 2},
-        ],
-        [
-            "beaver_conv2d",
-            {"a_shape": [1, 1, 28, 28], "b_shape": [5, 1, 5, 5], "nr_parties": 2},
-        ],
-        ["fss_comp", {"n_values": 4}],
-    ],
-)
-def test_primitive_logging_ops(ops: list, get_clients) -> None:
+def test_primitive_logging_beaver_mul(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    if ops[0] != "fss_comp":
-        p_kwargs = {
-            "a_shape": tuple(ops[1].get("a_shape")),
-            "b_shape": tuple(ops[1].get("b_shape")),
-        }
-    else:
-        p_kwargs = {}
+    p_kwargs = {"a_shape": (2, 10), "b_shape": (2, 10)}
+    g_kwargs = {"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2}
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
         sessions=session.session_ptrs,
-        op_str=ops[0],
+        op_str="beaver_mul",
         p_kwargs=p_kwargs,
-        g_kwargs=ops[1],
+        g_kwargs=g_kwargs,
     )
     primitive_log = CryptoPrimitiveProvider.stop_logging()
-    expected_log = {ops[0]: [ops[1]]}
+    expected_log = {"beaver_mul": [(p_kwargs, g_kwargs)]}
+
+    assert expected_log == primitive_log
+
+
+def test_primitive_logging_beaver_matmul(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    p_kwargs = {"a_shape": (2, 3), "b_shape": (3, 10)}
+    g_kwargs = {"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2}
+
+    CryptoPrimitiveProvider.start_logging()
+    CryptoPrimitiveProvider.generate_primitives(
+        sessions=session.session_ptrs,
+        op_str="beaver_matmul",
+        p_kwargs=p_kwargs,
+        g_kwargs=g_kwargs,
+    )
+    primitive_log = CryptoPrimitiveProvider.stop_logging()
+    expected_log = {"beaver_matmul": [(p_kwargs, g_kwargs)]}
+
+    assert expected_log == primitive_log
+
+
+def test_primitive_logging_beaver_conv2d(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    p_kwargs = {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5)}
+    g_kwargs = {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5), "nr_parties": 2}
+
+    CryptoPrimitiveProvider.start_logging()
+    CryptoPrimitiveProvider.generate_primitives(
+        sessions=session.session_ptrs,
+        op_str="beaver_conv2d",
+        p_kwargs=p_kwargs,
+        g_kwargs=g_kwargs,
+    )
+    primitive_log = CryptoPrimitiveProvider.stop_logging()
+    expected_log = {"beaver_conv2d": [(p_kwargs, g_kwargs)]}
 
     assert expected_log == primitive_log
 
@@ -230,7 +262,12 @@ def test_generate_primitive_from_dict_beaver_matmul(get_clients) -> None:
     SessionManager.setup_mpc(session)
 
     primitive_log = {
-        "beaver_matmul": [{"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2}]
+        "beaver_matmul": [
+            (
+                {"a_shape": (2, 3), "b_shape": (3, 10)},
+                {"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2},
+            )
+        ]
     }
 
     CryptoPrimitiveProvider.generate_primitive_from_dict(
@@ -261,8 +298,14 @@ def test_generate_primitive_from_dict_beaver_mul(get_clients) -> None:
 
     primitive_log = {
         "beaver_mul": [
-            {"a_shape": (1, 5), "b_shape": (1, 5), "nr_parties": 2},
-            {"a_shape": (1, 8), "b_shape": (1, 8), "nr_parties": 2},
+            (
+                {"a_shape": (2, 10), "b_shape": (2, 10)},
+                {"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2},
+            ),
+            (
+                {"a_shape": (1, 5), "b_shape": (1, 5)},
+                {"a_shape": (1, 5), "b_shape": (1, 5), "nr_parties": 2},
+            ),
         ]
     }
 
@@ -273,8 +316,8 @@ def test_generate_primitive_from_dict_beaver_mul(get_clients) -> None:
     args = primitive_log.popitem()[1]
 
     for arg in args:
-        a_shape = arg.get("a_shape")
-        b_shape = arg.get("b_shape")
+        a_shape = arg[1].get("a_shape")
+        b_shape = arg[1].get("b_shape")
 
         key = f"beaver_mul_{a_shape}_{b_shape}"
 
@@ -297,7 +340,14 @@ def test_generate_primitive_from_dict_beaver_conv2d(get_clients) -> None:
 
     primitive_log = {
         "beaver_conv2d": [
-            {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5), "nr_parties": 2}
+            (
+                {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5)},
+                {
+                    "a_shape": (1, 1, 28, 28),
+                    "b_shape": (5, 1, 5, 5),
+                    "nr_parties": 2,
+                },
+            )
         ]
     }
 
