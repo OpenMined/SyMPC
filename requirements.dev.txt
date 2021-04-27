@@ -13,6 +13,7 @@ mypy==0.790
 notebook==6.2.0
 papermill==2.3.1
 pep8-naming==0.11.1
+pre-commit==2.11.1
 pytest==6.2.2
 pytest-cov==2.10.1
 pytest-xdist[psutil]

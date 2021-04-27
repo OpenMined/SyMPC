@@ -1,4 +1,6 @@
-"""SPDZ mechanism used for multiplication Contains functions that are run at:
+"""SPDZ Protocol.
+
+SPDZ mechanism used for multiplication Contains functions that are run at:
 
 * the party that orchestrates the computation
 * the parties that hold the shares
@@ -31,14 +33,20 @@ EXPECTED_OPS = {"mul", "matmul", "conv2d"}
 def mul_master(
     x: MPCTensor, y: MPCTensor, op_str: str, kwargs_: Dict[Any, Any]
 ) -> MPCTensor:
-    """Function that is executed by the orchestrator to multiply two secret
-    values.
+    """Function that is executed by the orchestrator to multiply two secret values.
 
-    :return: a new set of shares that represents the multiplication
-           between two secret values
-    :rtype: MPCTensor
+    Args:
+        x (MPCTensor): First value to multiply with.
+        y (MPCTensor): Second value to multiply with.
+        op_str (str): Operation string.
+        kwargs_ (dict): TODO:Add docstring.
+
+    Raises:
+        ValueError: If op_str not in EXPECTED_OPS.
+
+    Returns:
+        MPCTensor: Result of the multiplication.
     """
-
     if op_str not in EXPECTED_OPS:
         raise ValueError(f"{op_str} should be in {EXPECTED_OPS}")
 
@@ -84,14 +92,15 @@ def mul_master(
 
 
 def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
-    """Function that is executed by the orchestrator to divide a secret by a
-    value (that value is public)
+    """Function that is executed by the orchestrator to divide a secret by a public value.
 
-    :return: a new set of shares that represents the multiplication
-           between two secret values
-    :rtype: MPCTensor
+    Args:
+        x (MPCTensor): Private numerator.
+        y (Union[torch.Tensor, int]): Public denominator.
+
+    Returns:
+        MPCTensor: A new set of shares that represents the division.
     """
-
     session = x.session
     res_shape = x.shape
 
@@ -135,8 +144,7 @@ def div_wraps(
     z_shares: List[torch.Tensor],
     y: Union[torch.Tensor, int],
 ) -> ShareTensor:
-    """From CrypTen Privately computes the number of wraparounds for a set a
-    shares.
+    """From CrypTen Privately computes the number of wraparounds for a set a shares.
 
     To do so, we note that:
         [theta_x] = theta_z + [beta_xr] - [theta_r] - [eta_xr]
@@ -148,9 +156,19 @@ def div_wraps(
 
     Note: Since [eta_xr] = 0 with probability 1 - |x| / Q for modulus Q, we
     can make the assumption that [eta_xr] = 0 with high probability.
+
+    Args:
+        r_share (ShareTensor): Share.
+        theta_r (ShareTensor): Share
+        x_share (ShareTensor): Share
+        z_shares (ShareTensor): Share
+        y (Union[Torch.Tensor,y]): Public denominator.
+
+    Returns:
+        ShareTensor: Shared result of the division.
     """
     session = get_session()
-
+    
     beta_xr = count_wraps([x_share.tensor, r_share.tensor])
     theta_x = ShareTensor(encoder_precision=0)
     theta_x.tensor = beta_xr - theta_r.tensor
@@ -167,8 +185,18 @@ def div_wraps(
 def spdz_mask(
     x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
 ) -> Tuple[ShareTensor, ShareTensor]:
-    session = get_session()
+    """Spdz mask.
 
+    Args:
+        x_sh (ShareTensor): X share.
+        y_sh (ShareTensor): Y share.
+        op_str (str): Operator.
+
+    Returns:
+        Tuple[ShareTensor, ShareTensor]
+    """
+    session = get_session()
+    
     crypto_store = session.crypto_store
 
     primitives = crypto_store.get_primitives_from_store(
@@ -183,19 +211,19 @@ def spdz_mask(
 def mul_parties(
     eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
 ) -> ShareTensor:
-    """
-    [c] = [a * b]
-    [eps] = [x] - [a]
-    [delta] = [y] - [b]
+    """SPDZ Multiplication.
 
-    Open eps and delta
-    [result] = [c] + eps * [b] + delta * [a] + eps * delta
+    Args:
+        eps (torch:tensor): Epsilon value of the protocol.
+        delta (torch.Tensor): Delta value of the protocol.
+        op_str (str): Operator string.
+        kwargs: Keywords arguments for the operator.
 
-    :return: the ShareTensor for the multiplication
-    :rtype: ShareTensor (in our case ShareTensorPointer)
+    Returns:
+        ShareTensor: Shared result of the division.
     """
     session = get_session()
-
+  
     crypto_store = session.crypto_store
     eps_shape = tuple(eps.shape)
     delta_shape = tuple(delta.shape)

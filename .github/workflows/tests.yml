@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "**.py"
+      - "**.ipynb"
       - "setup.cfg"
       - ".github/workflows/**.yml"
       - "requirements_dev.txt"
@@ -55,11 +56,18 @@ jobs:
           pip install -r requirements.dev.txt
           pip install -e .
 
+      - id: file_changes  # get changed files.
+        uses: trilom/file-changes-action@v1.2.3
+        with:
+          output: ' '
+
       - uses: pre-commit/action@v2.0.0
+        with:
+          extra_args: --files ${{ steps.file_changes.outputs.files}}  # apply only to changed files.
 
       - name: Check docstring coverage
         run: |
-          interrogate -mvp src/ -f 52.5
+          interrogate -mvp src/ -f 80
 
       - name: Scan for security issues
         run: |
