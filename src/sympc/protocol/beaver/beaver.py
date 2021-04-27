@@ -1,4 +1,10 @@
-"""The Beaver Triples."""
+"""Beaver Triples Protocol.
+
+D. Beaver. *Efficient multiparty protocols using circuit randomization*.
+In J. Feigenbaum, editor, CRYPTO, volume **576** of Lecture Notes in
+Computer Science, pages 420–432. Springer, 1991.
+"""
+
 
 # stdlib
 import operator
@@ -31,10 +37,23 @@ def _get_triples(
     b_shape: Tuple[int],
     **kwargs: Dict[Any, Any]
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
-    """The Trusted Third Party (TTP) or Crypto Provider should provide this
-    triples Currently, the one that orchestrates the communication provides
-    those triples."""
+    """Get triples.
 
+    The Trusted Third Party (TTP) or Crypto Provider should provide this triples Currently,
+    the one that orchestrates the communication provides those triples.".
+
+    Args:
+        op_str (str): Operator string.
+        nr_parties (int): Number of parties
+        a_shape (Tuple[int]): Shape of a from beaver triples protocol.
+        b_shape (Tuple[int]): Shape of b part from beaver triples protocol.
+        kwargs: Arbitrary keyword arguments for commands.
+
+
+    Returns:
+        List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]:
+        The generated triples a,b,c for each party.
+    """
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
@@ -64,7 +83,10 @@ def _get_triples(
     c_shares = MPCTensor.generate_shares(
         secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
+
+    # We are always creating an instance
     triple_sequential = [(a_shares, b_shares, c_shares)]
+
     """
     Example -- for n_instances=2 and n_parties=2:
     For Beaver Triples the "res" would look like:
@@ -92,7 +114,16 @@ def _get_triples(
 def get_triples_mul(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the matmul operation."""
+    """Get the beaver triples for the multiplication operation.
+
+    Args:
+        *args (List[ShareTensor]): Named arguments of :func:`beaver.__get_triples`.
+        **kwargs (List[ShareTensor]): Keyword arguments of :func:`beaver.__get_triples`.
+
+    Returns:
+        Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]: The generated triples a,b,c
+        for the mul operation.
+    """
     return _get_triples("mul", *args, **kwargs)
 
 
@@ -103,6 +134,14 @@ def mul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
+    """Add the primitives required for the "mul" operation to the CryptoStore.
+
+    Arguments:
+        store (Dict[Any, Any]): the CryptoStore
+        primitives (Iterable[Any]): the list of primitives
+        a_shape (Tuple[int]): the shape of the first operand
+        b_shape (Tuple[int]): the shape of the second operand
+    """
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -117,6 +156,22 @@ def mul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
+    """Retrieve the primitives from the CryptoStore.
+
+    Those are needed for executing the "mul" operation.
+
+    Args:
+        store (Dict[Tuple[int, int], List[Any]]): The CryptoStore.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
+
+    Returns:
+        Any: The primitives required for the "mul" operation.
+
+    Raises:
+        ValueError: If no primitive in the store for config_key.
+    """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -138,7 +193,16 @@ def mul_store_get(
 def get_triples_matmul(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the mul operation."""
+    """Get the beaver triples for the matmul  operation.
+
+    Args:
+        *args (List[ShareTensor]): Named arguments of :func:`beaver.__get_triples`.
+        **kwargs (List[ShareTensor]): Keyword arguments of :func:`beaver.__get_triples`.
+
+    Returns:
+        Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]: The generated triples a,b,c
+        for the matmul operation.
+    """
     return _get_triples("matmul", *args, **kwargs)
 
 
@@ -149,7 +213,15 @@ def matmul_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
+    """Add the primitives required for the "matmul" operation to the CryptoStore.
 
+    Args:
+        store (Any): The CryptoStore.
+        primitives (Iterable[Any]): The list of primitives
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+
+    """
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -164,6 +236,22 @@ def matmul_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
+    """Retrieve the primitives from the CryptoStore.
+
+    Those are needed for executing the "matmul" operation.
+
+    Args:
+        store (Dict[Tuple[int, int], List[Any]]): The CryptoStore.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
+
+    Returns:
+        Any: The primitives required for the "matmul" operation.
+
+    Raises:
+        ValueError: If no primitive in the store for config_key.
+    """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -185,7 +273,16 @@ def matmul_store_get(
 def get_triples_conv2d(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the conv2d operation."""
+    """Get the beaver triples for the conv2d operation.
+
+    Args:
+        *args: Arguments for _get_triples.
+        **kwargs: Keyword arguments for _get_triples.
+
+    Returns:
+        Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]: The generated
+        triples a,b,c for each party.
+    """
     return _get_triples("conv2d", *args, **kwargs)
 
 
@@ -196,7 +293,14 @@ def conv2d_store_add(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
+    """Add the primitives required for the "conv2d" operation to the CryptoStore.
 
+    Args:
+        store (Any): The CryptoStore.
+        primitives (Iterable[Any]): The list of primitives.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+    """
     config_key = (a_shape, b_shape)
     if config_key in store:
         store[config_key].extend(primitives)
@@ -211,6 +315,22 @@ def conv2d_store_get(
     b_shape: Tuple[int],
     remove: bool = True,
 ) -> Any:
+    """Retrieve the primitives from the CryptoStore.
+
+    Those are needed for executing the "conv2d" operation.
+
+    Args:
+        store: the CryptoStore
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
+
+    Returns:
+        Any: The primitives required for the "conv2d" operation.
+
+    Raises:
+        ValueError: If no primitive in the store for config_key.
+    """
     config_key = (a_shape, b_shape)
     primitives = store[config_key]
 
@@ -232,13 +352,24 @@ def conv2d_store_get(
 def count_wraps_rand(
     nr_parties: int, shape: Tuple[int]
 ) -> Tuple[List[ShareTensor], List[ShareTensor]]:
-    """The Trusted Third Party (TTP) or Crypto Provider should generate.
+    """Count wraps random.
+
+    The Trusted Third Party (TTP) or Crypto provider should generate:
 
     - a set of shares for a random number
     - a set of shares for the number of wraparounds for that number
 
     Those shares are used when doing a public division, such that the
     end result would be the correct one.
+
+    Args:
+        nr_parties (int): Number of parties
+        shape (Tuple[int]): The shape for the random value
+
+    Returns:
+        List[List[List[ShareTensor, ShareTensor]]: a list of instaces with the shares
+        for a random integer value and shares for the number of wraparounds that are done when
+        reconstructing the random value
     """
     rand_val = torch.empty(size=shape, dtype=torch.long).random_(
         generator=ttp_generator
@@ -256,8 +387,11 @@ def count_wraps_rand(
         secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
     )
 
+    # We are always creating only an instance
     primitives_sequential = [(r_shares, theta_r_shares)]
+
     primitives = list(
         map(list, zip(*map(lambda x: map(list, zip(*x)), primitives_sequential)))
     )
+
     return primitives

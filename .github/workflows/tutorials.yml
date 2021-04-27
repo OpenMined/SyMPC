@@ -3,7 +3,7 @@ name: Tutorials
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - "**.py"
       - "**.ipynb"

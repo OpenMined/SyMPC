@@ -1,9 +1,17 @@
+"""Package where needed crypto material is stored."""
+
 from sympc.store.crypto_primitive_provider import CryptoPrimitiveProvider
 from sympc.store.crypto_store import CryptoStore
 
 
-def register_primitive_generator(name):
-    """Decorator to register a crypto primitive provider."""
+def register_primitive_generator(name: str):
+    """Decorator to register a crypto primitive provider.
+
+    Args:
+        name (str): Name of the primitive.
+
+    # noqa: DAR201
+    """
 
     def register_generator(func_generator):
         if name in CryptoPrimitiveProvider._func_providers:
@@ -15,7 +23,13 @@ def register_primitive_generator(name):
 
 
 def register_primitive_store_add(name):
-    """Decorator to add primitives to the store."""
+    """Decorator to add primitives to the store.
+
+    Args:
+        name (str): Name of the primitive.
+
+    # noqa: DAR201
+    """
 
     def register_add(func_add):
         if name in CryptoStore._func_add_store:
@@ -27,7 +41,13 @@ def register_primitive_store_add(name):
 
 
 def register_primitive_store_get(name):
-    """Decorator to retrieve primitives from the store."""
+    """Decorator to retrieve primitives from the store.
+
+    Args:
+        name (str): Name of the primitive.
+
+    # noqa: DAR201
+    """
 
     def register_get(func_get):
         if name in CryptoStore._func_get_store:

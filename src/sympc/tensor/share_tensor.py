@@ -3,9 +3,11 @@
 # stdlib
 import operator
 from typing import Any
+from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
+from typing import Set
 from typing import Union
 
 # third party
@@ -14,12 +16,14 @@ import torch
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 
-FORWARD_TENSOR_ATTRS = {"unsqueeze", "shape"}
+from .tensor import SyMPCTensor
+
+PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
 
 
-class ShareTensor:
-    """This class represents 1 share that a party holds when doing secret
-    sharing.
+class ShareTensor(metaclass=SyMPCTensor):
+    """Single Share representation.
 
     Arguments:
         data (Optional[Any]): the share a party holds
@@ -50,6 +54,10 @@ class ShareTensor:
         "fp_encoder",
     }
 
+    # Used by the SyMPCTensor metaclass
+    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze"}
+    PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
+
     def __init__(
         self,
         data: Optional[Union[float, int, torch.Tensor]] = None,
@@ -58,8 +66,17 @@ class ShareTensor:
         encoder_precision: int = 16,
         ring_size: int = 2 ** 64,
     ) -> None:
-        """Initializer for the ShareTensor."""
+        """Initialize ShareTensor.
 
+        Args:
+            data (Optional[Any]): The share a party holds. Defaults to None
+            session (Optional[Any]): The session from which this shares belongs to.
+                Defaults to None.
+            encoder_base (int): The base for the encoder. Defaults to 2.
+            encoder_precision (int): the precision for the encoder. Defaults to 16.
+            ring_size (int): field used for the operations applied on the shares
+                Defaults to 2**64
+        """
         if session is None:
             self.session = Session(
                 ring_size=ring_size,
@@ -87,6 +104,11 @@ class ShareTensor:
         return self.fp_encoder.encode(data)
 
     def decode(self):
+        """Decode via FixedPrecisionEncoder.
+
+        Returns:
+            torch.Tensor: Decoded value
+        """
         return self._decode()
 
     def _decode(self):
@@ -96,10 +118,16 @@ class ShareTensor:
     def sanity_checks(
         x: "ShareTensor", y: Union[int, float, torch.Tensor, "ShareTensor"], op_str: str
     ) -> "ShareTensor":
-        """Check the type of "y" and convert it to a share if necessary.
+        """Check the type of "y" and covert it to share if necessary.
 
-        :return: the y value
-        :rtype: ShareTensor, int or Integer type Tensor
+        Args:
+            x (ShareTensor): Typically "self".
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): Tensor to check.
+            op_str (str): String operator.
+
+        Returns:
+            ShareTensor: the converted y value.
+
         """
         if not isinstance(y, ShareTensor):
             y = ShareTensor(data=y, session=x.session)
@@ -111,8 +139,12 @@ class ShareTensor:
     ) -> "ShareTensor":
         """Apply a given operation.
 
-        :return: the result of applying "op_str" on "self" and y
-        :rtype: ShareTensor
+        Args:
+            y (Union["ShareTensor", torch.Tensor, int, float]): tensor to apply the operator.
+            op_str (str): Operator.
+
+        Returns:
+            ShareTensor: Result of the operation.
         """
         op = getattr(operator, op_str)
 
@@ -128,8 +160,11 @@ class ShareTensor:
     def add(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "add" operation between "self" and "y".
 
-        :return: self + y
-        :rtype: ShareTensor
+        Args:
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): self + y
+
+        Returns:
+            ShareTensor. Result of the operation.
         """
         y_share = ShareTensor.sanity_checks(self, y, "add")
         res = self.apply_function(y_share, "add")
@@ -138,8 +173,11 @@ class ShareTensor:
     def sub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "sub" operation between "self" and "y".
 
-        :return: self - y
-        :rtype: ShareTensor
+        Args:
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): self - y
+
+        Returns:
+            ShareTensor. Result of the operation.
         """
         y_share = ShareTensor.sanity_checks(self, y, "sub")
         res = self.apply_function(y_share, "sub")
@@ -148,8 +186,11 @@ class ShareTensor:
     def rsub(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "sub" operation between "y" and "self".
 
-        :return: y - self
-        :rtype: ShareTensor
+        Args:
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): y - self
+
+        Returns:
+            ShareTensor. Result of the operation.
         """
         y_share = ShareTensor.sanity_checks(self, y, "sub")
         res = y_share.apply_function(self, "sub")
@@ -158,8 +199,11 @@ class ShareTensor:
     def mul(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
         """Apply the "mul" operation between "self" and "y".
 
-        :return: self * y
-        :rtype: ShareTensor
+        Args:
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): self * y
+
+        Returns:
+            ShareTensor. Result of the operation.
         """
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
@@ -173,6 +217,14 @@ class ShareTensor:
         return res
 
     def xor(self, y: Union[int, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
+        """Apply the "xor" operation between "self" and "y".
+
+        Args:
+            y (Union[int, torch.Tensor, "ShareTensor"]): self xor y
+
+        Returns:
+            ShareTensor: Result of the operation.
+        """
         res = ShareTensor(session=self.session)
 
         if isinstance(y, ShareTensor):
@@ -187,8 +239,11 @@ class ShareTensor:
     ) -> "ShareTensor":
         """Apply the "matmul" operation between "self" and "y".
 
-        :return: self @ y
-        :rtype: ShareTensor
+        Args:
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): self @ y.
+
+        Returns:
+            ShareTensor: Result of the operation.
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
@@ -202,20 +257,28 @@ class ShareTensor:
         return res
 
     def rmatmul(self, y: torch.Tensor) -> "ShareTensor":
-        """Apply the reversed "matmul" operation between "self" and "y".
+        """Apply the "rmatmul" operation between "y" and "self".
 
-        :return: y @ self
-        :rtype: ShareTensor
+        Args:
+            y (torch.Tensor): y @ self
+
+        Returns:
+            ShareTensor. Result of the operation.
         """
         y = ShareTensor.sanity_checks(self, y, "matmul")
         return y.matmul(self)
 
     def div(self, y: Union[int, float, torch.Tensor, "ShareTensor"]) -> "ShareTensor":
-        """Apply the "div" operation between "self" and "y". Currently,
-        NotImplemented.
+        """Apply the "div" operation between "self" and "y".
 
-        :return: self / y
-        :rtype: ShareTensor
+        Args:
+            y (Union[int, float, torch.Tensor, "ShareTensor"]): Denominator.
+
+        Returns:
+            ShareTensor: Result of the operation.
+
+        Raises:
+            ValueError: If y is not an integer or LongTensor.
         """
         if not isinstance(y, (int, torch.LongTensor)):
             raise ValueError("Div works (for the moment) only with integers!")
@@ -226,33 +289,50 @@ class ShareTensor:
         return res
 
     def __getattr__(self, attr_name: str) -> Any:
+        """Access to tensor attributes.
+
+        Args:
+            attr_name (str): Name of the attribute.
+
+        Returns:
+            Any: Attribute.
+        """
         tensor = self.tensor
         res = getattr(tensor, attr_name)
         return res
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
-        """Check if "self" is bigger than "y".
+        """Greater than operator.
 
-        :return: self > y
-        :rtype: bool
+        Args:
+            y (Union["ShareTensor", torch.Tensor, int]): Tensor to compare.
+
+        Returns:
+            bool: Result of the comparison.
         """
         y_share = ShareTensor.sanity_checks(self, y, "gt")
         res = self.tensor > y_share.tensor
         return res
 
     def __lt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
-        """Check if "self" is less than "y".
+        """Lower than operator.
 
-        :return: self < y
-        :rtype: bool
+        Args:
+            y (Union["ShareTensor", torch.Tensor, int]): Tensor to compare.
+
+        Returns:
+            bool: Result of the comparison.
         """
-
         y_share = ShareTensor.sanity_checks(self, y, "lt")
         res = self.tensor < y_share.tensor
         return res
 
     def __str__(self) -> str:
-        """Return the string representation of ShareTensor."""
+        """Representation.
+
+        Returns:
+            str: Return the string representation of ShareTensor.
+        """
         type_name = type(self).__name__
         out = f"[{type_name}]"
         out = f"{out}\n\t| {self.fp_encoder}"
@@ -261,16 +341,26 @@ class ShareTensor:
         return out
 
     def __repr__(self) -> str:
+        """Representation.
+
+        Returns:
+            String representation.
+        """
         return self.__str__()
 
     def __eq__(self, other: Any) -> bool:
-        """Check if "self" is equal with another object given a set of
-        attributes to compare.
+        """Equal operator.
 
-        :return: if self and other are equal
-        :rtype: bool
+        Check if "self" is equal with another object given a set of
+            attributes to compare.
+
+        Args:
+            other (Any): Tensor to compare.
+
+        Returns:
+            bool: True if equal False if not.
+
         """
-
         if not (self.tensor == other.tensor).all():
             return False
 
@@ -279,28 +369,93 @@ class ShareTensor:
 
         return True
 
-    # Forward to tensor methods
+    @staticmethod
+    def hook_property(property_name: str) -> Any:
+        """Hook a framework property (only getter).
 
-    @property
-    def shape(self) -> Any:
-        return self.tensor.shape
+        Ex:
+         * if we call "shape" we want to call it on the underlying tensor
+        and return the result
+         * if we call "T" we want to call it on the underlying tensor
+        but we want to wrap it in the same tensor type
 
-    def numel(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        return self.tensor.numel(*args, **kwargs)
+        Args:
+            property_name (str): property to hook
 
-    @property
-    def T(self) -> Any:
-        res = ShareTensor(session=self.session)
-        res.tensor = self.tensor.T
+        Returns:
+            A hooked property
+        """
+
+        def property_new_share_tensor_getter(_self: "ShareTensor") -> Any:
+            tensor = getattr(_self.tensor, property_name)
+            res = ShareTensor(session=_self.session)
+            res.tensor = tensor
+            return res
+
+        def property_getter(_self: "ShareTensor") -> Any:
+            prop = getattr(_self.tensor, property_name)
+            return prop
+
+        if property_name in PROPERTIES_NEW_SHARE_TENSOR:
+            res = property(property_new_share_tensor_getter, None)
+        else:
+            res = property(property_getter, None)
+
         return res
 
-    def unsqueeze(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        tensor = self.tensor.unsqueeze(*args, **kwargs)
-        res = ShareTensor(session=self.session)
-        res.tensor = tensor
+    @staticmethod
+    def hook_method(method_name: str) -> Callable[..., Any]:
+        """Hook a framework method such that we know how to treat it given that we call it.
+
+        Ex:
+         * if we call "numel" we want to call it on the underlying tensor
+        and return the result
+         * if we call "unsqueeze" we want to call it on the underlying tensor
+        but we want to wrap it in the same tensor type
+
+        Args:
+            method_name (str): method to hook
+
+        Returns:
+            A hooked method
+        """
+
+        def method_new_share_tensor(
+            _self: "ShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+        ) -> Any:
+            method = getattr(_self.tensor, method_name)
+            tensor = method(*args, **kwargs)
+            res = ShareTensor(session=_self.session)
+            res.tensor = tensor
+            return res
+
+        def method(
+            _self: "ShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+        ) -> Any:
+            method = getattr(_self.tensor, method_name)
+            res = method(*args, **kwargs)
+            return res
+
+        if method_name in METHODS_NEW_SHARE_TENSOR:
+            res = method_new_share_tensor
+        else:
+            res = method
+
         return res
 
     def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
+        """Tensor with the same data but new dimensions/view.
+
+        Args:
+            *args: Arguments to tensor.view.
+            **kwargs: Keyword arguments passed to tensor.view.
+
+        Returns:
+            Any: ShareTensor with new view.
+
+        References:
+            https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
+        """
         tensor = self.tensor.view(*args, **kwargs)
         res = ShareTensor(session=self.session)
         res.tensor = tensor
