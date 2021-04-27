@@ -1,10 +1,11 @@
+"""Simple convolutional network and helper functions for benchmarking."""
+
 # stdlib
 from typing import Any
 from typing import Callable
 from typing import List
 
 # third party
-import numpy as np
 import syft as sy
 import torch
 
@@ -14,7 +15,14 @@ from sympc.tensor import MPCTensor
 
 
 class ConvNet(sy.Module):
+    """Simple convolutional network."""
+
     def __init__(self, torch_ref):
+        """Initialize convolutional network.
+
+        Arguments:
+            torch_ref: Reference to the torch library
+        """
         super(ConvNet, self).__init__(torch_ref=torch_ref)
         self.conv1 = self.torch_ref.nn.Conv2d(
             in_channels=1, out_channels=5, kernel_size=5
@@ -23,6 +31,14 @@ class ConvNet(sy.Module):
         self.fc2 = self.torch_ref.nn.Linear(10, 5)
 
     def forward(self, x):
+        """Do a feedforward through the layer.
+
+        Args:
+            x (MPCTensor): the input
+
+        Returns:
+            An MPCTensor representing the layer specific operation applied on the input
+        """
         x = self.conv1(x)
         x = self.torch_ref.nn.functional.relu(x)
         x = x.view(1, -1)
@@ -33,6 +49,11 @@ class ConvNet(sy.Module):
 
 
 def run_conv_model(get_clients: Callable[[int], List[Any]]):
+    """Create a convolutional network and do a feedforwad.
+
+    Arguments:
+        get_clients: Fixture that returns a list of clients
+    """
     model = ConvNet(torch)
 
     clients = get_clients(2)
@@ -51,8 +72,6 @@ def run_conv_model(get_clients: Callable[[int], List[Any]]):
     expected = model(x_secret)
 
     res_mpc = mpc_model(x_mpc)
-    assert isinstance(res_mpc, MPCTensor)
 
     res = res_mpc.reconstruct()
     expected = expected.detach().numpy()
-    assert np.allclose(res, expected, atol=1e-3)

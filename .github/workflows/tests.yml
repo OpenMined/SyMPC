@@ -80,4 +80,4 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ --deselect=tests/notebooks --deselect=tests/benchmarks -n auto
+          pytest tests/ --deselect=tests/notebooks -n auto
