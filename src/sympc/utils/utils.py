@@ -15,8 +15,6 @@ from typing import Optional
 from typing import Type
 from typing import Union
 
-from sympc.session import Session
-
 
 def ispointer(obj: Any) -> bool:
     """Check if a given obj is a pointer (is a remote object).
@@ -128,13 +126,3 @@ def parallel_execution(
         return local_shares
 
     return wrapper
-
-
-def get_session() -> Session:
-    """Gets the current session for a party as defined in the global space.
-
-    Returns:
-        Session: MPC Session
-    """
-    session = globals()["session"]
-    return session

@@ -17,11 +17,11 @@ from typing import Union
 # third party
 import torch
 
+from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
-from sympc.utils import get_session
 from sympc.utils import parallel_execution
 
 EXPECTED_OPS = {"mul", "matmul", "conv2d"}
