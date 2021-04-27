@@ -18,7 +18,6 @@ import torch as th
 import torchcsprng as csprng  # type: ignore
 
 from sympc.protocol.protocol import Protocol
-from sympc.session import Session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
@@ -57,7 +56,7 @@ def mask_builder(x1: ShareTensor, x2: ShareTensor, op: str) -> ShareTensor:
         ShareTensor: share of the masked input
     """
     session = get_session()
-    
+
     x = x1 - x2
 
     keys = session.crypto_store.get_primitives_from_store(
@@ -86,7 +85,7 @@ def evaluate(b, x_masked, op, dtype="long") -> ShareTensor:
         ShareTensor: A share of the result of the FSS protocol.
     """
     session = get_session()
-    
+
     numel = x_masked.numel()
     keys = session.crypto_store.get_primitives_from_store(
         f"fss_{op}", nr_instances=numel, remove=True
