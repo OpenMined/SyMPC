@@ -40,9 +40,7 @@ dif = sycret.LeFactory(n_threads=N_CORES)
 
 
 # share level
-def mask_builder(
-    x1: ShareTensor, x2: ShareTensor, op: str
-) -> ShareTensor:
+def mask_builder(x1: ShareTensor, x2: ShareTensor, op: str) -> ShareTensor:
     """Mask the private inputs.
 
     Add the share of alpha (the mask) that is held in the crypto store to
