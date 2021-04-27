@@ -282,13 +282,17 @@ def test_generate_primitive_from_dict_beaver_matmul(get_clients) -> None:
     store_client_1 = session.session_ptrs[0].crypto_store.store.get()
     store_client_2 = session.session_ptrs[1].crypto_store.store.get()
 
-    shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
-    shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+    a_shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
+    b_shape_client_1 = tuple(store_client_1.get(key)[0][1].shape)
 
-    expected_shape = (2, 3)
+    assert a_shape == a_shape_client_1
+    assert b_shape == b_shape_client_1
 
-    assert expected_shape == shape_client_1
-    assert expected_shape == shape_client_2
+    a_shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+    b_shape_client_2 = tuple(store_client_2.get(key)[0][1].shape)
+
+    assert a_shape == a_shape_client_2
+    assert b_shape == b_shape_client_2
 
 
 def test_generate_primitive_from_dict_beaver_mul(get_clients) -> None:
@@ -324,13 +328,17 @@ def test_generate_primitive_from_dict_beaver_mul(get_clients) -> None:
         store_client_1 = session.session_ptrs[0].crypto_store.store.get()
         store_client_2 = session.session_ptrs[1].crypto_store.store.get()
 
-        shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
-        shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+        a_shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
+        b_shape_client_1 = tuple(store_client_1.get(key)[0][1].shape)
 
-        expected_shape = a_shape
+        assert a_shape == a_shape_client_1
+        assert b_shape == b_shape_client_1
 
-        assert expected_shape == shape_client_1
-        assert expected_shape == shape_client_2
+        a_shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+        b_shape_client_2 = tuple(store_client_2.get(key)[0][1].shape)
+
+        assert a_shape == a_shape_client_2
+        assert b_shape == b_shape_client_2
 
 
 def test_generate_primitive_from_dict_beaver_conv2d(get_clients) -> None:
@@ -363,10 +371,14 @@ def test_generate_primitive_from_dict_beaver_conv2d(get_clients) -> None:
     store_client_1 = session.session_ptrs[0].crypto_store.store.get()
     store_client_2 = session.session_ptrs[1].crypto_store.store.get()
 
-    shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
-    shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+    a_shape_client_1 = tuple(store_client_1.get(key)[0][0].shape)
+    b_shape_client_1 = tuple(store_client_1.get(key)[0][1].shape)
 
-    expected_shape = (1, 1, 28, 28)
+    assert a_shape == a_shape_client_1
+    assert b_shape == b_shape_client_1
 
-    assert expected_shape == shape_client_1
-    assert expected_shape == shape_client_2
+    a_shape_client_2 = tuple(store_client_2.get(key)[0][0].shape)
+    b_shape_client_2 = tuple(store_client_2.get(key)[0][1].shape)
+
+    assert a_shape == a_shape_client_2
+    assert b_shape == b_shape_client_2
