@@ -102,6 +102,16 @@ def test_invalid_op_exception(op_str="truediv", precision=2, base=16) -> None:
         op(y, x_share)
 
 
+def test_div_with_float_exception() -> None:
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+
+    x_share = ShareTensor(data=x, encoder_base=16, encoder_precision=2)
+
+    with pytest.raises(ValueError):
+        x_share / 5.3
+
+
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 def test_ops_share_integer_local(op_str, precision, base) -> None:
