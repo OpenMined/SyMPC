@@ -80,6 +80,11 @@ def test_eq():
     assert session == other2
 
 
-def test_protocol_exception():
+def test_invalid_protocol_exception():
     with pytest.raises(ValueError):
-        session = Session(protocol="fs")
+        Session(protocol="fs")
+
+
+def test_invalid_ringsize_exception():
+    with pytest.raises(ValueError):
+        Session(ring_size=2 ** 63)
