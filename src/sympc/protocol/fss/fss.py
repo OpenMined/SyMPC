@@ -129,7 +129,6 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
     # FIXME: we cast it into a MPCTensor at the expense of extra communication
     session = x1.session
-    dtype = session.tensor_type
 
     shape = MPCTensor._get_shape("sub", x1.shape, x2.shape)
     n_values = shape.numel()
@@ -306,7 +305,7 @@ def get_primitive(
 
 
 @register_primitive_store_get("fss_comp")
-def get_primitive(
+def get_primitive(  # noqa
     store: Dict[Any, Any], nr_instances: int, remove: bool = True, **kwargs
-) -> Any:  # noqa
+) -> Any:
     return _get_primitive("fss_comp", store, nr_instances, remove, **kwargs)

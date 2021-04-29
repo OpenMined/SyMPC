@@ -20,7 +20,7 @@ def test_mpc_tensor_exception(get_clients) -> None:
         MPCTensor(secret=42, session=session)
 
     with pytest.raises(ValueError):
-        x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
+        _ = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
 
 
 def test_reconstruct(get_clients) -> None:
@@ -30,9 +30,9 @@ def test_reconstruct(get_clients) -> None:
 
     a_rand = 3
     a = ShareTensor(data=a_rand, encoder_precision=0)
-    a_shares = MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
+    _ = MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
 
-    a_shares_copy = MPCTensor.generate_shares(
+    _ = MPCTensor.generate_shares(
         secret=a_rand, nr_parties=2, tensor_type=torch.long
     )
 
@@ -54,7 +54,7 @@ def test_op_mpc_different_sessions(get_clients) -> None:
     y = MPCTensor(secret=torch.Tensor([1, -2]), session=session_two)
 
     with pytest.raises(ValueError):
-        z = x + y
+        _ = x + y
 
 
 def test_remote_mpc_no_shape(get_clients) -> None:
@@ -65,7 +65,7 @@ def test_remote_mpc_no_shape(get_clients) -> None:
     x_remote = alice_client.torch.Tensor([1, -2, 0.3])
 
     with pytest.raises(ValueError):
-        x = MPCTensor(secret=x_remote, session=session)
+        _ = MPCTensor(secret=x_remote, session=session)
 
 
 def test_remote_mpc_with_shape(get_clients) -> None:
@@ -365,13 +365,13 @@ def test_share_get_method_parties_exception(get_clients) -> None:
     clients = get_clients(4)
 
     x_secret = torch.Tensor([1.0, 2.0, 5.0])
-    expected_res = x_secret * x_secret
+    _ = x_secret * x_secret
 
     mpc_tensor1 = x_secret.share(parties=clients[:2])
     mpc_tensor2 = x_secret.share(parties=clients[2:])
 
     with pytest.raises(ValueError):
-        res = mpc_tensor1 * mpc_tensor2
+        _ = mpc_tensor1 * mpc_tensor2
 
 
 def test_share_get_method_session(get_clients) -> None:

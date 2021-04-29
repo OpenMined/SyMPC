@@ -27,9 +27,6 @@ MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items
 
 
 def share(_self, session: Session) -> sy.Module:
-    parties = session.parties
-    nr_parties = session.nr_parties
-
     mpc_module = copy.copy(_self)
 
     mpc_module._modules = OrderedDict()
