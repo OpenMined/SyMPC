@@ -13,7 +13,7 @@ from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 
 """
-The functiaonlity is already tested with CryptoStoreProvider
+The functionality is already tested with CryptoStoreProvider
 
 Those tests are to help a developer pinpoint a problem in case
 it appears when pushing code
