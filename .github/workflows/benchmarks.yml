@@ -52,6 +52,6 @@ jobs:
         with:
           name: Pytest-benchmarks
           tool: "pytest"
-          output-file-path: tests/benchmarks/pytest_benchmarks_output.json
+          output-file-path: benchmarks/pytest_benchmarks_output.json
           github-token: ${{ secrets.GITHUB_TOKEN }}
           auto-push: true

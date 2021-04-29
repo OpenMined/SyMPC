@@ -51,7 +51,7 @@ class CryptoPrimitiveProvider:
         primitives = generator(**g_kwargs)
 
         if CryptoPrimitiveProvider._LOGGING:
-            CryptoPrimitiveProvider._ops_list[op_str].append(p_kwargs)
+            CryptoPrimitiveProvider._ops_list[op_str].append((p_kwargs, g_kwargs))
 
         if p_kwargs is not None:
             """Do not transfer the primitives if there is not specified a
@@ -110,11 +110,35 @@ class CryptoPrimitiveProvider:
             json: returns the json object containing ops details.
         """
         CryptoPrimitiveProvider._LOGGING = False
-        log_json = json.dumps(CryptoPrimitiveProvider._ops_list)
+        log = CryptoPrimitiveProvider._ops_list.copy()
         CryptoPrimitiveProvider._ops_list.clear()
 
         if generate_file:
             with open(CryptoPrimitiveProvider._FILENAME, "w") as f:
-                f.write(log_json)
+                f.write(json.dumps(log))
+        return dict(log)
 
-        return log_json
+    @staticmethod
+    def generate_primitive_from_dict(
+        primitive_log: Dict[str, Any], session: Session
+    ) -> None:
+        """Generates primitives from the log provided.
+
+        Args:
+            primitive_log (dict): the dict log created with primitive logging.
+            session (Session): Session.
+
+        Raises:
+            ValueError: If primitive_log is None.
+        """
+        if primitive_log is None:
+            raise ValueError("The provided log is cannot be None")
+
+        for op_str, args in primitive_log.items():
+            for (p_kwargs, g_kwargs) in args:
+                CryptoPrimitiveProvider.generate_primitives(
+                    op_str=op_str,
+                    sessions=session.session_ptrs,
+                    g_kwargs=g_kwargs,
+                    p_kwargs=p_kwargs,
+                )

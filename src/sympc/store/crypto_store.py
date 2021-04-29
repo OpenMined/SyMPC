@@ -16,6 +16,8 @@ class CryptoStore:
 
     """
 
+    __slots__ = {"store"}
+
     _func_add_store: Dict[Any, Callable] = {}
     _func_get_store: Dict[Any, Callable] = {}
 
