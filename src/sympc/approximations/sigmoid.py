@@ -49,10 +49,10 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
         # Reference: http://www.nnw.cz/doi/2012/NNW.2012.22.023.pdf
         # Make sure the elements are all positive
         _sign = sign(tensor)
-        tensor_8 = tensor * _sign / 8
+        positive_tensor_rescaled = tensor * _sign / 8
         p = 11
         q = 11
-        scaler = ((1 + tensor_8) / 2) ** (q + 1)
+        scaler = ((1 + positive_tensor_rescaled) / 2) ** (q + 1)
 
         def factorial(n):
             fact = 1
@@ -60,10 +60,10 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
                 fact = fact * i
             return fact
 
-        polynomial = 0 * tensor_8
+        polynomial = 0 * positive_tensor_rescaled
         for mu in range(p + 1):
             a_n = factorial(mu + q) / (factorial(mu) * factorial(q))
-            T_n_w = ((1 - tensor_8) / 2) ** mu
+            T_n_w = ((1 - positive_tensor_rescaled) / 2) ** mu
             polynomial += a_n * T_n_w
 
         result = scaler * polynomial
