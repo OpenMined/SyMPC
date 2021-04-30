@@ -3,7 +3,6 @@ import pytest
 
 from sympc.protocol import Protocol
 from sympc.protocol.fss.fss import _generate_primitive
-from sympc.protocol.fss.fss import _get_primitive
 from sympc.protocol.fss.fss import get_primitive
 
 
