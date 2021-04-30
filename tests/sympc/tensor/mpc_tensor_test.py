@@ -4,7 +4,6 @@ import operator
 # third party
 import numpy as np
 import pytest
-import syft as sy
 import torch
 
 from sympc.session import Session
