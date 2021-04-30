@@ -64,11 +64,11 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
         for mu in range(p + 1):
             a_n = factorial(mu + q) / (factorial(mu) * factorial(q))
             T_n_w = ((1 - tensor_8) / 2) ** mu
-            polynomial += a_n * T_n_w * _sign
+            polynomial += a_n * T_n_w
 
         result = scaler * polynomial
 
-        return ((1 - _sign) * (1 + result) + (1 + _sign) * (result)) / 2
+        return ((1 - _sign) * (1 - result) + (1 + _sign) * (result)) / 2
 
     else:
         raise ValueError(f"Invalid method {method} given for sigmoid function")
