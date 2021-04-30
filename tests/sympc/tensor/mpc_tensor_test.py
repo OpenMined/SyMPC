@@ -32,9 +32,7 @@ def test_reconstruct(get_clients) -> None:
     a = ShareTensor(data=a_rand, encoder_precision=0)
     _ = MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
 
-    _ = MPCTensor.generate_shares(
-        secret=a_rand, nr_parties=2, tensor_type=torch.long
-    )
+    _ = MPCTensor.generate_shares(secret=a_rand, nr_parties=2, tensor_type=torch.long)
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)

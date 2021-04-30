@@ -305,7 +305,7 @@ def get_primitive(
 
 
 @register_primitive_store_get("fss_comp")
-def get_primitive(  # noqa
+def get_primitive(
     store: Dict[Any, Any], nr_instances: int, remove: bool = True, **kwargs
-) -> Any:
+) -> Any:  # noqa
     return _get_primitive("fss_comp", store, nr_instances, remove, **kwargs)
