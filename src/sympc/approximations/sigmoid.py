@@ -46,6 +46,7 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
         return result
 
     elif method == "chebyshev":
+        # Reference: http://www.nnw.cz/doi/2012/NNW.2012.22.023.pdf
         # Make sure the elements are all positive
         _sign = sign(tensor)
         tensor_8 = tensor * _sign / 8
