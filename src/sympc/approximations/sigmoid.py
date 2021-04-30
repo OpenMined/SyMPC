@@ -19,6 +19,9 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
 
     Returns:
         tensor: the calulated sigmoid value
+
+    Raises:
+        ValueError: if the given method is not supported
     """
     if method == "exp":
         _sign = sign(tensor)
@@ -41,3 +44,25 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
             result += (tensor ** d) * weights[i + 1]
 
         return result
+
+    elif method == "chebyshev":
+        tensor_8 = tensor / 8
+        p = 11
+        q = 11
+        scaler = ((1 + tensor_8) / 2) ** (q + 1)
+
+        def factorial(n):
+            fact = 1
+            for i in range(1, n + 1):
+                fact = fact * i
+            return fact
+
+        polynomial = 0 * tensor_8
+        for mu in range(p + 1):
+            a_n = factorial(mu + q) / (factorial(mu) * factorial(q))
+            T_n_w = ((1 - tensor_8) / 2) ** mu
+            polynomial += a_n * T_n_w
+
+        return scaler * polynomial
+    else:
+        raise ValueError(f"Invalid method {method} given for sigmoid function")
