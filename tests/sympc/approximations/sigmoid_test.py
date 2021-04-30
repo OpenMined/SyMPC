@@ -8,7 +8,7 @@ from sympc.session import SessionManager
 from sympc.tensor.mpc_tensor import MPCTensor
 
 
-@pytest.mark.parametrize("method", ["maclaurin", "exp"])
+@pytest.mark.parametrize("method", ["maclaurin", "exp", "chebyshev"])
 def test_sigmoid(get_clients, method) -> None:
     clients = get_clients(2)
 
