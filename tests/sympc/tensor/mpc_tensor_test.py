@@ -203,18 +203,11 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
-def test_ops_divfloat_exception() -> None:
+def test_ops_divfloat_exception(get_clients) -> None:
     # Define the virtual machines that would be use in the computation
-    alice_vm = sy.VirtualMachine(name="alice")
-    bob_vm = sy.VirtualMachine(name="bob")
-    charlie_vm = sy.VirtualMachine(name="charlie")
+    alice, bob = get_clients(2)
 
-    # Get clients from each VM
-    alice = alice_vm.get_root_client()
-    bob = bob_vm.get_root_client()
-    charlie = charlie_vm.get_root_client()
-
-    parties = [alice, bob, charlie]
+    parties = [alice, bob]
 
     # Setup the session for the computation
     session = Session(parties=parties)
