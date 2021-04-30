@@ -4,6 +4,7 @@ import pytest
 from sympc.protocol import Protocol
 from sympc.protocol.fss.fss import _generate_primitive
 from sympc.protocol.fss.fss import _get_primitive
+from sympc.protocol.fss.fss import get_primitive
 
 
 class TestProtocol(metaclass=Protocol):
@@ -24,4 +25,4 @@ def test_exception_insufficient_fss_primitives():
     store = {}
     store["fss_eq"] = [[10]]
     with pytest.raises(ValueError):
-        _get_primitive("fss_eq", store, 100)
+        get_primitive(store, 10)
