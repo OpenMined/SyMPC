@@ -50,8 +50,8 @@ def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
         # Make sure the elements are all positive
         _sign = sign(tensor)
         positive_tensor_rescaled = tensor * _sign / 8
-        p = 11
-        q = 11
+        p = 8
+        q = 8
         scaler = ((1 + positive_tensor_rescaled) / 2) ** (q + 1)
 
         def factorial(n):
