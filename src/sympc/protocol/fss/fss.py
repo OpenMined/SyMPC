@@ -5,6 +5,8 @@ arXiv:2006.04593 [cs.LG]
 """
 # stdlib
 import multiprocessing
+import os
+import warnings
 from typing import Any
 from typing import Dict
 from typing import Iterable
@@ -39,9 +41,7 @@ dif = sycret.LeFactory(n_threads=N_CORES)
 
 
 # share level
-def mask_builder(
-    session: Session, x1: ShareTensor, x2: ShareTensor, op: str
-) -> ShareTensor:
+def mask_builder(session: Session, x1: ShareTensor, x2: ShareTensor, op: str) -> ShareTensor:
     """Mask the private inputs.
 
     Add the share of alpha (the mask) that is held in the crypto store to
@@ -60,9 +60,7 @@ def mask_builder(
     """
     x = x1 - x2
 
-    keys = session.crypto_store.get_primitives_from_store(
-        f"fss_{op}", nr_instances=x.numel(), remove=False
-    )
+    keys = session.crypto_store.get_primitives_from_store(f"fss_{op}", nr_instances=x.numel(), remove=False)
 
     n_bytes = n // 8  # keys contains bytes not bits
     alpha = np.frombuffer(np.ascontiguousarray(keys[:, 0:n_bytes]), dtype=np.uint32)
@@ -87,9 +85,7 @@ def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
         ShareTensor: A share of the result of the FSS protocol.
     """
     numel = x_masked.numel()
-    keys = session.crypto_store.get_primitives_from_store(
-        f"fss_{op}", nr_instances=numel, remove=True
-    )
+    keys = session.crypto_store.get_primitives_from_store(f"fss_{op}", nr_instances=numel, remove=True)
 
     b = b.numpy().item()
     original_shape = x_masked.shape
@@ -124,7 +120,11 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     Returns:
         MPCTensor: Shares of the comparison.
     """
-    assert not th.cuda.is_available()  # nosec
+    if th.cuda.is_available():
+        # FSS is currently not supported on GPU.
+        # https://stackoverflow.com/a/62145307/8878627
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        warnings.warn("CUDA has been disabled as FSS currently does not support it")
 
     # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
     # FIXME: we cast it into a MPCTensor at the expense of extra communication
@@ -151,9 +151,7 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     mask_value = mask_value.reconstruct(decode=False) % 2 ** n
 
     # TODO: add dtype to args
-    args = [
-        (session.session_ptrs[i], th.IntTensor([i]), mask_value, op) for i in range(2)
-    ]
+    args = [(session.session_ptrs[i], th.IntTensor([i]), mask_value, op) for i in range(2)]
 
     shares = parallel_execution(evaluate, session.parties)(args)
 
@@ -273,8 +271,7 @@ def _get_primitive(
         return primitive
     else:
         raise ValueError(
-            f"Not enough primitives for fss: {nr_instances} required, "
-            f"but only {available_instances} available"
+            f"Not enough primitives for fss: {nr_instances} required, " f"but only {available_instances} available"
         )
 
 
@@ -299,14 +296,10 @@ def add_primitive(store: Dict[Any, Any], primitives: Iterable[Any]):  # noqa
 
 
 @register_primitive_store_get("fss_eq")
-def get_primitive(
-    store: Dict[Any, Any], nr_instances: int, remove: bool = True, **kwargs
-) -> Any:  # noqa
+def get_primitive(store: Dict[Any, Any], nr_instances: int, remove: bool = True, **kwargs) -> Any:  # noqa
     return _get_primitive("fss_eq", store, nr_instances, remove, **kwargs)
 
 
 @register_primitive_store_get("fss_comp")
-def get_primitive(
-    store: Dict[Any, Any], nr_instances: int, remove: bool = True, **kwargs
-) -> Any:  # noqa
+def get_primitive(store: Dict[Any, Any], nr_instances: int, remove: bool = True, **kwargs) -> Any:  # noqa
     return _get_primitive("fss_comp", store, nr_instances, remove, **kwargs)
