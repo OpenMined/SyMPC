@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1619639305972,
+  "lastUpdate": 1619860662281,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -31,6 +31,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.13450106511594326",
             "extra": "mean: 3.8054739986000072 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "spsharan2000@gmail.com",
+            "name": "S P Sharan",
+            "username": "Syzygianinfern0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "08ec861c51d68c44b2facb0a1ffea7a2d824e5e6",
+          "message": "Disable CUDA when using FSS (#135)\n\n* Disable GPU access rather than a hard Assertion\r\n\r\n* black\r\n\r\n* Restore environment variable value after execution\r\n\r\n* except KeyError -> .get(key, def)",
+          "timestamp": "2021-05-01T10:15:25+01:00",
+          "tree_id": "f1dd2d347193250a0cdfc942d8660c0c717a4e22",
+          "url": "https://github.com/OpenMined/SyMPC/commit/08ec861c51d68c44b2facb0a1ffea7a2d824e5e6"
+        },
+        "date": 1619860661355,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.29642667203655826,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05296507047103274",
+            "extra": "mean: 3.3735155920000013 sec\nrounds: 5"
           }
         ]
       }
