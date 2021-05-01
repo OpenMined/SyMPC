@@ -73,5 +73,5 @@ def run_conv_model(get_clients: Callable[[int], List[Any]]):
 
     res_mpc = mpc_model(x_mpc)
 
-    _ = res_mpc.reconstruct()
+    res_mpc.reconstruct()
     expected = expected.detach().numpy()
