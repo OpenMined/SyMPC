@@ -204,9 +204,7 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
 
 def test_ops_divfloat_exception(get_clients) -> None:
     # Define the virtual machines that would be use in the computation
-    alice, bob = get_clients(2)
-
-    parties = [alice, bob]
+    parties = get_clients(2)
 
     # Setup the session for the computation
     session = Session(parties=parties)
