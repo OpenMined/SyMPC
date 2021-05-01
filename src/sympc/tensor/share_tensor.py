@@ -9,17 +9,29 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+import functools
 
 # third party
 import torch
 
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
+from sympc.tensor.grads import forward
+from sympc.tensor.grads import GRAD_FUNCS
 
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
-METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t"}
+
+
+def wrapper_getattribute(func):
+    def wrapper_func(*args, **kwargs):
+        _self, *new_args = args
+        f = getattr(_self, func.__name__)
+        return f(*new_args, **kwargs)
+
+    return wrapper_func
 
 
 class ShareTensor(metaclass=SyMPCTensor):
@@ -52,10 +64,20 @@ class ShareTensor(metaclass=SyMPCTensor):
         "tensor",
         "session",
         "fp_encoder",
+        # We need this because only floating type tensor can have requires_grad
+        # If not, we could use the self.tensor requires_grad
+        "requires_grad",
+        # Use for training
+        "grad",
+        "grad_fn",
+        "ctx",
+        "parents",
     }
 
+    AUTOGRAD_IS_ON: bool = True
+
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze"}
+    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze", "t", "view"}
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
     def __init__(
@@ -65,6 +87,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         encoder_base: int = 2,
         encoder_precision: int = 16,
         ring_size: int = 2 ** 64,
+        requires_grad: bool = False,
     ) -> None:
         """Initialize ShareTensor.
 
@@ -95,10 +118,15 @@ class ShareTensor(metaclass=SyMPCTensor):
         )
 
         self.tensor: Optional[torch.Tensor] = None
-
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self._encode(data).type(tensor_type)
+
+        self.grad_fn = None
+        self.grad = 0
+        self.ctx = {}
+        self.requires_grad = requires_grad
+        self.parents = []
 
     def _encode(self, data):
         return self.fp_encoder.encode(data)
@@ -288,18 +316,18 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         return res
 
-    def __getattr__(self, attr_name: str) -> Any:
-        """Access to tensor attributes.
+    def __getattribute__(self, attr_name: str) -> Any:
+        # Do the forward pass
+        # Implementation similar to CrypTen
+        grad_fn = GRAD_FUNCS.get(attr_name, None)
+        if grad_fn and ShareTensor.AUTOGRAD_IS_ON:
+            return functools.partial(forward, self, grad_fn)
 
-        Args:
-            attr_name (str): Name of the attribute.
+        return object.__getattribute__(self, attr_name)
 
-        Returns:
-            Any: Attribute.
-        """
-        tensor = self.tensor
-        res = getattr(tensor, attr_name)
-        return res
+    def backward(self) -> Any:
+        # TODO: implement this
+        pass
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
         """Greater than operator.
@@ -337,6 +365,9 @@ class ShareTensor(metaclass=SyMPCTensor):
         out = f"[{type_name}]"
         out = f"{out}\n\t| {self.fp_encoder}"
         out = f"{out}\n\t| Data: {self.tensor}"
+
+        if self.grad_fn:
+            out = f"{out}\n\t| GradFunc: {self.grad_fn}"
 
         return out
 
@@ -443,31 +474,13 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         return res
 
-    def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """Tensor with the same data but new dimensions/view.
-
-        Args:
-            *args: Arguments to tensor.view.
-            **kwargs: Keyword arguments passed to tensor.view.
-
-        Returns:
-            Any: ShareTensor with new view.
-
-        References:
-            https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
-        """
-        tensor = self.tensor.view(*args, **kwargs)
-        res = ShareTensor(session=self.session)
-        res.tensor = tensor
-        return res
-
-    __add__ = add
-    __radd__ = add
-    __sub__ = sub
-    __rsub__ = rsub
-    __mul__ = mul
-    __rmul__ = mul
-    __matmul__ = matmul
-    __rmatmul__ = rmatmul
-    __truediv__ = div
-    __xor__ = xor
+    __add__ = wrapper_getattribute(add)
+    __radd__ = wrapper_getattribute(add)
+    __sub__ = wrapper_getattribute(sub)
+    __rsub__ = wrapper_getattribute(rsub)
+    __mul__ = wrapper_getattribute(mul)
+    __rmul__ = wrapper_getattribute(mul)
+    __matmul__ = wrapper_getattribute(matmul)
+    __rmatmul__ = wrapper_getattribute(rmatmul)
+    __truediv__ = wrapper_getattribute(div)
+    __xor__ = wrapper_getattribute(xor)

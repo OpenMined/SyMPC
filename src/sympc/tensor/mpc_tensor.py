@@ -26,7 +26,7 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
-METHODS_FORWARD_ALL_SHARES = {}
+METHODS_FORWARD_ALL_SHARES = {"t"}
 
 
 class MPCTensor(metaclass=SyMPCTensor):
@@ -56,7 +56,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __slots__ = {"share_ptrs", "session", "shape"}
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel"}
+    METHODS_FORWARD = {"numel", "t"}
     PROPERTIES_FORWARD = {"T"}
 
     def __init__(
@@ -765,9 +765,11 @@ class MPCTensor(metaclass=SyMPCTensor):
 
             for share in _self.share_ptrs:
                 method = getattr(share, method_name)
-                shares.append(method(*args, **kwargs))
+                new_share = method(*args, **kwargs)
+                shares.append(new_share)
 
-            new_shape = getattr(torch.empty(_self.shape), method_name).shape
+            dummy_res = getattr(torch.empty(_self.shape), method_name)(*args, **kwargs)
+            new_shape = dummy_res.shape
             res = MPCTensor(shares=shares, shape=new_shape, session=_self.session)
             return res
 
