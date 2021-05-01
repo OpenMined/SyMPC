@@ -12,7 +12,7 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 
 
-def test_mpc_tensor_exception(get_clients) -> None:
+def test_setupmpc_nocall_exception(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
 
@@ -20,7 +20,7 @@ def test_mpc_tensor_exception(get_clients) -> None:
         MPCTensor(secret=42, session=session)
 
     with pytest.raises(ValueError):
-        x = MPCTensor(secret=torch.Tensor([1, -2]), session=session)
+        MPCTensor(secret=torch.Tensor([1, -2]), session=session)
 
 
 def test_mpc_tensor_nosession_exception(get_clients) -> None:
@@ -30,7 +30,7 @@ def test_mpc_tensor_nosession_exception(get_clients) -> None:
         MPCTensor(secret=42)
 
     with pytest.raises(ValueError):
-        x = MPCTensor(secret=torch.Tensor([1, -2]))
+        MPCTensor(secret=torch.Tensor([1, -2]))
 
 
 def test_mpc_share_nosession_exception(get_clients) -> None:
