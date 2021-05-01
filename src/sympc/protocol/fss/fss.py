@@ -141,7 +141,6 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
     # FIXME: we cast it into a MPCTensor at the expense of extra communication
     session = x1.session
-    dtype = session.tensor_type
 
     shape = MPCTensor._get_shape("sub", x1.shape, x2.shape)
     n_values = shape.numel()
