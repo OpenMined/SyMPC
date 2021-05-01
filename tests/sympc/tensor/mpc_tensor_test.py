@@ -24,11 +24,10 @@ def test_setupmpc_nocall_exception(get_clients) -> None:
 
 
 def test_mpc_share_nosession_exception() -> None:
-
-    x_secret = torch.Tensor([[0.1, -1], [-4, 4]])
+    secret = torch.Tensor([[0.1, -1], [-4, 4]])
 
     with pytest.raises(ValueError):
-        x_secret.share()
+        secret.share()
 
 
 def test_reconstruct(get_clients) -> None:
