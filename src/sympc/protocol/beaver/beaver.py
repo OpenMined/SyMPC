@@ -35,7 +35,7 @@ def _get_triples(
     nr_parties: int,
     a_shape: Tuple[int],
     b_shape: Tuple[int],
-    **kwargs: Dict[Any, Any]
+    **kwargs: Dict[Any, Any],
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
 
@@ -142,7 +142,7 @@ def mul_store_add(
         a_shape (Tuple[int]): the shape of the first operand
         b_shape (Tuple[int]): the shape of the second operand
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_mul_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
@@ -172,12 +172,12 @@ def mul_store_get(
     Raises:
         ValueError: If no primitive in the store for config_key.
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_mul_{tuple(a_shape)}_{tuple(b_shape)}"
     primitives = store[config_key]
 
     try:
         primitive = primitives[0]
-    except:
+    except Exception:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
@@ -222,7 +222,7 @@ def matmul_store_add(
         b_shape (Tuple[int]): The shape of the second operand.
 
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_matmul_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
@@ -252,12 +252,12 @@ def matmul_store_get(
     Raises:
         ValueError: If no primitive in the store for config_key.
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_matmul_{tuple(a_shape)}_{tuple(b_shape)}"
     primitives = store[config_key]
 
     try:
         primitive = primitives[0]
-    except:
+    except Exception:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
@@ -301,7 +301,7 @@ def conv2d_store_add(
         a_shape (Tuple[int]): The shape of the first operand.
         b_shape (Tuple[int]): The shape of the second operand.
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_conv2d_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
@@ -331,12 +331,12 @@ def conv2d_store_get(
     Raises:
         ValueError: If no primitive in the store for config_key.
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_conv2d_{tuple(a_shape)}_{tuple(b_shape)}"
     primitives = store[config_key]
 
     try:
         primitive = primitives[0]
-    except:
+    except Exception:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:

@@ -5,11 +5,13 @@ arXiv:2006.04593 [cs.LG]
 """
 # stdlib
 import multiprocessing
+import os
 from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Tuple
+import warnings
 
 # third party
 import numpy as np
@@ -124,12 +126,21 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     Returns:
         MPCTensor: Shares of the comparison.
     """
-    assert not th.cuda.is_available()  # nosec
+    if th.cuda.is_available():
+        # FSS is currently not supported on GPU.
+        # https://stackoverflow.com/a/62145307/8878627
+
+        # When the CUDA_VISIBLE_DEVICES environment variable is not set,
+        # CUDA is not used even if available. Hence, we default to None
+        cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        warnings.warn("Temporarily disabling CUDA as FSS does not support it")
+    else:
+        cuda_visible_devices = None
 
     # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
     # FIXME: we cast it into a MPCTensor at the expense of extra communication
     session = x1.session
-    dtype = session.tensor_type
 
     shape = MPCTensor._get_shape("sub", x1.shape, x2.shape)
     n_values = shape.numel()
@@ -157,6 +168,10 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 
     response = MPCTensor(session=session, shares=shares, shape=shape)
     response.shape = shape
+
+    if cuda_visible_devices is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
+
     return response
 
 
