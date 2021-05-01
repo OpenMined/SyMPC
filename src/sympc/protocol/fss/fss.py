@@ -129,14 +129,12 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     if th.cuda.is_available():
         # FSS is currently not supported on GPU.
         # https://stackoverflow.com/a/62145307/8878627
-        try:
-            cuda_visible_devices = os.environ["CUDA_VISIBLE_DEVICES"]
-            os.environ["CUDA_VISIBLE_DEVICES"] = ""
-            warnings.warn("Temporarily disabling CUDA as FSS does not support it")
-        except KeyError:
-            # When the CUDA_VISIBLE_DEVICES environment variable is not set,
-            # CUDA is not used even if available
-            cuda_visible_devices = None
+
+        # When the CUDA_VISIBLE_DEVICES environment variable is not set,
+        # CUDA is not used even if available. Hence, we default to None
+        cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        warnings.warn("Temporarily disabling CUDA as FSS does not support it")
     else:
         cuda_visible_devices = None
 
