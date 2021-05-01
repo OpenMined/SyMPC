@@ -55,4 +55,14 @@ repos:
     rev: v1.8.0
     hooks:
       - id: darglint
+        args:
+          - -v 2
         exclude: ^tests/
+
+  - repo: https://github.com/myint/autoflake
+    rev: v1.4
+    hooks:
+      - id: autoflake
+        args:
+          - --in-place
+          - --remove-unused-variables
