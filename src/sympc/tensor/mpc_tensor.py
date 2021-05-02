@@ -26,7 +26,7 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
-METHODS_FORWARD_ALL_SHARES = {"t"}
+METHODS_FORWARD_ALL_SHARES = {"t", "forward", "backward"}
 
 
 class MPCTensor(metaclass=SyMPCTensor):
@@ -53,7 +53,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
-    __slots__ = {"share_ptrs", "session", "shape"}
+    __slots__ = {"share_ptrs", "session", "shape", "requires_grad"}
 
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t"}
@@ -65,6 +65,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         secret: Optional[Union[ShareTensor, torch.Tensor, float, int]] = None,
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
         shares: Optional[List[ShareTensor]] = None,
+        requires_grad: bool = False,
     ) -> None:
         """Initializer for the MPCTensor. It can be used in two ways.
 
@@ -100,6 +101,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             raise ValueError("setup_mpc was not called on the session")
 
         self.shape = None
+        self.requires_grad = requires_grad
 
         if secret is not None:
             """In the case the secret is hold by a remote party then we use the
@@ -126,6 +128,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                     nr_parties=self.session.nr_parties,
                     tensor_type=tensor_type,
                 )
+
+        for share in shares:
+            share.requires_grad = self.requires_grad
 
         if not ispointer(shares[0]):
             shares = MPCTensor.distribute_shares(shares, self.session.parties)
@@ -683,8 +688,12 @@ class MPCTensor(metaclass=SyMPCTensor):
         type_name = type(self).__name__
         out = f"[{type_name}]\nShape: {self.shape}"
 
+        if self.requires_grad:
+            out = f"{out}\nrequires_grad: True"
+
         for share in self.share_ptrs:
             out = f"{out}\n\t| {share.client} -> {share.__name__}"
+
         return out
 
     def __repr__(self):

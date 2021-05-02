@@ -1,7 +1,7 @@
 import torch
 
-x = torch.tensor([[1.0, 2.0, 3], [4, 5, 6]], requires_grad=True)
-y = torch.tensor([[2.0, 3.0], [4, 5], [6, 7]], requires_grad=False)
+x = torch.tensor([6.0], requires_grad=True)
+y = torch.tensor([2.0], requires_grad=False)
 
 z = x.t()
 print(z.requires_grad)
@@ -17,11 +17,15 @@ x (no parent)      ---- * ---- q (2 parents)
 y (no parent) --
 """
 
+z.retain_grad()
+q.retain_grad()
+q.backward()
+print(q)
+print(q.grad)
+print("=======")
+print(y.grad)
+print(x.grad)
+print(z.grad)
 import pdb
 
 pdb.set_trace()
-
-print(x.parents)
-print(z.parents)
-print(y.parents)
-print(q.children)

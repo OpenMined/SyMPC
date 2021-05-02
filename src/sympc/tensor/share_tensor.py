@@ -72,6 +72,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         "grad_fn",
         "ctx",
         "parents",
+        "nr_out_edges",
     }
 
     AUTOGRAD_IS_ON: bool = True
@@ -123,10 +124,13 @@ class ShareTensor(metaclass=SyMPCTensor):
             self.tensor = self._encode(data).type(tensor_type)
 
         self.grad_fn = None
-        self.grad = 0
+        self.grad = None
+
+        self.parents = []
+        self.nr_out_edges = 0
+
         self.ctx = {}
         self.requires_grad = requires_grad
-        self.parents = []
 
     def _encode(self, data):
         return self.fp_encoder.encode(data)
@@ -325,9 +329,44 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         return object.__getattribute__(self, attr_name)
 
-    def backward(self) -> Any:
-        # TODO: implement this
-        pass
+    def backward(self, grad_input=None) -> Any:
+        if not self.requires_grad:
+            return
+
+        ShareTensor.AUTOGRAD_IS_ON = False
+
+        if grad_input is None:
+            grad_input = ShareTensor(torch.ones_like(self.tensor), session=self.session)
+
+        if self.grad is None:
+            self.grad = grad_input
+        else:
+            self.grad = self.grad + grad_input
+
+        if len(self.parents) == 0:
+            print(
+                f"We can not propagate from this node {self} because it does not have parents"
+            )
+            return
+
+        self.nr_out_edges -= 1
+        if self.nr_out_edges > 0:
+            # For the moment we presume all parents are differentiable
+            print("We will visit this node when all the parents returned the gradients")
+            return
+
+        if self.grad_fn is None:
+            raise ValueError(f"Do not know how to propagate {self}")
+
+        grad = self.grad_fn.backward(self.ctx, self.grad)
+        if not isinstance(grad, (list, tuple)):
+            grad = (grad,)
+
+        for idx, parent in enumerate(self.parents):
+            print(parent)
+            parent.backward(grad_input=grad[idx])
+
+        ShareTensor.AUTOGRAD_IS_ON = True
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
         """Greater than operator.
