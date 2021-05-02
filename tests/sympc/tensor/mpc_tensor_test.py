@@ -12,7 +12,7 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 
 
-def test_setupmpc_nocall_exception(get_clients) -> None:
+def test_mpc_tensor_exception(get_clients) -> None:
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
 
