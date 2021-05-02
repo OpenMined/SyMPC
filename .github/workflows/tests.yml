@@ -73,11 +73,6 @@ jobs:
         run: |
           bandit -r src
 
-      - name: Run darglint - Ignore Errors
-        continue-on-error: true
-        run: |
-          darglint src tests
-
       - name: Run tests
         run: |
           pytest tests/ --deselect=tests/notebooks -n auto

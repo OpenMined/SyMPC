@@ -65,4 +65,5 @@ repos:
       - id: autoflake
         args:
           - --in-place
+          - --recursive
           - --remove-unused-variables
