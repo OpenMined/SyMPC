@@ -15,13 +15,19 @@ bob_client = bob.get_client()
 session = Session(parties=[alice_client, bob_client])
 SessionManager.setup_mpc(session)
 
-# x = MPCTensor(secret=torch.Tensor([1, 2, 3]), requires_grad=True, session=session)
+x = MPCTensor(secret=torch.Tensor([1, 2, 3]), requires_grad=True, session=session)
+y = MPCTensor(secret=torch.Tensor([2.0]), requires_grad=False, session=session)
+
+z = torch.tensor([1, 2, 3]) * x
+z.backward()
+
 # print(x)
 
 
+'''
 x = ShareTensor(data=torch.Tensor([6.0]), requires_grad=True)
-y = ShareTensor(data=torch.Tensor([2.0]), requires_grad=False)
 
+y = ShareTensor(data=torch.Tensor([2.0]), requires_grad=False)
 z = x.t()
 q = z * y
 
@@ -45,6 +51,7 @@ print(q.grad.decode())
 print(x.grad.decode())
 print(z.grad.decode())
 print(y.grad.decode())
+'''
 
 import pdb
 

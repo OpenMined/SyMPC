@@ -19,7 +19,7 @@ y (no parent) --
 
 z.retain_grad()
 q.retain_grad()
-q.backward()
+z.backward()
 print(q)
 print(q.grad)
 print("=======")

@@ -10,6 +10,7 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
+import functools
 
 # third party
 from syft.core.node.common.client import Client
@@ -23,10 +24,24 @@ from sympc.utils import islocal
 from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
+from sympc.tensor.grads import forward
+from sympc.tensor.grads import GRAD_FUNCS
+
+
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
-METHODS_FORWARD_ALL_SHARES = {"t", "forward", "backward"}
+METHODS_FORWARD_ALL_SHARES = {"t", "unsqueeze", "view"}
+
+
+def wrapper_getattribute(func):
+    def wrapper_func(*args, **kwargs):
+        _self, *new_args = args
+        f = getattr(_self, func.__name__)
+        res = f(*new_args, **kwargs)
+        return res
+
+    return wrapper_func
 
 
 class MPCTensor(metaclass=SyMPCTensor):
@@ -53,10 +68,26 @@ class MPCTensor(metaclass=SyMPCTensor):
         shape (Union[torch.size, tuple]): the shape for the shared secret
     """
 
-    __slots__ = {"share_ptrs", "session", "shape", "requires_grad"}
+    __slots__ = {
+        "share_ptrs",
+        "session",
+        "shape",
+        "grad",
+        # We need this because only floating type tensor can have requires_grad
+        # If not, we could use the self.tensor requires_grad
+        # Use for training
+        "requires_grad",
+        "grad",
+        "grad_fn",
+        "ctx",
+        "parents",
+        "nr_out_edges",
+    }
+
+    AUTOGRAD_IS_ON: bool = True
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t"}
+    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view"}
     PROPERTIES_FORWARD = {"T"}
 
     def __init__(
@@ -101,7 +132,6 @@ class MPCTensor(metaclass=SyMPCTensor):
             raise ValueError("setup_mpc was not called on the session")
 
         self.shape = None
-        self.requires_grad = requires_grad
 
         if secret is not None:
             """In the case the secret is hold by a remote party then we use the
@@ -114,13 +144,11 @@ class MPCTensor(metaclass=SyMPCTensor):
             if is_remote_secret:
                 # If the secret is remote we use PRZS (Pseudo-Random-Zero Shares) and the
                 # party that holds the secret will add it to its share
-                self.share_ptrs = MPCTensor.generate_przs(
-                    shape=self.shape, session=self.session
-                )
-                for i, share in enumerate(self.share_ptrs):
+                shares = MPCTensor.generate_przs(shape=self.shape, session=self.session)
+                for i, share in enumerate(shares):
                     if share.client == secret.client:  # type: ignore
-                        self.share_ptrs[i] = self.share_ptrs[i] + secret
-                        return
+                        shares[i] = shares[i] + secret
+                        break
             else:
                 tensor_type = self.session.tensor_type
                 shares = MPCTensor.generate_shares(
@@ -129,16 +157,22 @@ class MPCTensor(metaclass=SyMPCTensor):
                     tensor_type=tensor_type,
                 )
 
-        for share in shares:
-            share.requires_grad = self.requires_grad
-
         if not ispointer(shares[0]):
             shares = MPCTensor.distribute_shares(shares, self.session.parties)
+
+        self.share_ptrs = shares
 
         if shape is not None:
             self.shape = shape
 
-        self.share_ptrs = shares
+        # For training
+        self.requires_grad = requires_grad
+        self.nr_out_edges = 0
+        self.ctx = {}
+
+        self.grad = None
+        self.grad_fn = None
+        self.parents: List["MPCTensor"] = []
 
     @staticmethod
     def distribute_shares(shares: List[ShareTensor], parties: List[Client]):
@@ -667,8 +701,8 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
-        if op_str in {"mul", "matmul", "conv2d"} and not (
-            is_private and self.session.nr_parties == 2
+        if op_str in {"mul", "matmul", "conv2d"} and (
+            not is_private or self.session.nr_parties > 2
         ):
             # For private op we do the division in the mul_parties function from spdz
             scale = (
@@ -687,9 +721,9 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         type_name = type(self).__name__
         out = f"[{type_name}]\nShape: {self.shape}"
-
-        if self.requires_grad:
-            out = f"{out}\nrequires_grad: True"
+        out = f"{out}\nRequires Grad: {self.requires_grad}"
+        if self.grad_fn:
+            out = f"{out}\nGradFunc: {self.grad_fn}"
 
         for share in self.share_ptrs:
             out = f"{out}\n\t| {share.client} -> {share.__name__}"
@@ -703,6 +737,55 @@ class MPCTensor(metaclass=SyMPCTensor):
             str: Representation.
         """
         return self.__str__()
+
+    def __getattribute__(self, attr_name: str) -> Any:
+        # Take the attribute and check if we need to assign a gradient function
+        # Implementation similar to CrypTen
+        grad_fn = GRAD_FUNCS.get(attr_name, None)
+        if grad_fn and MPCTensor.AUTOGRAD_IS_ON:
+            requires_grad = object.__getattribute__(self, "requires_grad")
+            if requires_grad:
+                return functools.partial(forward, self, grad_fn)
+
+        return object.__getattribute__(self, attr_name)
+
+    def backward(self, gradient=None) -> None:
+        if not self.requires_grad:
+            return
+
+        MPCTensor.AUTOGRAD_IS_ON = False
+
+        if gradient is None:
+            gradient = MPCTensor(secret=torch.ones(self.shape), session=self.session)
+
+        if self.grad is None:
+            self.grad = gradient
+        else:
+            self.grad = self.grad + gradient
+
+        if len(self.parents) == 0:
+            print(
+                f"We can not propagate from this node {self} because it does not have parents"
+            )
+            return
+
+        self.nr_out_edges -= 1
+        if self.nr_out_edges > 0:
+            # For the moment we presume all parents are differentiable
+            print("We will visit this node when all the parents returned the gradients")
+            return
+
+        if self.grad_fn is None:
+            raise ValueError(f"Do not know how to propagate {self}")
+
+        grad = self.grad_fn.backward(self.ctx, self.grad)
+        if not isinstance(grad, (list, tuple)):
+            grad = (grad,)
+
+        for idx, parent in enumerate(self.parents):
+            parent.backward(gradient=grad[idx])
+
+        MPCTensor.AUTOGRAD_IS_ON = True
 
     @staticmethod
     def __check_or_convert(value, session) -> "MPCTensor":
@@ -777,8 +860,13 @@ class MPCTensor(metaclass=SyMPCTensor):
                 new_share = method(*args, **kwargs)
                 shares.append(new_share)
 
-            dummy_res = getattr(torch.empty(_self.shape), method_name)(*args, **kwargs)
-            new_shape = dummy_res.shape
+            if method_name in {"backward"}:
+                new_shape = _self.shape
+            else:
+                dummy_res = getattr(torch.empty(_self.shape), method_name)(
+                    *args, **kwargs
+                )
+                new_shape = dummy_res.shape
             res = MPCTensor(shares=shares, shape=new_shape, session=_self.session)
             return res
 
@@ -794,42 +882,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         else:
             res = method_share
 
-        return res
-
-    def unsqueeze(self, *args, **kwargs) -> "MPCTensor":
-        """Tensor with a dimension of size one inserted at the specified position.
-
-        Args:
-            *args: Arguments to tensor.unsqueeze
-            **kwargs: Keyword arguments passed to tensor.unsqueeze
-
-        Returns:
-            MPCTensor: Tensor unsqueezed.
-
-        References:
-            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
-        """
-        shares = [share.unsqueeze(*args, **kwargs) for share in self.share_ptrs]
-        res = MPCTensor(shares=shares, session=self.session)
-        res.shape = torch.empty(self.shape).unsqueeze(*args, **kwargs).shape
-        return res
-
-    def view(self, *args, **kwargs) -> "MPCTensor":
-        """Tensor with the same data but new dimensions/view.
-
-        Args:
-            *args: Arguments to tensor.view.
-            **kwargs: Keyword arguments passed to tensor.view.
-
-        Returns:
-            MPCTensor: Tensor with new view.
-
-        References:
-            https://pytorch.org/docs/stable/generated/torch.unsqueeze.html
-        """
-        shares = [share.view(*args, **kwargs) for share in self.share_ptrs]
-        res = MPCTensor(shares=shares, session=self.session)
-        res.shape = torch.empty(self.shape).view(*args, **kwargs).shape
         return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":
@@ -920,22 +972,22 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
-    __add__ = add
-    __radd__ = add
-    __sub__ = sub
-    __rsub__ = rsub
-    __mul__ = mul
-    __rmul__ = mul
-    __matmul__ = matmul
-    __rmatmul__ = rmatmul
-    __truediv__ = div
-    __pow__ = pow
-    __le__ = le
-    __ge__ = ge
-    __lt__ = lt
-    __gt__ = gt
-    __eq__ = eq
-    __ne__ = ne
+    __add__ = wrapper_getattribute(add)
+    __radd__ = wrapper_getattribute(add)
+    __sub__ = wrapper_getattribute(sub)
+    __rsub__ = wrapper_getattribute(rsub)
+    __mul__ = wrapper_getattribute(mul)
+    __rmul__ = wrapper_getattribute(mul)
+    __matmul__ = wrapper_getattribute(matmul)
+    __rmatmul__ = wrapper_getattribute(rmatmul)
+    __truediv__ = wrapper_getattribute(div)
+    __pow__ = wrapper_getattribute(pow)
+    __le__ = wrapper_getattribute(le)
+    __ge__ = wrapper_getattribute(ge)
+    __lt__ = wrapper_getattribute(lt)
+    __gt__ = wrapper_getattribute(gt)
+    __eq__ = wrapper_getattribute(eq)
+    __ne__ = wrapper_getattribute(ne)
 
 
 PARTIES_TO_SESSION: Dict[Any, Session] = {}

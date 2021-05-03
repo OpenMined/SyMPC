@@ -30,6 +30,7 @@ class GradT(GradFunc):
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+        print(grad)
         return grad.t()
 
 
@@ -51,27 +52,23 @@ class GradMul(GradFunc):
         return grad * y, grad * x
 
 
-def forward(_self, grad_fn, *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+def forward(_self, grad_fn, *args: List[Any], **kwargs: Dict[str, Any]) -> "MPCTensor":
     # TODO: Fix this import
-    from ..share_tensor import ShareTensor
+    from ..mpc_tensor import MPCTensor
 
-    share_tensor_params = [_self] + [
-        arg for arg in args if isinstance(arg, ShareTensor)
-    ]
-    requires_grad = any(
-        share_tensor.requires_grad for share_tensor in share_tensor_params
-    )
+    mpc_tensor_params = [_self] + [arg for arg in args if isinstance(arg, MPCTensor)]
+    requires_grad = any(mpc_tensor.requires_grad for mpc_tensor in mpc_tensor_params)
 
-    ShareTensor.AUTOGRAD_IS_ON = False
+    MPCTensor.AUTOGRAD_IS_ON = False
     res = grad_fn.forward(_self.ctx, _self, *args, **kwargs)
-    ShareTensor.AUTOGRAD_IS_ON = True
+    MPCTensor.AUTOGRAD_IS_ON = True
 
     res.requires_grad = requires_grad
     res.grad_fn = grad_fn
     res.ctx = _self.ctx.copy()
-    res.parents = share_tensor_params
-    for share in share_tensor_params:
-        share.nr_out_edges += 1
+    res.parents = mpc_tensor_params
+    for mpc_tensor in mpc_tensor_params:
+        mpc_tensor.nr_out_edges += 1
     return res
 
 
