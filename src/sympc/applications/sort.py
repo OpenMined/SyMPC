@@ -1,4 +1,4 @@
-def sort_mpctensor_list(input_list,ascending=True):
+def sort_mpctensor_list(input_list, ascending=True):
     if len(input_list) > 1:
         mid = len(input_list) // 2
         left = input_list[:mid]
@@ -11,16 +11,16 @@ def sort_mpctensor_list(input_list,ascending=True):
         # Two iterators for traversing the two halves
         i = 0
         j = 0
-        
+
         # Iterator for the main list
         k = 0
-        
+
         while i < len(left) and j < len(right):
-            if (left[i]<right[j]).reconstruct():
-              # The value from the left half has been used
-              input_list[k] = left[i]
-              # Move the iterator forward
-              i += 1
+            if (left[i] < right[j]).reconstruct():
+                # The value from the left half has been used
+                input_list[k] = left[i]
+                # Move the iterator forward
+                i += 1
             else:
                 input_list[k] = right[j]
                 j += 1
@@ -34,13 +34,12 @@ def sort_mpctensor_list(input_list,ascending=True):
             k += 1
 
         while j < len(right):
-            input_list[k]=right[j]
+            input_list[k] = right[j]
             j += 1
             k += 1
-            
-    if(not ascending):
-        
-        return input_list[::-1]
-            
-    return input_list
 
+    if not ascending:
+
+        return input_list[::-1]
+
+    return input_list
