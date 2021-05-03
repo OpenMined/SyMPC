@@ -30,8 +30,61 @@ class GradT(GradFunc):
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: Any) -> Any:
-        print(grad)
         return grad.t()
+
+
+@final
+class GradAdd(GradFunc):
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: Any, y: Any) -> Any:
+        assert x.shape == y.shape
+
+        return x + y
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+        return grad, grad.clone()
+
+
+@final
+class GradSum(GradFunc):
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: Any) -> Any:
+        ctx["x_shape"] = x.shape
+        total_sum = x.sum()
+        return total_sum
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+        x_shape = ctx["x_shape"]
+        return grad * torch.ones(shape=x_shape)
+
+
+@final
+class GradSigmoid(GradFunc):
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: Any) -> Any:
+
+        grad = x.sigmoid()
+        ctx["probs"] = grad
+        return grad
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+        probs = ctx["probs"]
+        return grad * probs * (1 - probs)
+
+
+@final
+class GradSub(GradFunc):
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: Any, y: Any) -> Any:
+        assert x.shape == b.shape
+        return x - y
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+        return grad, grad.clone()
 
 
 @final
@@ -72,4 +125,11 @@ def forward(_self, grad_fn, *args: List[Any], **kwargs: Dict[str, Any]) -> "MPCT
     return res
 
 
-GRAD_FUNCS: Final[Dict[str, GradFunc]] = {"t": GradT, "mul": GradMul}
+GRAD_FUNCS: Final[Dict[str, GradFunc]] = {
+    "t": GradT,
+    "mul": GradMul,
+    "sub": GradSub,
+    "add": GradAdd,
+    "sum": GradSum,
+    "sigmoid": GradSigmoid,
+}

@@ -6,10 +6,9 @@ import torch
 from sympc.approximations.exponential import exp
 from sympc.approximations.reci import reciprocal
 from sympc.approximations.utils import sign
-from sympc.tensor.mpc_tensor import MPCTensor
 
 
-def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
+def sigmoid(tensor: "MPCTensor", method: str = "exp") -> "MPCTensor":
     """Approximates the sigmoid function using a given method.
 
     Args:

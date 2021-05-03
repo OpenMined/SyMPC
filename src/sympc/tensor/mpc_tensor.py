@@ -17,6 +17,8 @@ from syft.core.node.common.client import Client
 import torch
 import torchcsprng as csprng  # type: ignore
 
+from sympc.approximations import sigmoid
+
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
@@ -31,7 +33,7 @@ from sympc.tensor.grads import GRAD_FUNCS
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
-METHODS_FORWARD_ALL_SHARES = {"t", "unsqueeze", "view"}
+METHODS_FORWARD_ALL_SHARES = {"t", "unsqueeze", "view", "sum", "clone"}
 
 
 def wrapper_getattribute(func):
@@ -87,7 +89,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     AUTOGRAD_IS_ON: bool = True
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view"}
+    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
     PROPERTIES_FORWARD = {"T"}
 
     def __init__(
@@ -549,7 +551,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         result = spdz.public_divide(self, y)
         return result
 
-    def pow(self, power: int) -> "MPCTensor":
+    def mpc_pow(self, power: int) -> "MPCTensor":
         """Compute integer power of a number by recursion using mul.
 
         - Divide power by 2 and multiply base to itself (if the power is even)
@@ -860,9 +862,6 @@ class MPCTensor(metaclass=SyMPCTensor):
                 new_share = method(*args, **kwargs)
                 shares.append(new_share)
 
-            if method_name in {"backward"}:
-                new_shape = _self.shape
-            else:
                 dummy_res = getattr(torch.empty(_self.shape), method_name)(
                     *args, **kwargs
                 )
@@ -972,6 +971,9 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
+    def sigmoid(self) -> "MPCTensor":
+        return sigmoid(self)
+
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
     __sub__ = wrapper_getattribute(sub)
@@ -981,7 +983,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __matmul__ = wrapper_getattribute(matmul)
     __rmatmul__ = wrapper_getattribute(rmatmul)
     __truediv__ = wrapper_getattribute(div)
-    __pow__ = wrapper_getattribute(pow)
+    __pow__ = wrapper_getattribute(mpc_pow)
     __le__ = wrapper_getattribute(le)
     __ge__ = wrapper_getattribute(ge)
     __lt__ = wrapper_getattribute(lt)

@@ -19,7 +19,7 @@ from sympc.session import Session
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
-METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 
 
 class ShareTensor(metaclass=SyMPCTensor):
@@ -55,7 +55,7 @@ class ShareTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze", "t", "view"}
+    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze", "t", "view", "sum", "clone"}
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
     def __init__(
@@ -65,7 +65,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         encoder_base: int = 2,
         encoder_precision: int = 16,
         ring_size: int = 2 ** 64,
-        requires_grad: bool = False,
     ) -> None:
         """Initialize ShareTensor.
 
@@ -99,15 +98,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self._encode(data).type(tensor_type)
-
-    @property
-    def requires_grad(self) -> bool:
-        return self._requires_grad
-
-    @requires_grad.setter
-    def requires_grad(self, value: bool) -> None:
-        print(value)
-        self._requires_grad = value
 
     def _encode(self, data):
         return self.fp_encoder.encode(data)
