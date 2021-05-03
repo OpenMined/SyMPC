@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620034473408,
+  "lastUpdate": 1620067332447,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -124,6 +124,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.1042745907220382",
             "extra": "mean: 3.8126496410000015 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16245436+jmaunon@users.noreply.github.com",
+            "name": "jmaunon",
+            "username": "jmaunon"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c47d1cb4ace446de0a295e1b8ddab1041f9d7c91",
+          "message": "Add auto-flake (#139)\n\n* Add auto-flake\r\n\r\n* Add --recursive and update GA test\r\n\r\n* Add foo file that will be deleted after testing\r\n\r\n* Delete foo.py\r\n\r\n* Add all-unused-imports\r\n\r\nCo-authored-by: George-Cristian Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2021-05-03T19:39:42+01:00",
+          "tree_id": "4365619d6123f75727e1b3db503427c0edd4d833",
+          "url": "https://github.com/OpenMined/SyMPC/commit/c47d1cb4ace446de0a295e1b8ddab1041f9d7c91"
+        },
+        "date": 1620067331833,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.24349522707325272,
+            "unit": "iter/sec",
+            "range": "stddev: 0.10109338241279515",
+            "extra": "mean: 4.106856680599992 sec\nrounds: 5"
           }
         ]
       }
