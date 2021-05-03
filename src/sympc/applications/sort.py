@@ -1,3 +1,5 @@
+"""Applications that make use of primitive MPC operations."""
+
 # stdlib
 from typing import List
 
@@ -16,7 +18,6 @@ def sort_mpctensor_list(
     Returns:
         List[MPC_tensor]: Sorted list of MPCTensors
     """
-
     if len(input_list) > 1:
         mid = len(input_list) // 2
         left = input_list[:mid]
