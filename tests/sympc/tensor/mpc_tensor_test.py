@@ -22,13 +22,11 @@ def test_setupmpc_nocall_exception(get_clients) -> None:
     with pytest.raises(ValueError):
         MPCTensor(secret=torch.Tensor([1, -2]), session=session)
 
-
 def test_mpc_share_nosession_exception() -> None:
     secret = torch.Tensor([[0.1, -1], [-4, 4]])
 
     with pytest.raises(ValueError):
         secret.share()
-
 
 def test_reconstruct(get_clients) -> None:
     clients = get_clients(2)
@@ -37,11 +35,9 @@ def test_reconstruct(get_clients) -> None:
 
     a_rand = 3
     a = ShareTensor(data=a_rand, encoder_precision=0)
-    a_shares = MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
+    MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
 
-    a_shares_copy = MPCTensor.generate_shares(
-        secret=a_rand, nr_parties=2, tensor_type=torch.long
-    )
+    MPCTensor.generate_shares(secret=a_rand, nr_parties=2, tensor_type=torch.long)
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)
@@ -61,7 +57,7 @@ def test_op_mpc_different_sessions(get_clients) -> None:
     y = MPCTensor(secret=torch.Tensor([1, -2]), session=session_two)
 
     with pytest.raises(ValueError):
-        z = x + y
+        x + y
 
 
 def test_remote_mpc_no_shape(get_clients) -> None:
@@ -72,7 +68,7 @@ def test_remote_mpc_no_shape(get_clients) -> None:
     x_remote = alice_client.torch.Tensor([1, -2, 0.3])
 
     with pytest.raises(ValueError):
-        x = MPCTensor(secret=x_remote, session=session)
+        MPCTensor(secret=x_remote, session=session)
 
 
 def test_remote_mpc_with_shape(get_clients) -> None:
@@ -392,13 +388,13 @@ def test_share_get_method_parties_exception(get_clients) -> None:
     clients = get_clients(4)
 
     x_secret = torch.Tensor([1.0, 2.0, 5.0])
-    expected_res = x_secret * x_secret
+    x_secret * x_secret
 
     mpc_tensor1 = x_secret.share(parties=clients[:2])
     mpc_tensor2 = x_secret.share(parties=clients[2:])
 
     with pytest.raises(ValueError):
-        res = mpc_tensor1 * mpc_tensor2
+        mpc_tensor1 * mpc_tensor2
 
 
 def test_share_get_method_session(get_clients) -> None:
