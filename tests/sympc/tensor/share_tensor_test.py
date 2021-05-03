@@ -90,6 +90,29 @@ def test_reverse_ops_share_tensor_local(op_str, precision, base) -> None:
     assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
+def test_invalid_op_exception() -> None:
+
+    op = getattr(operator, "truediv")
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ShareTensor(data=x, encoder_base=16, encoder_precision=2)
+
+    with pytest.raises(TypeError):
+        op(y, x_share)
+
+
+def test_div_with_float_exception() -> None:
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+
+    x_share = ShareTensor(data=x, encoder_base=16, encoder_precision=2)
+
+    with pytest.raises(ValueError):
+        x_share / 5.3
+
+
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 def test_ops_share_integer_local(op_str, precision, base) -> None:
