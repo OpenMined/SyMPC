@@ -66,4 +66,6 @@ repos:
         args:
           - --in-place
           - --recursive
+          - --remove-all-unused-imports
+          - --ignore-init-module-imports
           - --remove-unused-variables
