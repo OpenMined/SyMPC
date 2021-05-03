@@ -1,4 +1,22 @@
-def sort_mpctensor_list(input_list, ascending=True):
+# stdlib
+from typing import List
+
+from sympc.tensor import MPCTensor
+
+
+def sort_mpctensor_list(
+    input_list: List[MPCTensor], ascending: bool = True
+) -> List[MPCTensor]:
+    """Takes a list of MPCTensors and sorts them in ascending/desending order.
+
+    Args:
+        input_list (List[MPCTensor]): Takes a list of MPCTensor
+        ascending (bool): If list has to sorted in ascending/descending order
+
+    Returns:
+        List[MPC_tensor]: Sorted list of MPCTensors
+    """
+
     if len(input_list) > 1:
         mid = len(input_list) // 2
         left = input_list[:mid]
