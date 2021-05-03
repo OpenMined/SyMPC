@@ -200,7 +200,7 @@ def test_ops_divfloat_exception(get_clients) -> None:
     y = MPCTensor(secret=y_secret, session=session)
 
     with pytest.raises(NotImplementedError):
-        z = x / y
+        x / y
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])

@@ -29,11 +29,11 @@ def test_exception_value_error(get_clients) -> None:
     clients = get_clients(2)
 
     x_secret = torch.Tensor([0.0, 1, -2, 3, -4])
-    x_secret_tanh = torch.tanh(x_secret)
+    torch.tanh(x_secret)
 
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
     x = MPCTensor(secret=x_secret, session=session)
 
     with pytest.raises(ValueError):
-        x_tanh = tanh(x, method="exp")
+        tanh(x, method="exp")

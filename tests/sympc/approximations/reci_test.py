@@ -33,4 +33,4 @@ def test_exception_value_error(get_clients) -> None:
     x = MPCTensor(secret=x_secret, session=session_one)
 
     with pytest.raises(ValueError):
-        x_reciprocal = reciprocal(x, method="exp")
+        reciprocal(x, method="exp")

@@ -85,7 +85,7 @@ def test_exception_conv2d_kernel_mismatch(get_clients):
     SessionManager.setup_mpc(session)
 
     with pytest.raises(ValueError):
-        mpc_model = model.share(session=session)
+        model.share(session=session)
 
 
 def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
