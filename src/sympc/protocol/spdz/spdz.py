@@ -62,7 +62,7 @@ def mul_master(
 
     try:
         mask = parallel_execution(spdz_mask, session.parties)(args)
-    except:
+    except (KeyError, ValueError):
         CryptoPrimitiveProvider.generate_primitives(
             f"beaver_{op_str}",
             sessions=session.session_ptrs,
