@@ -13,11 +13,11 @@ def test_mpc_sort(get_clients):
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    x = MPCTensor(secret=1, session=session)
-    y = MPCTensor(secret=3, session=session)
-    z = MPCTensor(secret=6, session=session)
-    w = MPCTensor(secret=18, session=session)
-    v = MPCTensor(secret=5, session=session)
+    x = MPCTensor(secret=torch.tensor([1]), session=session)
+    y = MPCTensor(secret=torch.tensor([3]), session=session)
+    z = MPCTensor(secret=torch.tensor([6]), session=session)
+    w = MPCTensor(secret=torch.tensor([18]), session=session)
+    v = MPCTensor(secret=torch.tensor([5]), session=session)
 
     mpctensor_list = [x, y, z, w, v]
 
@@ -50,9 +50,9 @@ def test_sort_invalidim_exception(get_clients):
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    x = MPCTensor(secret=1, session=session)
-    y = MPCTensor(secret=3, session=session)
-    z = MPCTensor(secret=[6, 2], session=session)
+    x = MPCTensor(secret=torch.tensor([1]), session=session)
+    y = MPCTensor(secret=torch.tensor([3]), session=session)
+    z = MPCTensor(secret=torch.tensor([6, 2]), session=session)
 
     mpctensor_list = [x, y, z]
 
