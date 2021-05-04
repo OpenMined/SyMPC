@@ -3,7 +3,8 @@
 # stdlib
 from typing import List
 
-#third-party 
+# third party
+# third-party
 import torch
 
 from sympc.tensor import MPCTensor
@@ -19,12 +20,14 @@ def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]
     Returns:
         List[MPC_tensor]: Sorted list of MPCTensors
     """
-    
-    #Checks if the list of MPCTensors are of length 1
-    if(not all((item.shape==torch.Size([1])) for item in input_list)):
-        
-        raise ValueError("Invalid dimension of MPCTensor. All MPCTensors should have an underlying 1-dimensional secret.")
-    
+
+    # Checks if the list of MPCTensors are of length 1
+    if not all((item.shape == torch.Size([1])) for item in input_list):
+
+        raise ValueError(
+            "Invalid dimension. All MPCTensors should have an 1-dimensional secret."
+        )
+
     if len(input_list) > 1:
         mid = len(input_list) // 2
         left = input_list[:mid]
