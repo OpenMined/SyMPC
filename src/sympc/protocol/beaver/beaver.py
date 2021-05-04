@@ -153,8 +153,8 @@ def mul_store_add(
 @register_primitive_store_get("beaver_mul")
 def mul_store_get(
     store: Dict[Tuple[int, int], List[Any]],
-    a_shape: Tuple[int],
-    b_shape: Tuple[int],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
     remove: bool = True,
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
@@ -178,7 +178,7 @@ def mul_store_get(
     try:
         primitives = store[config_key]
     except Exception:
-        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
         primitive = primitives[0]
@@ -237,8 +237,8 @@ def matmul_store_add(
 @register_primitive_store_get("beaver_matmul")
 def matmul_store_get(
     store: Dict[Tuple[int, int], List[Any]],
-    a_shape: Tuple[int],
-    b_shape: Tuple[int],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
     remove: bool = True,
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
@@ -262,7 +262,7 @@ def matmul_store_get(
     try:
         primitives = store[config_key]
     except Exception:
-        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
         primitive = primitives[0]
@@ -320,8 +320,8 @@ def conv2d_store_add(
 @register_primitive_store_get("beaver_conv2d")
 def conv2d_store_get(
     store: Dict[Tuple[int, int], List[Any]],
-    a_shape: Tuple[int],
-    b_shape: Tuple[int],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
     remove: bool = True,
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
@@ -345,7 +345,7 @@ def conv2d_store_get(
     try:
         primitives = store[config_key]
     except Exception:
-        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
         primitive = primitives[0]
