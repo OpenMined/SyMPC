@@ -1,7 +1,7 @@
 # third party
 import torch
 
-from sympc.applications.sort import sort_mpctensor_list
+from sympc.applications.sort import sort
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -20,8 +20,8 @@ def test_mpc_sort(get_clients):
 
     list = [x, y, z, w, v]
 
-    ascending_sorted = sort_mpctensor_list(list)
-    descending_sorted = sort_mpctensor_list(list, ascending=False)
+    ascending_sorted = sort(list)
+    descending_sorted = sort(list, ascending=False)
 
     expected_list = [
         torch.tensor([1.0]),
@@ -38,9 +38,6 @@ def test_mpc_sort(get_clients):
     sorted_list_2 = []
     for i in descending_sorted:
         sorted_list_2.append(i.reconstruct())
-
-    print(expected_list[::-1])
-    print(sorted_list_2)
 
     assert sorted_list_1 == expected_list
     assert sorted_list_2 == expected_list[::-1]

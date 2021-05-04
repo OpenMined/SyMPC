@@ -6,9 +6,7 @@ from typing import List
 from sympc.tensor import MPCTensor
 
 
-def sort_mpctensor_list(
-    input_list: List[MPCTensor], ascending: bool = True
-) -> List[MPCTensor]:
+def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]:
     """Takes a list of MPCTensors and sorts them in ascending/desending order.
 
     Args:
@@ -24,8 +22,8 @@ def sort_mpctensor_list(
         right = input_list[mid:]
 
         # Recursive call on each half
-        sort_mpctensor_list(left)
-        sort_mpctensor_list(right)
+        sort(left)
+        sort(right)
 
         # Two iterators for traversing the two halves
         i = 0
