@@ -18,6 +18,7 @@ from typing import Tuple
 import torch
 import torchcsprng as csprng  # type: ignore
 
+from sympc.exceptions import EmptyPrimitiveStore
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
@@ -170,15 +171,19 @@ def mul_store_get(
         Any: The primitives required for the "mul" operation.
 
     Raises:
-        ValueError: If no primitive in the store for config_key.
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
     config_key = f"beaver_mul_{tuple(a_shape)}_{tuple(b_shape)}"
-    primitives = store[config_key]
+
+    try:
+        primitives = store[config_key]
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     try:
         primitive = primitives[0]
     except Exception:
-        raise ValueError("No primitive in the store for {config_key}")
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     if remove:
         del primitives[0]
@@ -250,15 +255,19 @@ def matmul_store_get(
         Any: The primitives required for the "matmul" operation.
 
     Raises:
-        ValueError: If no primitive in the store for config_key.
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
     config_key = f"beaver_matmul_{tuple(a_shape)}_{tuple(b_shape)}"
-    primitives = store[config_key]
+
+    try:
+        primitives = store[config_key]
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     try:
         primitive = primitives[0]
     except Exception:
-        raise ValueError("No primitive in the store for {config_key}")
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     if remove:
         del primitives[0]
@@ -329,15 +338,19 @@ def conv2d_store_get(
         Any: The primitives required for the "conv2d" operation.
 
     Raises:
-        ValueError: If no primitive in the store for config_key.
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
     config_key = f"beaver_conv2d_{tuple(a_shape)}_{tuple(b_shape)}"
-    primitives = store[config_key]
+
+    try:
+        primitives = store[config_key]
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     try:
         primitive = primitives[0]
     except Exception:
-        raise ValueError("No primitive in the store for {config_key}")
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     if remove:
         del primitives[0]

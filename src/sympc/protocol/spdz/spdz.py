@@ -17,6 +17,7 @@ from typing import Union
 # third party
 import torch
 
+from sympc.exceptions import EmptyPrimitiveStore
 from sympc.session import Session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
@@ -62,7 +63,7 @@ def mul_master(
 
     try:
         mask = parallel_execution(spdz_mask, session.parties)(args)
-    except (KeyError, ValueError):
+    except EmptyPrimitiveStore:
         CryptoPrimitiveProvider.generate_primitives(
             f"beaver_{op_str}",
             sessions=session.session_ptrs,
