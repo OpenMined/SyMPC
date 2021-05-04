@@ -1,114 +1,295 @@
-from typing import final
-from typing import Any
-from typing import List
-from typing import Final
-from typing import Dict
+"""Definitions for the gradient functions and the forward pass logic."""
 
+# stdlib
 from abc import ABC
 from abc import abstractmethod
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Tuple
+
+# third party
+import torch
+
+from sympc.tensor import MPCTensor
 
 
 class GradFunc(ABC):
+    """Abstract class that should be implemented by the Gradient Functions."""
+
     @staticmethod
     @abstractmethod
-    def forward(ctx: Dict[str, Any], *args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+    def forward(
+        ctx: Dict[str, Any], *args: List[Any], **kwargs: Dict[str, Any]
+    ) -> None:
+        """Perform the feedforward and compute the result for the implemented operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            *args (List[Any]): Arguments for the operation
+            **kwargs (Dict[str, Any]): Named arguments for the operation
+
+        Raises:
+            NotImplementedError: The operation should be implemented
+        """
         raise NotImplementedError("Forward method not implemented!")
 
     @staticmethod
     @abstractmethod
     def backward(
         ctx: Dict[str, Any], *args: List[Any], **kwargs: Dict[str, Any]
-    ) -> Any:
+    ) -> None:
+        """Perform the backward pass and compute the gradient for the implemented operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            *args (List[Any]): Arguments for the operation
+            **kwargs (Dict[str, Any]): Named arguments for the operation
+
+        Raises:
+            NotImplementedError: The operation should be implemented
+        """
         raise NotImplementedError("Backward method not implemented!")
 
 
-@final
 class GradT(GradFunc):
+    """The tranpose gradient function."""
+
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: Any) -> Any:
+    def forward(ctx: Dict[str, Any], x: MPCTensor) -> MPCTensor:
+        """Perform the feedforward and compute the result for the transpose operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): The operand to apply the transpose on
+
+        Returns:
+            x.t() (MPCTensor): The result after applying transpose
+        """
         return x.t()
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
-        return grad.t()
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the transpose operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            res_grad (MPCTensor): The gradients passed to the parent node
+        """
+        res_grad = grad.t()
+        return res_grad
 
 
-@final
 class GradAdd(GradFunc):
+    """The addition gradient function."""
+
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: Any, y: Any) -> Any:
-        assert x.shape == y.shape
+    def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
+        """Perform the feedforward and compute the result for the addition operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): 1st operand for the addition operation
+            y (Any): 2nd operand for the addition operation
+
+        Returns:
+            x + y (MPCTensor): The result of the addition
+
+        Raises:
+            ValueError: The shapes for the operands are not the same
+        """
+        # TODO: Fix for different shapes
+        if x.shape != y.shape:
+            raise ValueError("X and Y should have the same shape")
 
         return x + y
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
-        return grad, grad.clone()
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
+        """Perform the backward pass for the addition operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the parent node
+        """
+        x_grad = grad
+        y_grad = grad.clone()
+        return x_grad, y_grad
 
 
-@final
 class GradSum(GradFunc):
+    """The summation gradient function."""
+
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: Any) -> Any:
+    def forward(ctx: Dict[str, Any], x: MPCTensor) -> MPCTensor:
+        """Perform the feedforward and compute the result for the summation operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): The operand on which to apply the sum function
+
+        Returns:
+            sum(x) (MPCTensor): The summation of all the elements from the input
+        """
         ctx["x_shape"] = x.shape
         total_sum = x.sum()
         return total_sum
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the summation operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            res_grad (MPCTensor): The gradients passed to the parent node
+        """
         x_shape = ctx["x_shape"]
-        return grad * torch.ones(shape=x_shape)
+        res_grad = grad * torch.ones(shape=x_shape)
+        return res_grad
 
 
-@final
 class GradSigmoid(GradFunc):
-    @staticmethod
-    def forward(ctx: Dict[str, Any], x: Any) -> Any:
+    """The sigmoid gradient function."""
 
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: MPCTensor) -> MPCTensor:
+        """Perform the feedforward and compute the result for the sigmoid operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): The operand on which to apply the sigmoid function
+
+        Returns:
+            sigmoid(x) (MPCTensor): The sigmoid approximation applied on the input
+        """
         grad = x.sigmoid()
         ctx["probs"] = grad
         return grad
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the substraction operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            res_grad (MPCTensor): The gradient passed to the parent node
+        """
         probs = ctx["probs"]
-        return grad * probs * (1 - probs)
+        res_grad = grad * probs * (1 - probs)
+        return res_grad
 
 
-@final
 class GradSub(GradFunc):
+    """The substraction gradient function."""
+
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: Any, y: Any) -> Any:
-        assert x.shape == b.shape
+    def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
+        """Perform the feedforward and compute the result for the substraction operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): 1st operand for the substraction operation
+            y (Any): 2nd operand for the substraction operation
+
+        Returns:
+            x - y (MPCTensor): The result of the substraction
+
+        Raises:
+            ValueError: The shapes for the operands are not the same
+        """
+        # TODO: Fix for different shapes
+        if x.shape != y.shape:
+            raise ValueError("X and Y should have the same shape")
+
         return x - y
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
-        return grad, grad.clone()
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
+        """Perform the backward pass for the substraction  operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
+        """
+        x_grad = grad
+        y_grad = grad.clone()
+        return x_grad, y_grad
 
 
-@final
 class GradMul(GradFunc):
+    """The multiplication gradient function."""
+
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: Any, y: Any) -> Any:
+    def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
+        """Perform the feedforward and compute the result for the multiplication operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): 1st operand for the multiplication operation
+            y (Any): 2nd operand for the multiplication operation
+
+        Returns:
+            x * y (MPCTensor): The result of the multiplication
+
+        Raises:
+            ValueError: The shapes for the operands are not the same
+        """
         # TODO: Tackle the broadcast step
         # Make sure we do not broadcast because we would need to deal with this
         # in the backward
-        assert x.shape == y.shape
+        if x.shape != y.shape:
+            raise ValueError("X and Y should have the same shape")
+
         ctx["x"] = x
         ctx["y"] = y
         return x * y
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: Any) -> Any:
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
+        """Perform the backward pass for the multiplication operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            (y_grad, x_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
+        """
         x, y = ctx["x"], ctx["y"]
-        return grad * y, grad * x
+        x_grad = grad * x
+        y_grad = grad * y
+        return y_grad, x_grad
 
 
-def forward(_self, grad_fn, *args: List[Any], **kwargs: Dict[str, Any]) -> "MPCTensor":
-    # TODO: Fix this import
-    from ..mpc_tensor import MPCTensor
+def forward(
+    _self: MPCTensor, grad_fn: GradFunc, *args: List[Any], **kwargs: Dict[str, Any]
+) -> Any:
+    """Perform the forward pass and construct the computational graph.
 
+    Args:
+        _self (MPCTensor): Perform
+        grad_fn (GradFunc): The gradient function to use
+        *args (List[Any]): Arguments for the gradient function
+        **kwargs (Dict[str, Any]): Named arguments for the gradient function
+
+    Returns:
+        res (MPCTensor): The result of the computation
+    """
     mpc_tensor_params = [_self] + [arg for arg in args if isinstance(arg, MPCTensor)]
     requires_grad = any(mpc_tensor.requires_grad for mpc_tensor in mpc_tensor_params)
 
@@ -125,7 +306,7 @@ def forward(_self, grad_fn, *args: List[Any], **kwargs: Dict[str, Any]) -> "MPCT
     return res
 
 
-GRAD_FUNCS: Final[Dict[str, GradFunc]] = {
+GRAD_FUNCS: Dict[str, GradFunc] = {
     "t": GradT,
     "mul": GradMul,
     "sub": GradSub,

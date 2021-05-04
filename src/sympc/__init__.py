@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
-"""This package represents the MPC component for Syft For the moment it has
-some basic functionality, but more would come in the following weeks."""
+"""This package represents the MPC component for Syft.
+
+For the moment it has some basic functionality, but more would come in the following weeks.
+"""
 
 # third party
 from pkg_resources import DistributionNotFound
@@ -27,6 +29,11 @@ except ImportError as e:
 
 
 def add_methods_tensor_syft() -> None:
+    """Add SyMPC methods (only "share") to the torch.Tensor.
+
+    Raises:
+        ValueError: if torch.Tensor has already the method added.
+    """
     # third party
     import torch
 

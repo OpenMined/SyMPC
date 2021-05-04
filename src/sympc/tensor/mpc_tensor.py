@@ -1,6 +1,7 @@
 """Class used to orchestrate the computation on shared values."""
 
 # stdlib
+import functools
 from functools import lru_cache
 import operator
 from typing import Any
@@ -10,7 +11,6 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 from typing import Union
-import functools
 
 # third party
 from syft.core.node.common.client import Client
@@ -18,7 +18,6 @@ import torch
 import torchcsprng as csprng  # type: ignore
 
 from sympc.approximations import sigmoid
-
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
@@ -26,18 +25,32 @@ from sympc.utils import islocal
 from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
-from sympc.tensor.grads import forward
-from sympc.tensor.grads import GRAD_FUNCS
-
-
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
 METHODS_FORWARD_ALL_SHARES = {"t", "unsqueeze", "view", "sum", "clone"}
 
 
-def wrapper_getattribute(func):
-    def wrapper_func(*args, **kwargs):
+def wrapper_getattribute(func: Callable[..., Any]) -> Callable[..., Any]:
+    """Wrapper to make sure that we call __getattribute__ before anything else.
+
+    Args:
+        func (Callable[Any, Any]): The function to wrap
+
+    Returns:
+        The wrapper for the func
+    """
+
+    def wrapper_func(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        """Use the getattr functionality to get the attribute/method.
+
+        Args:
+            *args (List[Any]): The attributes for the function call.
+            **kwargs (Dict[str, Any]): The named attributes for the function call.
+
+        Returns:
+            The result of applying the function with args and kwargs.
+        """
         _self, *new_args = args
         f = getattr(_self, func.__name__)
         res = f(*new_args, **kwargs)
@@ -117,6 +130,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 to be able to generate random elements in the proper way). Defaults to None
             shares (Optional[List[ShareTensor]]): In case the shares are already at the
                 parties involved in the computation. Defaults to None
+            requires_grad: (bool): Specify if the MPCTensor is required for gradient computation
 
         Raises:
             ValueError: If session is not provided as argument or in the ShareTensor.
@@ -741,17 +755,40 @@ class MPCTensor(metaclass=SyMPCTensor):
         return self.__str__()
 
     def __getattribute__(self, attr_name: str) -> Any:
+        """Get the attribute and check if we should track the gradient.
+
+        Args:
+            attr_name (str): The name of the attribute
+
+        Returns:
+            The attribute specific for this instance
+        """
+        # TODO: Fix this
+        from sympc.tensor.grads import GRAD_FUNCS
+
         # Take the attribute and check if we need to assign a gradient function
         # Implementation similar to CrypTen
         grad_fn = GRAD_FUNCS.get(attr_name, None)
         if grad_fn and MPCTensor.AUTOGRAD_IS_ON:
             requires_grad = object.__getattribute__(self, "requires_grad")
             if requires_grad:
+                # TODO: Fix this
+                from sympc.tensor.grads import forward
+
                 return functools.partial(forward, self, grad_fn)
 
         return object.__getattribute__(self, attr_name)
 
-    def backward(self, gradient=None) -> None:
+    def backward(self, gradient: Optional["MPCTensor"] = None) -> None:
+        """Perform the backward step on the computationl graph.
+
+        Args:
+            gradient (MPCTensor): The gradient (received) from the computational graph
+
+        Raises:
+            ValueError: if there is no gradient function recorded for a node that needs to compute
+                   the gradient
+        """
         if not self.requires_grad:
             return
 
@@ -971,8 +1008,17 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
-    def sigmoid(self) -> "MPCTensor":
-        return sigmoid(self)
+    # TODO: Move the method arg to Session level
+    def sigmoid(self, method: str = "exp") -> "MPCTensor":
+        """Compute the sigmoid function (approximation).
+
+        Args:
+            method (str): Method to be used for the approximation
+
+        Returns:
+            The sigmoid approximation for the MPCTensor
+        """
+        return sigmoid(self, method=method)
 
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
