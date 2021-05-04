@@ -31,9 +31,7 @@ def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]
         for item in input_list
     ):
 
-        raise ValueError(
-            "Invalid dimension. All MPCTensors should have an 1-D secret."
-        )
+        raise ValueError("Invalid dimension. All MPCTensors should have an 1-D secret.")
 
     n = len(input_list)
 

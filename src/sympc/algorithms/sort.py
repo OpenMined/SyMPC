@@ -21,7 +21,6 @@ def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]
     Returns:
         List[MPC_tensor]: Sorted list of MPCTensors
     """
-
     # Checks if the list of MPCTensors are of length 1
     if not all(
         ((hasattr(item, "shape")) and item.shape == torch.Size([1]))
