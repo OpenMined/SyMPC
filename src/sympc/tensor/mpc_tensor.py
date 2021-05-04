@@ -795,6 +795,8 @@ class MPCTensor(metaclass=SyMPCTensor):
         MPCTensor.AUTOGRAD_IS_ON = False
 
         if gradient is None:
+            if len(self.shape) != 1:
+                raise ValueError("Need to provide gradient if not scalar!")
             gradient = MPCTensor(secret=torch.ones(self.shape), session=self.session)
 
         if self.grad is None:

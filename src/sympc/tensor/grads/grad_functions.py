@@ -153,7 +153,7 @@ class GradSum(GradFunc):
             res_grad (MPCTensor): The gradients passed to the parent node
         """
         x_shape = ctx["x_shape"]
-        res_grad = grad * torch.ones(shape=x_shape)
+        res_grad = grad * torch.ones(size=x_shape)
         return res_grad
 
 
@@ -172,7 +172,7 @@ class GradSigmoid(GradFunc):
             sigmoid(x) (MPCTensor): The sigmoid approximation applied on the input
         """
         grad = x.sigmoid()
-        ctx["probs"] = grad
+        ctx["probabilities"] = grad
         return grad
 
     @staticmethod
@@ -186,7 +186,7 @@ class GradSigmoid(GradFunc):
         Returns:
             res_grad (MPCTensor): The gradient passed to the parent node
         """
-        probs = ctx["probs"]
+        probs = ctx["probabilities"]
         res_grad = grad * probs * (1 - probs)
         return res_grad
 
@@ -269,8 +269,17 @@ class GradMul(GradFunc):
 
         Returns:
             (y_grad, x_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
+
+        Raises:
+            ValueError: if gradient shape does not match X and Y shape
         """
         x, y = ctx["x"], ctx["y"]
+
+        # TODO: Fix for different shapes
+        if x.shape != grad.shape or y.shape != grad.shape:
+            raise ValueError(
+                "The gradient shape and the shape of X and Y should be the same!"
+            )
         x_grad = grad * x
         y_grad = grad * y
         return y_grad, x_grad
