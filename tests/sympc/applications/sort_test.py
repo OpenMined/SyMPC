@@ -1,5 +1,7 @@
 # third party
 import torch
+import pytest
+
 
 from sympc.applications.sort import sort
 from sympc.session import Session
@@ -18,10 +20,10 @@ def test_mpc_sort(get_clients):
     w = MPCTensor(secret=18, session=session)
     v = MPCTensor(secret=5, session=session)
 
-    list = [x, y, z, w, v]
+    mpctensor_list = [x, y, z, w, v]
 
-    ascending_sorted = sort(list)
-    descending_sorted = sort(list, ascending=False)
+    ascending_sorted = sort(mpctensor_list)
+    descending_sorted = sort(mpctensor_list, ascending=False)
 
     expected_list = [
         torch.tensor([1.0]),
@@ -41,3 +43,18 @@ def test_mpc_sort(get_clients):
 
     assert sorted_list_1 == expected_list
     assert sorted_list_2 == expected_list[::-1]
+    
+def test_sort_invalidim_exception(get_clients):
+    
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    x = MPCTensor(secret=1, session=session)
+    y = MPCTensor(secret=3, session=session)
+    z = MPCTensor(secret=[6,2], session=session)
+    
+    mpctensor_list = [x, y, z]
+
+    with pytest.raises(ValueError):
+       sort(mpctensor_list)
