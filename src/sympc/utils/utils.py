@@ -88,11 +88,11 @@ def parallel_execution(
         Returns:
             List[Any]: Results from the parties
         """
-        Executor: Union[Type[ProcessPoolExecutor], Type[ThreadPoolExecutor]]
+        executor: Union[Type[ProcessPoolExecutor], Type[ThreadPoolExecutor]]
         if cpu_bound:
-            Executor = ProcessPoolExecutor
+            executor = ProcessPoolExecutor
         else:
-            Executor = ThreadPoolExecutor
+            executor = ThreadPoolExecutor
 
         # Each party has a list of args and a dictionary of kwargs
         nr_parties = len(args)
@@ -113,7 +113,7 @@ def parallel_execution(
         futures = []
         loop = asyncio.get_event_loop()
 
-        with Executor(
+        with executor(
             max_workers=nr_parties, initializer=initializer, initargs=(loop,)
         ) as executor:
             for i in range(nr_parties):

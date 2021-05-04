@@ -177,7 +177,7 @@ def mul_store_get(
 
     try:
         primitive = primitives[0]
-    except:
+    except Exception:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
@@ -257,7 +257,7 @@ def matmul_store_get(
 
     try:
         primitive = primitives[0]
-    except:
+    except Exception:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
@@ -336,7 +336,7 @@ def conv2d_store_get(
 
     try:
         primitive = primitives[0]
-    except:
+    except Exception:
         raise ValueError("No primitive in the store for {config_key}")
 
     if remove:
