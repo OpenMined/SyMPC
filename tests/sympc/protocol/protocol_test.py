@@ -1,13 +1,13 @@
 # third party
 import pytest
 
-from sympc.exceptions import EmptyPrimitiveStore
 from sympc.protocol import Protocol
 from sympc.protocol.beaver.beaver import conv2d_store_get
 from sympc.protocol.beaver.beaver import matmul_store_get
 from sympc.protocol.beaver.beaver import mul_store_get
 from sympc.protocol.fss.fss import _generate_primitive
 from sympc.protocol.fss.fss import get_primitive
+from sympc.store.exceptions import EmptyPrimitiveStore
 
 
 class TestProtocol(metaclass=Protocol):

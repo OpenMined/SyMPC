@@ -17,9 +17,9 @@ from typing import Union
 # third party
 import torch
 
-from sympc.exceptions import EmptyPrimitiveStore
 from sympc.session import Session
 from sympc.store import CryptoPrimitiveProvider
+from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
