@@ -177,7 +177,7 @@ def mul_store_get(
 
     try:
         primitives = store[config_key]
-    except Exception:
+    except KeyError:
         raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
@@ -261,7 +261,7 @@ def matmul_store_get(
 
     try:
         primitives = store[config_key]
-    except Exception:
+    except KeyError:
         raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
@@ -344,7 +344,7 @@ def conv2d_store_get(
 
     try:
         primitives = store[config_key]
-    except Exception:
+    except KeyError:
         raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
