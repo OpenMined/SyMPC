@@ -1,4 +1,6 @@
 """function used to calculate sigmoid of a given tensor."""
+# stdlib
+from typing import Any
 
 # third party
 import torch
@@ -6,19 +8,18 @@ import torch
 from sympc.approximations.exponential import exp
 from sympc.approximations.reci import reciprocal
 from sympc.approximations.utils import sign
-from sympc.tensor.mpc_tensor import MPCTensor
 
 
-def sigmoid(tensor: MPCTensor, method: str = "exp") -> "MPCTensor":
+def sigmoid(tensor: Any, method: str = "exp") -> Any:
     """Approximates the sigmoid function using a given method.
 
     Args:
-        tensor: tensor to calculate sigmoid
+        tensor (Any): tensor to calculate sigmoid
         method (str): (default = "chebyshev")
             Possible values: "exp", "maclaurin", "chebyshev"
 
     Returns:
-        tensor: the calulated sigmoid value
+        tensor (Any): the calulated sigmoid value
     """
     if method == "exp":
         _sign = sign(tensor)
