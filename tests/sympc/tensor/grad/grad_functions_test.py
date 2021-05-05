@@ -108,7 +108,7 @@ def test_grad_sum_forward(get_clients) -> None:
     assert (res == expected).all()
 
 
-def test_grad_sum_bacward(get_clients) -> None:
+def test_grad_sum_backward(get_clients) -> None:
     parties = get_clients(4)
     grad = torch.tensor(420)
 
