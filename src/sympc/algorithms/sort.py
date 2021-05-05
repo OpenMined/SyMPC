@@ -11,8 +11,7 @@ from sympc.tensor import MPCTensor
 
 
 def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]:
-    """Takes a list of MPCTensors and sorts them in ascending/desending order.
-       Uses basic bubbleSort.
+    """Takes a list of MPCTensors and sorts them in ascending/desending order using bubble sort.
 
     Args:
         input_list (List[MPCTensor]): Takes a list of MPCTensor
