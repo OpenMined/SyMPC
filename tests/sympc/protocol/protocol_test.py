@@ -31,23 +31,23 @@ def test_exception_insufficient_fss_primitives():
         get_primitive(store, 10)
 
 
-def test_exception_empty_primitive_store_no_key():
+@pytest.mark.parametrize(
+    "function", [mul_store_get, matmul_store_get, conv2d_store_get]
+)
+def test_exception_empty_primitive_store_no_key(function):
     """Exception when there exists no key in store."""
     a_shape = (2, 2)
     b_shape = (2, 2)
     store = {}
 
     with pytest.raises(EmptyPrimitiveStore):
-        mul_store_get(store, a_shape, b_shape)
-
-    with pytest.raises(EmptyPrimitiveStore):
-        matmul_store_get(store, a_shape, b_shape)
-
-    with pytest.raises(EmptyPrimitiveStore):
-        conv2d_store_get(store, a_shape, b_shape)
+        function(store, a_shape, b_shape)
 
 
-def test_exception_empty_primitive_store_no_primitive():
+@pytest.mark.parametrize(
+    "function", [mul_store_get, matmul_store_get, conv2d_store_get]
+)
+def test_exception_empty_primitive_store_no_primitive(function):
     """Exception when there exists a key in store but has no primitive."""
     a_shape = (2, 2)
     b_shape = (2, 2)
@@ -59,21 +59,9 @@ def test_exception_empty_primitive_store_no_primitive():
     }
 
     with pytest.raises(EmptyPrimitiveStore):
-        mul_store_get(store, a_shape, b_shape)
-
-    with pytest.raises(EmptyPrimitiveStore):
-        matmul_store_get(store, a_shape, b_shape)
-
-    with pytest.raises(EmptyPrimitiveStore):
-        conv2d_store_get(store, a_shape, b_shape)
+        function(store, a_shape, b_shape)
 
     # invalid shapes
 
     with pytest.raises(EmptyPrimitiveStore):
-        mul_store_get(store, (2, 3), b_shape)
-
-    with pytest.raises(EmptyPrimitiveStore):
-        matmul_store_get(store, a_shape, (3, 2))
-
-    with pytest.raises(EmptyPrimitiveStore):
-        conv2d_store_get(store, (2, 4, 5), b_shape)
+        function(store, (2, 3), b_shape)
