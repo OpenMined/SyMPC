@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620067332447,
+  "lastUpdate": 1620243263888,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -155,6 +155,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.10109338241279515",
             "extra": "mean: 4.106856680599992 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "72750519f1a19a0bf66d2b930241ffe9fd39ffd6",
+          "message": "Add gradient functions (#138)\n\n* Test\r\n\r\n* Add stub backprop\r\n\r\n* Move backward to MPCTensor\r\n\r\n* Change pow to mpc_pow\r\n\r\n* Add documentation for functions\r\n\r\n* Add tests",
+          "timestamp": "2021-05-05T20:32:12+01:00",
+          "tree_id": "d96190e70942f75d2c259c847db385af1cc6c8c6",
+          "url": "https://github.com/OpenMined/SyMPC/commit/72750519f1a19a0bf66d2b930241ffe9fd39ffd6"
+        },
+        "date": 1620243262878,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.2967479196897495,
+            "unit": "iter/sec",
+            "range": "stddev: 0.11495999713714863",
+            "extra": "mean: 3.3698635563999972 sec\nrounds: 5"
           }
         ]
       }
