@@ -20,6 +20,10 @@ def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]
 
     Returns:
         List[MPC_tensor]: Sorted list of MPCTensors
+
+    Raises:
+        ValueError: If the list contains MPCTensor with secret that is not 1-D.
+
     """
     # Checks if the list of MPCTensors are of length 1
     if not all(
