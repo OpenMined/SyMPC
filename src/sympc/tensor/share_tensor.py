@@ -19,7 +19,7 @@ from sympc.session import Session
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
-METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 
 
 class ShareTensor(metaclass=SyMPCTensor):
@@ -55,7 +55,7 @@ class ShareTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze"}
+    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze", "t", "view", "sum", "clone"}
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
     def __init__(
@@ -95,7 +95,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         )
 
         self.tensor: Optional[torch.Tensor] = None
-
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self._encode(data).type(tensor_type)
@@ -212,7 +211,7 @@ class ShareTensor(metaclass=SyMPCTensor):
             # We are using a simple share without usig the MPCTensor
             # In case we used the MPCTensor - the division would have
             # been done in the protocol
-            res.tensor = res.tensor // self.fp_encoder.scale
+            res.tensor //= self.fp_encoder.scale
 
         return res
 
@@ -286,19 +285,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         res = ShareTensor(session=self.session)
         res.tensor = self.tensor // y
 
-        return res
-
-    def __getattr__(self, attr_name: str) -> Any:
-        """Access to tensor attributes.
-
-        Args:
-            attr_name (str): Name of the attribute.
-
-        Returns:
-            Any: Attribute.
-        """
-        tensor = self.tensor
-        res = getattr(tensor, attr_name)
         return res
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
@@ -441,24 +427,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         else:
             res = method
 
-        return res
-
-    def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """Tensor with the same data but new dimensions/view.
-
-        Args:
-            *args: Arguments to tensor.view.
-            **kwargs: Keyword arguments passed to tensor.view.
-
-        Returns:
-            Any: ShareTensor with new view.
-
-        References:
-            https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
-        """
-        tensor = self.tensor.view(*args, **kwargs)
-        res = ShareTensor(session=self.session)
-        res.tensor = tensor
         return res
 
     __add__ = add
