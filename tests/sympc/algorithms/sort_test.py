@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-from sympc.algorithms.sort import sort
+from sympc.algorithms.algorithms import sort
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
