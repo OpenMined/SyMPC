@@ -8,7 +8,6 @@ from typing import Tuple
 
 # third party
 import pytest
-import syft as sy
 import torch
 
 from sympc.session import Session
@@ -18,11 +17,12 @@ from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
+from tests.stubs.module_stub import Module
 
 PRIMITIVE_NR_ELEMS = 4
 
 
-class LinearNet(sy.Module):
+class LinearNet(Module):
     def __init__(self, torch_ref):
         super(LinearNet, self).__init__(torch_ref=torch_ref)
         self.fc1 = self.torch_ref.nn.Linear(3, 10)
