@@ -13,11 +13,13 @@ If you want to know how a real Module should look like, please check the one in 
 # stdlib
 from collections import OrderedDict
 import copy
-from sympc.module.nn import Conv2d
-from sympc.module.nn import Linear
-import sympc.module as sympc_module
+
+# third party
 import torch
 
+import sympc.module as sympc_module
+from sympc.module.nn import Conv2d
+from sympc.module.nn import Linear
 
 MAP_TORCH_TO_SYMPC = {
     "Linear": Linear,

@@ -10,6 +10,7 @@ from typing import Tuple
 import pytest
 import torch
 
+from stubs.module_stub import Module
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.store import CryptoPrimitiveProvider
