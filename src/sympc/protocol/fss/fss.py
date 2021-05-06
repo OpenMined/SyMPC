@@ -20,7 +20,7 @@ import torch as th
 import torchcsprng as csprng  # type: ignore
 
 from sympc.protocol.protocol import Protocol
-from sympc.session import Session
+from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
@@ -41,9 +41,7 @@ dif = sycret.LeFactory(n_threads=N_CORES)
 
 
 # share level
-def mask_builder(
-    session: Session, x1: ShareTensor, x2: ShareTensor, op: str
-) -> ShareTensor:
+def mask_builder(x1: ShareTensor, x2: ShareTensor, op: str) -> ShareTensor:
     """Mask the private inputs.
 
     Add the share of alpha (the mask) that is held in the crypto store to
@@ -52,7 +50,6 @@ def mask_builder(
     x1 - x2 with alpha that is a random mask.
 
     Args:
-        session (Session): MPC Session.
         x1 (ShareTensor): Share of the first private value.
         x2 (ShareTensor): Share of the second private value.
         op (str): Type of operation to perform (eq or comp).
@@ -60,6 +57,8 @@ def mask_builder(
     Returns:
         ShareTensor: share of the masked input
     """
+    session = get_session()
+
     x = x1 - x2
 
     keys = session.crypto_store.get_primitives_from_store(
@@ -75,11 +74,10 @@ def mask_builder(
 
 
 # share level
-def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
+def evaluate(b, x_masked, op, dtype="long") -> ShareTensor:
     """Evaluate the FSS protocol on the masked and public input `x_masked`.
 
     Args:
-        session (Session): MPC Session
         b: rank of the evaluator running this function
         x_masked: the public input created by masking the private input
         op: the type of operation (eq or comp)
@@ -88,6 +86,8 @@ def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
     Returns:
         ShareTensor: A share of the result of the FSS protocol.
     """
+    session = get_session()
+
     numel = x_masked.numel()
     keys = session.crypto_store.get_primitives_from_store(
         f"fss_{op}", nr_instances=numel, remove=True
@@ -152,7 +152,7 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
         p_kwargs={},
     )
 
-    args = zip(session.session_ptrs, x1.share_ptrs, x2.share_ptrs)
+    args = zip(x1.share_ptrs, x2.share_ptrs)
     args = [list(el) + [op] for el in args]
 
     shares = parallel_execution(mask_builder, session.parties)(args)
@@ -162,9 +162,7 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     mask_value = mask_value.reconstruct(decode=False) % 2 ** n
 
     # TODO: add dtype to args
-    args = [
-        (session.session_ptrs[i], th.IntTensor([i]), mask_value, op) for i in range(2)
-    ]
+    args = [(th.IntTensor([i]), mask_value, op) for i in range(2)]
 
     shares = parallel_execution(evaluate, session.parties)(args)
 
