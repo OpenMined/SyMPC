@@ -18,6 +18,7 @@ import torch
 import torchcsprng as csprng  # type: ignore
 
 from sympc.approximations import sigmoid
+from sympc.approximations.reci import reciprocal
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
@@ -554,11 +555,17 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the operation.
 
         Raises:
-            NotImplementedError: If y is not a MPCTensor.
+            ValueError: If parties are more than two.
         """
         is_private = isinstance(y, MPCTensor)
+
+        # TODO: Implement support for more than two parties.
         if is_private:
-            raise NotImplementedError("Not implemented for MPCTensor")
+            if len(self.session.session_ptrs) > 2:
+                raise ValueError(
+                    "Private division currently works with a maximum of two parties only."
+                )
+            return self.mul(reciprocal(y))
 
         from sympc.protocol.spdz import spdz
 
