@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620243263888,
+  "lastUpdate": 1620325281474,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -186,6 +186,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.11495999713714863",
             "extra": "mean: 3.3698635563999972 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4b333154dfbdfd56063e7807cda4506acd8aa76e",
+          "message": "support to use pre generated primitives (#141)\n\n* added conditional genration for generating primitive\r\n\r\n* fixes\r\n\r\n* fixed except block\r\n\r\n* added custom exceptions\r\n\r\n* added tests\r\n\r\n* moved exception file\r\n\r\n* more specific exceptions\r\n\r\n* parameterized tests",
+          "timestamp": "2021-05-06T19:19:00+01:00",
+          "tree_id": "57af9b4c8e561abc3d99269521abec5d316fcc33",
+          "url": "https://github.com/OpenMined/SyMPC/commit/4b333154dfbdfd56063e7807cda4506acd8aa76e"
+        },
+        "date": 1620325280889,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.25876093035228687,
+            "unit": "iter/sec",
+            "range": "stddev: 0.13457891608113143",
+            "extra": "mean: 3.8645710487999962 sec\nrounds: 5"
           }
         ]
       }
