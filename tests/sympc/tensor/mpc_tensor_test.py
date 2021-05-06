@@ -251,7 +251,7 @@ def test_mpc_print(get_clients) -> None:
 
     x = MPCTensor(secret=x_secret, session=session)
 
-    expected = f"[MPCTensor]\nShape: {x_secret.shape}\n\t|"
+    expected = f"[MPCTensor]\nShape: {x_secret.shape}\nRequires Grad: False\n\t|"
     expected = (
         f"{expected} <VirtualMachineClient: P_0 Client> -> ShareTensorPointer\n\t|"
     )
