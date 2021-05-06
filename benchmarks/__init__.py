@@ -1,1 +1,1 @@
-"""Module which contains benchmarks tests"""
+"""Module which contains benchmarks tests."""
