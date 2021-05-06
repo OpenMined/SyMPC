@@ -7,16 +7,15 @@ from typing import Type
 # third party
 import numpy as np
 import pytest
-import syft as sy
 import torch
 
-from sympc.module import MAP_TORCH_TO_SYMPC
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
+from tests.stubs.module_stub import Module, MAP_TORCH_TO_SYMPC
 
 
-class LinearNet(sy.Module):
+class LinearNet(Module):
     def __init__(self, torch_ref):
         super(LinearNet, self).__init__(torch_ref=torch_ref)
         self.fc1 = self.torch_ref.nn.Linear(3, 10)
@@ -30,7 +29,7 @@ class LinearNet(sy.Module):
         return x
 
 
-class ConvNet(sy.Module):
+class ConvNet(Module):
     def __init__(self, torch_ref, kernel_size=5):
         super(ConvNet, self).__init__(torch_ref=torch_ref)
         self.conv1 = self.torch_ref.nn.Conv2d(
@@ -117,7 +116,7 @@ def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
 @pytest.mark.parametrize("is_remote", [False, True])
 @pytest.mark.parametrize("model_type", [LinearNet, ConvNet])
 def test_reconstruct_shared_model(
-    is_remote: bool, model_type: Type[sy.Module], get_clients: Callable[[int], Any]
+    is_remote: bool, model_type: Type[Module], get_clients: Callable[[int], Any]
 ):
     net = model_type(torch)
 
@@ -134,7 +133,7 @@ def test_reconstruct_shared_model(
     mpc_model = model.share(session=session)
     res = mpc_model.reconstruct()
 
-    assert isinstance(res, sy.Module)
+    assert isinstance(res, Module)
 
     if is_remote:
         # If the model is remote fetch it such that we could compare it
