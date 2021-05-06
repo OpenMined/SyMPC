@@ -141,6 +141,25 @@ def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
 
 
 @pytest.mark.parametrize("nr_clients", [2])
+@pytest.mark.parametrize("op_str", ["truediv"])
+def test_ops_mpc_mpc_div(get_clients, nr_clients, op_str) -> None:
+    clients = get_clients(nr_clients)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+    result = op(x, y).reconstruct()
+    expected_result = op(x_secret, y_secret)
+
+    assert np.allclose(result, expected_result, rtol=10e-4)
+
+
+@pytest.mark.parametrize("nr_clients", [2])
 @pytest.mark.parametrize("bias", [None, torch.ones(1)])
 @pytest.mark.parametrize("stride", [1, 2])
 @pytest.mark.parametrize("padding", [0, 1])
@@ -184,9 +203,10 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
-def test_ops_divfloat_exception(get_clients) -> None:
+@pytest.mark.parametrize("nr_parties", [3, 4, 5])
+def test_ops_divfloat_exception(get_clients, nr_parties) -> None:
     # Define the virtual machines that would be use in the computation
-    parties = get_clients(2)
+    parties = get_clients(nr_parties)
 
     # Setup the session for the computation
     session = Session(parties=parties)
@@ -199,7 +219,7 @@ def test_ops_divfloat_exception(get_clients) -> None:
     x = MPCTensor(secret=x_secret, session=session)
     y = MPCTensor(secret=y_secret, session=session)
 
-    with pytest.raises(NotImplementedError):
+    with pytest.raises(ValueError):
         x / y
 
 
