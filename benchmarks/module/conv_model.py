@@ -6,15 +6,15 @@ from typing import Callable
 from typing import List
 
 # third party
-import syft as sy
 import torch
 
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
+from tests.stubs.module_stub import Module
 
 
-class ConvNet(sy.Module):
+class ConvNet(Module):
     """Simple convolutional network."""
 
     def __init__(self, torch_ref):
