@@ -4,7 +4,6 @@
 from typing import List
 
 # third party
-# third-party
 import torch
 
 from sympc.tensor import MPCTensor
@@ -39,21 +38,17 @@ def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]
     # Traverse through all array elements
     for i in range(n - 1):
         # range(n) also work but outer loop will repeat one time more than needed.
-
         # Last i elements are already in place
         for j in range(0, n - i - 1):
-
             # traverse the array from 0 to n-i-1
             # Swap if the element found is greater
             # than the next element
             check = input_list[j] > input_list[j + 1]
-
             temp = input_list[j]
             input_list[j] = (1 - check) * input_list[j] + check * input_list[j + 1]
             input_list[j + 1] = (1 - check) * input_list[j + 1] + check * temp
 
     if not ascending:
-
         return input_list[::-1]
 
     return input_list

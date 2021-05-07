@@ -8,7 +8,8 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 
 
-def test_mpc_sort(get_clients):
+@pytest.mark.parametrize("ascending", [True, False])
+def test_mpc_sort(get_clients, ascending):
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -21,8 +22,7 @@ def test_mpc_sort(get_clients):
 
     mpctensor_list = [x, y, z, w, v]
 
-    ascending_sorted = sort(mpctensor_list)
-    descending_sorted = sort(mpctensor_list, ascending=False)
+    sorted = sort(mpctensor_list, ascending=ascending)
 
     expected_list = [
         torch.tensor([1.0]),
@@ -33,15 +33,15 @@ def test_mpc_sort(get_clients):
     ]
 
     sorted_list_1 = []
-    for i in ascending_sorted:
+    for i in sorted:
         sorted_list_1.append(i.reconstruct())
 
-    sorted_list_2 = []
-    for i in descending_sorted:
-        sorted_list_2.append(i.reconstruct())
+    if ascending:
 
-    assert sorted_list_1 == expected_list
-    assert sorted_list_2 == expected_list[::-1]
+        assert sorted_list_1 == expected_list
+    else:
+
+        assert sorted_list_1 == expected_list[::-1]
 
 
 def test_sort_invalidim_exception(get_clients):
