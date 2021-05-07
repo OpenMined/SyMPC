@@ -28,14 +28,30 @@ MAP_TORCH_TO_SYMPC = {
 
 
 def full_name_with_qualname(klass: type) -> str:
+    """Retrieve Fully Qualified Name.
+
+    Arguments:
+        klass: Type of which we want to know the Fully Qualified Name
+
+    Returns:
+        The Fully Qualified Name
+    """
     return f"{klass.__module__}.{klass.__qualname__}"
 
 
 class Module:
+    """Stub of the Module class that can be found in PySyft."""
+
     def __init__(self, torch_ref):
+        """Call setup method to initialize the basic attributes."""
         self.setup(torch_ref=torch_ref)
 
     def setup(self, torch_ref):
+        """Initialize the basic attributes this module requires to work.
+
+        Arguments:
+            torch_ref: Reference to the torch library.
+        """
         self.torch_ref = torch_ref
         self._modules = OrderedDict()
         if "syft" in full_name_with_qualname(klass=type(torch_ref)):
@@ -44,9 +60,26 @@ class Module:
             self.is_local = True
 
     def __call__(self, *args, **kwargs):
+        """Proxy method that will call the forward net method.
+
+        Arguments:
+            args: Python args
+            kwargs: Python kwargs
+
+        Returns:
+            Result of forward function.
+        """
         return self.forward(*args, **kwargs)
 
     def share(_self, session):
+        """Share the module between the clients of the session.
+
+        Arguments:
+            session: Session where the module will be shared.
+
+        Returns:
+            Module to share.
+        """
         mpc_module = copy.copy(_self)
 
         mpc_module._modules = OrderedDict()
@@ -63,9 +96,22 @@ class Module:
         return mpc_module
 
     def eval(self):
+        """Set train to false.
+
+        In this stub is not required to actually implement it.
+        """
         return
 
     def __setattr__(self, name, value):
+        """Catch modules being set during subclass init.
+
+        We must catch moduels due to a bug where torch.nn.modules is not the full name on some
+        imports.
+
+        Arguments:
+            name: Module name
+            value: Module value
+        """
         if "torch.nn" not in full_name_with_qualname(klass=type(value)):
             object.__setattr__(self, name, value)
             return
@@ -79,6 +125,14 @@ class Module:
             real_module.add_module(name, value)
 
     def __getattr__(self, name):
+        """Get module value.
+
+        Arguments:
+            name: Module name
+
+        Returns:
+            Module value
+        """
         modules = self.__dict__.get("_modules")
         if modules is not None and name in modules:
             return modules[name]
@@ -87,10 +141,23 @@ class Module:
 
     @property
     def modules(self):
+        """Check if modules exist and return it.
+
+        Returns:
+            Dicitonary with modules
+        """
         modules = self.__dict__.get("_modules")
         return modules or OrderedDict()
 
     def send(self, client):
+        """Send the model to one client of the session.
+
+        Arguments:
+            client: Client that will receive the model.
+
+        Returns:
+            Remote model
+        """
         if not self.is_local:
             return
 
@@ -101,6 +168,11 @@ class Module:
         return remote_model
 
     def get(self):
+        """Get the shared model.
+
+        Returns:
+            Shared model.
+        """
         if self.is_local:
             return None
 
@@ -112,10 +184,13 @@ class Module:
         return self.local_model
 
     def reconstruct(_self):
+        """Get back the shares from all the parties and reconstruct the underlying value.
+
+        Returns:
+            Neural network module with the secret reconstructed
+        """
         syft_module = copy.copy(_self)
 
-        # For this we will need to fetch the syft_module locally
-        # even if it was created at another party
         syft_module.real_module = None
         syft_module.torch_ref = torch
 
