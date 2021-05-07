@@ -10,6 +10,7 @@ from typing import Tuple
 import pytest
 import torch
 
+from stubs.module_stub import Module
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.store import CryptoPrimitiveProvider
@@ -17,7 +18,6 @@ from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
-from stubs.module_stub import Module
 
 PRIMITIVE_NR_ELEMS = 4
 

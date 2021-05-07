@@ -8,10 +8,10 @@ from typing import List
 # third party
 import torch
 
+from stubs.module_stub import Module
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
-from stubs.module_stub import Module
 
 
 class ConvNet(Module):
