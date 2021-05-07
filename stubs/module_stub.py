@@ -43,7 +43,11 @@ class Module:
     """Stub of the Module class that can be found in PySyft."""
 
     def __init__(self, torch_ref):
-        """Call setup method to initialize the basic attributes."""
+        """Call setup method to initialize the basic attributes.
+
+        Arguments:
+            torch_ref: Reference to the torch library.
+        """
         self.setup(torch_ref=torch_ref)
 
     def setup(self, torch_ref):

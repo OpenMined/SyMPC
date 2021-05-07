@@ -18,7 +18,7 @@ from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
-from tests.stubs.module_stub import Module
+from stubs.module_stub import Module
 
 PRIMITIVE_NR_ELEMS = 4
 
