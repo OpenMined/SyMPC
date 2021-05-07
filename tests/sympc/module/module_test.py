@@ -12,8 +12,8 @@ import torch
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
-from tests.stubs.module_stub import MAP_TORCH_TO_SYMPC
-from tests.stubs.module_stub import Module
+from stubs.module_stub import MAP_TORCH_TO_SYMPC
+from stubs.module_stub import Module
 
 
 class LinearNet(Module):
