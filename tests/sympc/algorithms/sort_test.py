@@ -37,10 +37,8 @@ def test_mpc_sort(get_clients, ascending):
         sorted_list_1.append(i.reconstruct())
 
     if ascending:
-
         assert sorted_list_1 == expected_list
     else:
-
         assert sorted_list_1 == expected_list[::-1]
 
 
