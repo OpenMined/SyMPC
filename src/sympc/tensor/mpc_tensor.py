@@ -18,6 +18,7 @@ import torch
 import torchcsprng as csprng  # type: ignore
 
 from sympc.approximations import sigmoid
+from sympc.approximations.reci import reciprocal
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
@@ -540,11 +541,11 @@ class MPCTensor(metaclass=SyMPCTensor):
         scale = (
             self.session.config.encoder_base ** self.session.config.encoder_precision
         )
-        result = result.div(scale)
+        result = result.truediv(scale)
 
         return result
 
-    def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+    def truediv(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
         Args:
@@ -554,11 +555,17 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the operation.
 
         Raises:
-            NotImplementedError: If y is not a MPCTensor.
+            ValueError: If parties are more than two.
         """
         is_private = isinstance(y, MPCTensor)
+
+        # TODO: Implement support for more than two parties.
         if is_private:
-            raise NotImplementedError("Not implemented for MPCTensor")
+            if len(self.session.session_ptrs) > 2:
+                raise ValueError(
+                    "Private division currently works with a maximum of two parties only."
+                )
+            return self.mul(reciprocal(y))
 
         from sympc.protocol.spdz import spdz
 
@@ -725,7 +732,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 self.session.config.encoder_base
                 ** self.session.config.encoder_precision
             )
-            result = result.div(scale)
+            result = result.truediv(scale)
 
         return result
 
@@ -1030,7 +1037,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __rmul__ = wrapper_getattribute(mul)
     __matmul__ = wrapper_getattribute(matmul)
     __rmatmul__ = wrapper_getattribute(rmatmul)
-    __truediv__ = wrapper_getattribute(div)
+    __truediv__ = wrapper_getattribute(truediv)
     __pow__ = wrapper_getattribute(mpc_pow)
     __le__ = wrapper_getattribute(le)
     __ge__ = wrapper_getattribute(ge)
