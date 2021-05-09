@@ -541,11 +541,11 @@ class MPCTensor(metaclass=SyMPCTensor):
         scale = (
             self.session.config.encoder_base ** self.session.config.encoder_precision
         )
-        result = result.div(scale)
+        result = result.truediv(scale)
 
         return result
 
-    def div(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+    def truediv(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
         Args:
@@ -732,7 +732,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 self.session.config.encoder_base
                 ** self.session.config.encoder_precision
             )
-            result = result.div(scale)
+            result = result.truediv(scale)
 
         return result
 
@@ -1037,7 +1037,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __rmul__ = wrapper_getattribute(mul)
     __matmul__ = wrapper_getattribute(matmul)
     __rmatmul__ = wrapper_getattribute(rmatmul)
-    __truediv__ = wrapper_getattribute(div)
+    __truediv__ = wrapper_getattribute(truediv)
     __pow__ = wrapper_getattribute(mpc_pow)
     __le__ = wrapper_getattribute(le)
     __ge__ = wrapper_getattribute(ge)
