@@ -44,11 +44,13 @@ def sort(input_list: List[MPCTensor], ascending: bool = True) -> List[MPCTensor]
             # Swap if the element found is greater
             # than the next element
             check = input_list[j] > input_list[j + 1]
+            neg_check=(1 - check)
             temp = input_list[j]
-            input_list[j] = (1 - check) * input_list[j] + check * input_list[j + 1]
-            input_list[j + 1] = (1 - check) * input_list[j + 1] + check * temp
+            input_list[j] = neg_check * input_list[j] + check * input_list[j + 1]
+            input_list[j + 1] = neg_check * input_list[j + 1] + check * temp
 
     if not ascending:
         return input_list[::-1]
 
     return input_list
+
