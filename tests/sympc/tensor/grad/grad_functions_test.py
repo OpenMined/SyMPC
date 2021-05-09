@@ -49,16 +49,36 @@ def test_grad_transpose_backward(get_clients) -> None:
     assert (res == expected).all()
 
 
-def test_grad_add_forward_value_exception(get_clients) -> None:
+def test_grad_add_different_dims_forward(get_clients) -> None:
     parties = get_clients(4)
     x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
-    y = torch.Tensor([[1, 2, 3]])
+    y = torch.Tensor([1, 2, 3])
 
     x_mpc = x.share(parties=parties)
     y_mpc = y.share(parties=parties)
 
-    with pytest.raises(ValueError):
-        GradAdd.forward({}, x_mpc, y_mpc)
+    ctx = {}
+    res_mpc = GradAdd.forward(ctx, x_mpc, y_mpc)
+
+    res = res_mpc.reconstruct()
+    expected = x + y
+
+    assert (res == expected).all()
+
+
+def test_grad_add_different_dims_backward(get_clients) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([[[2, 4, 6], [5, 7, 9]]])
+    grad_x = grad
+    grad_y = torch.Tensor([[7, 11, 15]])
+    grad_mpc = grad.share(parties=parties)
+
+    ctx = {"x_shape": (2, 3), "y_shape": (1, 3)}
+    res_mpc_x, res_mpc_y = GradAdd.backward(ctx, grad_mpc)
+
+    assert (res_mpc_x.reconstruct() == grad_x).all()
+    assert (res_mpc_y.reconstruct() == grad_y).all()
 
 
 def test_grad_add_forward(get_clients) -> None:
@@ -84,7 +104,7 @@ def test_grad_add_backward(get_clients) -> None:
     grad = torch.Tensor([1, 2, 3, 4])
     grad_mpc = grad.share(parties=parties)
 
-    ctx = {}
+    ctx = {"x_shape": (4,), "y_shape": (4,)}
     res_mpc_x, res_mpc_y = GradAdd.backward(ctx, grad_mpc)
 
     assert (res_mpc_x.reconstruct() == grad).all()
@@ -125,18 +145,6 @@ def test_grad_sum_bacward(get_clients) -> None:
     assert (res == expected).all()
 
 
-def test_grad_sub_forward_value_exception(get_clients) -> None:
-    parties = get_clients(4)
-    x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
-    y = torch.Tensor([[1, 2, 3]])
-
-    x_mpc = x.share(parties=parties)
-    y_mpc = y.share(parties=parties)
-
-    with pytest.raises(ValueError):
-        GradSub.forward({}, x_mpc, y_mpc)
-
-
 def test_grad_sub_forward(get_clients) -> None:
     parties = get_clients(4)
     x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
@@ -160,11 +168,43 @@ def test_grad_sub_backward(get_clients) -> None:
     grad = torch.Tensor([1, 2, 3, 4])
     grad_mpc = grad.share(parties=parties)
 
-    ctx = {}
+    ctx = {"x_shape": (4,), "y_shape": (4,)}
     res_mpc_x, res_mpc_y = GradSub.backward(ctx, grad_mpc)
 
     assert (res_mpc_x.reconstruct() == grad).all()
-    assert (res_mpc_y.reconstruct() == grad).all()
+    assert (res_mpc_y.reconstruct() == -grad).all()
+
+
+def test_grad_sub_different_dims_forward(get_clients) -> None:
+    parties = get_clients(4)
+    x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
+    y = torch.Tensor([1, 2, 3])
+
+    x_mpc = x.share(parties=parties)
+    y_mpc = y.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradSub.forward(ctx, x_mpc, y_mpc)
+
+    res = res_mpc.reconstruct()
+    expected = x - y
+
+    assert (res == expected).all()
+
+
+def test_grad_sub_different_dims_backward(get_clients) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([[[2, 4, 6], [5, 7, 9]]])
+    grad_x = grad
+    grad_y = -torch.Tensor([[7, 11, 15]])
+    grad_mpc = grad.share(parties=parties)
+
+    ctx = {"x_shape": (2, 3), "y_shape": (1, 3)}
+    res_mpc_x, res_mpc_y = GradSub.backward(ctx, grad_mpc)
+
+    assert (res_mpc_x.reconstruct() == grad_x).all()
+    assert (res_mpc_y.reconstruct() == grad_y).all()
 
 
 def test_grad_sigmoid_forward(get_clients) -> None:
@@ -200,35 +240,6 @@ def test_grad_sigmoid_bacward(get_clients) -> None:
     expected = grad * grad * (1 - grad)
 
     assert np.allclose(res, expected, rtol=1e-2)
-
-
-def test_grad_mul_forward_value_exception(get_clients) -> None:
-    parties = get_clients(4)
-    x = torch.Tensor([[1, 2], [3, 4]])
-    y = torch.Tensor([-1, -2])
-
-    x_mpc = x.share(parties=parties)
-    y_mpc = y.share(parties=parties)
-
-    with pytest.raises(ValueError):
-        GradMul.forward({}, x_mpc, y_mpc)
-
-
-def test_grad_mul_backward_value_exception(get_clients) -> None:
-    parties = get_clients(4)
-
-    grad = torch.Tensor([1, -2, -3, 4])
-    x = torch.Tensor([[1, 2], [3, -4]])
-    y = torch.Tensor([[1, -4], [8, 9]])
-
-    x_mpc = x.share(parties=parties)
-    y_mpc = y.share(parties=parties)
-
-    grad_mpc = grad.share(parties=parties)
-    ctx = {"x": x_mpc, "y": y_mpc}
-
-    with pytest.raises(ValueError):
-        GradMul.backward(ctx, grad_mpc)
 
 
 def test_grad_mul_forward(get_clients) -> None:

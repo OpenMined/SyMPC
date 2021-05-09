@@ -26,6 +26,8 @@ MAP_TORCH_TO_SYMPC = {
 
 MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items()})
 
+SKIP_LAYERS_NAME = {"Flatten"}
+
 
 def share(_self, session: Session) -> sy.Module:
     """Share remote state dictionary between the parties of the session.
@@ -44,10 +46,13 @@ def share(_self, session: Session) -> sy.Module:
     for name, module in _self.modules.items():
         state_dict = module.state_dict()
         name_layer = type(module).__name__
-        sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
-        sympc_layer = sympc_type_layer(session=session)
-        sympc_layer.share_state_dict(state_dict)
-        mpc_module._modules[name] = sympc_layer
+        if name_layer in SKIP_LAYERS_NAME:
+            mpc_module._modules[name] = module
+        else:
+            sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
+            sympc_layer = sympc_type_layer(session=session)
+            sympc_layer.share_state_dict(state_dict)
+            mpc_module._modules[name] = sympc_layer
 
     return mpc_module
 
