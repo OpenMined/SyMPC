@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620325281474,
+  "lastUpdate": 1620589793096,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -217,6 +217,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.13457891608113143",
             "extra": "mean: 3.8645710487999962 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "002a03356313b8ddd73889555ee874adef8f0b55",
+          "message": "added support for private division (#143)\n\n* added support for private div\r\n\r\n* fixed tests\r\n\r\n* converted div to truediv",
+          "timestamp": "2021-05-09T20:47:25+01:00",
+          "tree_id": "7263fa7cb915f8bf1c47864c95037d2f417f8b37",
+          "url": "https://github.com/OpenMined/SyMPC/commit/002a03356313b8ddd73889555ee874adef8f0b55"
+        },
+        "date": 1620589792573,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.24822550201337962,
+            "unit": "iter/sec",
+            "range": "stddev: 0.11549286389576566",
+            "extra": "mean: 4.028594934400007 sec\nrounds: 5"
           }
         ]
       }
