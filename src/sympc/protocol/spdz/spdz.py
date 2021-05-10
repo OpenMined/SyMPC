@@ -17,7 +17,7 @@ from typing import Union
 # third party
 import torch
 
-from sympc.session import get_session
+from sympc.session.session_utils import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
