@@ -219,13 +219,3 @@ class Session:
             operator.attrgetter(attr) for attr in self.__slots__ - Session.NOT_COMPARE
         ]
         return all(getter(self) == getter(other) for getter in attr_getters)
-
-
-def get_session() -> Session:
-    """Gets the current session for a party as defined in the global space.
-
-    Returns:
-        Session: MPC Session
-    """
-    session = globals()["session"]
-    return session
