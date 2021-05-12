@@ -1,99 +1,146 @@
+"""Used to abstract multiple shared values held by parties."""
 
-from .tensor import SyMPCTensor
+# stdlib
 from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
-from typing import Optional
 from typing import Set
-from typing import Union
 
+from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
 METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 
-class ReplicatedShareTensor(metaclass=SyMPCTensor):
-    """Replicated share tensor is used when a party  holds more than a single shares. 
-       Protocols such as Falcon require it.
-       
-       Arguments:
-          session (Session): the session
-          shares: The shares held by the party
-          
-       Attributes:
-          shares: The shares held by the party
 
+class ReplicatedShareTensor(metaclass=SyMPCTensor):
+    """RSTensor is used when a party holds more than a single share,required by various protocols.
+
+    Arguments:
+       session (Session): the session
+       shares: The shares held by the party
+
+    Attributes:
+       shares: The shares held by the party
     """
-       
-    
+
     AUTOGRAD_IS_ON: bool = True
 
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
     PROPERTIES_FORWARD = {"T"}
-    
-    def __init__(self,shares=None,session=None):
-        
-        self.shares=shares
-    
-        
-    def add(self,y):
-        
-        pass
-    
-    def radd(self,y):
-        
-        pass
-    
-    def sub(self,y):
-        
-        pass
-    
-    def rsub(self,y):
-        
-        pass
-    
-    def mul(self,y):
-        
-        pass
-    
-    def div(self,y):
-        
-        pass
-    
-    def matmul(self,y):
-        
-        pass
-    
-    def rmatmul(self,y):
-        
-        pass
-    
-    def xor(self,y):
-        
-        pass
-    
-    
-    def le(self,y):
-        
-        pass
-    
-    def ge(self,y):
-        
-        pass
-    
-    def eq(self,y):
-        
-        pass
-    
-    def ne(self,y):
-        
-        pass
 
-        
+    def __init__(self, shares=None, session=None):
+        """Initialize ShareTensor.
+
+        Args:
+            shares (Optional[List[ShareTensor]]): Shares from which RSTensor is created.
+            session (Optional[Session]): The session. Defaults to None.
+        """
+        self.session = session
+        self.shares = shares
+
+    def add(self, y):
+        """Apply the "add" operation between "self" and "y".
+
+        Args:
+            y: self+y
+
+        """
+
+    def sub(self, y):
+        """Apply the "sub" operation between "self" and "y".
+
+        Args:
+            y: self+y
+
+
+        """
+
+    def rsub(self, y):
+        """Apply the "sub" operation between "y" and "self".
+
+        Args:
+            y: self+y
+
+        """
+
+    def mul(self, y):
+        """Apply the "mul" operation between "self" and "y".
+
+        Args:
+            y: self+y
+
+        """
+
+    def truediv(self, y):
+        """Apply the "div" operation between "self" and "y".
+
+        Args:
+            y: self+y
+
+        """
+
+    def matmul(self, y):
+        """Apply the "matmul" operation between "self" and "y".
+
+        Args:
+            y: self+y
+
+        """
+
+    def rmatmul(self, y):
+        """Apply the "rmatmul" operation between "y" and "self".
+
+        Args:
+            y: self+y
+
+        """
+
+    def xor(self, y):
+        """Apply the "xor" operation between "self" and "y".
+
+        Args:
+            y: self+y
+
+        """
+
+    def lt(self, y):
+        """Lower than operator.
+
+        Args:
+            y: self+y
+
+        """
+
+    def gt(self, y):
+        """Greater than operator.
+
+        Args:
+            y: self+y
+
+        """
+
+    def eq(self, y):
+        """Equal operator.
+
+        Args:
+            y: self+y
+
+        """
+
+    def ne(self, y):
+        """Not Equal operator.
+
+        Args:
+            y: self+y
+
+        """
+
     @staticmethod
     def hook_property(property_name: str) -> Any:
         """Hook a framework property (only getter).
+
         Ex:
          * if we call "shape" we want to call it on the underlying tensor
         and return the result
@@ -125,6 +172,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
     @staticmethod
     def hook_method(method_name: str) -> Callable[..., Any]:
         """Hook a framework method such that we know how to treat it given that we call it.
+
         Ex:
          * if we call "numel" we want to call it on the underlying tensor
         and return the result
@@ -167,8 +215,5 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
     __rmul__ = mul
     __matmul__ = matmul
     __rmatmul__ = rmatmul
-    __truediv__ = div
+    __truediv__ = truediv
     __xor__ = xor
-
-    
-    
