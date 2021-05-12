@@ -441,7 +441,7 @@ class ShareTensor(metaclass=SyMPCTensor):
     __xor__ = xor
 
 
-allowed_operations_on_share_tensor = [
+allowed_external_api_share_tensor = [
     ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
     ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
     ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),

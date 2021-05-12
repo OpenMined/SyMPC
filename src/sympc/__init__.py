@@ -8,6 +8,8 @@ For the moment it has some basic functionality, but more would come in the follo
 from pkg_resources import DistributionNotFound
 from pkg_resources import get_distribution
 
+import sympc
+
 from . import approximations  # noqa: 401
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
@@ -15,6 +17,7 @@ from . import protocol  # noqa: 401
 from . import session  # noqa: 401
 from . import store  # noqa: 401
 from . import tensor  # noqa: 401
+from . import utils  # noqa: 401
 
 from . import module  # noqa: 401 isort: skip
 
@@ -53,3 +56,27 @@ finally:
     del get_distribution, DistributionNotFound
 
 add_methods_tensor_syft()
+
+
+allowed_external_api_modules = [
+    ("sympc", sympc),
+    ("sympc.session", session),
+    ("sympc.tensor", tensor),
+    ("sympc.protocol", protocol),
+    ("sympc.store", store),
+    ("sympc.protocol.fss", protocol.fss),
+    ("sympc.protocol.fss.fss", protocol.fss.fss),
+    ("sympc.protocol.spdz", protocol.spdz),
+    ("sympc.protocol.spdz.spdz", protocol.spdz.spdz),
+    ("sympc.utils", utils),
+]
+
+allowed_external_api_classes = [
+    ("sympc.session.Session", "sympc.session.Session", session.Session),
+    ("sympc.store.CryptoStore", "sympc.store.CryptoStore", store.CryptoStore),
+    (
+        "sympc.tensor.ShareTensor",
+        "sympc.tensor.ShareTensor",
+        tensor.ShareTensor,
+    ),
+]
