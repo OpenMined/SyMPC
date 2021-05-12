@@ -52,7 +52,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "sub" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y: self-y
 
 
         """
@@ -61,7 +61,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "sub" operation between "y" and "self".
 
         Args:
-            y: self+y
+            y: self-y
 
         """
 
@@ -69,7 +69,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "mul" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y: self*y
 
         """
 
@@ -77,7 +77,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "div" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y: self/y
 
         """
 
@@ -85,7 +85,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "matmul" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y: self@y
 
         """
 
@@ -93,7 +93,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "rmatmul" operation between "y" and "self".
 
         Args:
-            y: self+y
+            y: self@y
 
         """
 
@@ -101,7 +101,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Apply the "xor" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y: self^y
 
         """
 
@@ -109,7 +109,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Lower than operator.
 
         Args:
-            y: self+y
+            y: self<y
 
         """
 
@@ -117,7 +117,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Greater than operator.
 
         Args:
-            y: self+y
+            y: self>y
 
         """
 
@@ -125,7 +125,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Equal operator.
 
         Args:
-            y: self+y
+            y: self==y
 
         """
 
@@ -133,7 +133,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         """Not Equal operator.
 
         Args:
-            y: self+y
+            y: self!=y
 
         """
 
