@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620591505080,
+  "lastUpdate": 1620860825267,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -279,6 +279,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.10447490394441059",
             "extra": "mean: 4.000718756200001 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "danielorihuela@users.noreply.github.com",
+            "name": "danielorihuela",
+            "username": "danielorihuela"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "bf3e11a386e23b4cbc46e437f6cea4f10ff46344",
+          "message": "feat: move allowlist from syft to sympc (#162)\n\n* feat: move allowlist from syft to sympc\r\n\r\n* refactor: move allowlist to share tensor file\r\n\r\n* feat: move allowlists from pysyft to sympc\r\n\r\n* refactor: allowlist to api.py\r\n\r\n* docs: api.py\r\n\r\n* chore: improve import section",
+          "timestamp": "2021-05-13T00:04:42+01:00",
+          "tree_id": "b88f068b836667e5ae768c2b27b105eb343f5c27",
+          "url": "https://github.com/OpenMined/SyMPC/commit/bf3e11a386e23b4cbc46e437f6cea4f10ff46344"
+        },
+        "date": 1620860823025,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.2582252508254092,
+            "unit": "iter/sec",
+            "range": "stddev: 0.1022160260641643",
+            "extra": "mean: 3.872587970399991 sec\nrounds: 5"
           }
         ]
       }
