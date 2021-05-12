@@ -21,6 +21,7 @@ import torchcsprng as csprng  # type: ignore
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
+from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
@@ -35,7 +36,7 @@ def _get_triples(
     nr_parties: int,
     a_shape: Tuple[int],
     b_shape: Tuple[int],
-    **kwargs: Dict[Any, Any]
+    **kwargs: Dict[Any, Any],
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
 
@@ -142,7 +143,7 @@ def mul_store_add(
         a_shape (Tuple[int]): the shape of the first operand
         b_shape (Tuple[int]): the shape of the second operand
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_mul_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
@@ -152,8 +153,8 @@ def mul_store_add(
 @register_primitive_store_get("beaver_mul")
 def mul_store_get(
     store: Dict[Tuple[int, int], List[Any]],
-    a_shape: Tuple[int],
-    b_shape: Tuple[int],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
     remove: bool = True,
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
@@ -170,15 +171,19 @@ def mul_store_get(
         Any: The primitives required for the "mul" operation.
 
     Raises:
-        ValueError: If no primitive in the store for config_key.
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
-    config_key = (a_shape, b_shape)
-    primitives = store[config_key]
+    config_key = f"beaver_mul_{tuple(a_shape)}_{tuple(b_shape)}"
+
+    try:
+        primitives = store[config_key]
+    except KeyError:
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
         primitive = primitives[0]
-    except:
-        raise ValueError("No primitive in the store for {config_key}")
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     if remove:
         del primitives[0]
@@ -222,7 +227,7 @@ def matmul_store_add(
         b_shape (Tuple[int]): The shape of the second operand.
 
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_matmul_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
@@ -232,8 +237,8 @@ def matmul_store_add(
 @register_primitive_store_get("beaver_matmul")
 def matmul_store_get(
     store: Dict[Tuple[int, int], List[Any]],
-    a_shape: Tuple[int],
-    b_shape: Tuple[int],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
     remove: bool = True,
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
@@ -250,15 +255,19 @@ def matmul_store_get(
         Any: The primitives required for the "matmul" operation.
 
     Raises:
-        ValueError: If no primitive in the store for config_key.
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
-    config_key = (a_shape, b_shape)
-    primitives = store[config_key]
+    config_key = f"beaver_matmul_{tuple(a_shape)}_{tuple(b_shape)}"
+
+    try:
+        primitives = store[config_key]
+    except KeyError:
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
         primitive = primitives[0]
-    except:
-        raise ValueError("No primitive in the store for {config_key}")
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     if remove:
         del primitives[0]
@@ -301,7 +310,7 @@ def conv2d_store_add(
         a_shape (Tuple[int]): The shape of the first operand.
         b_shape (Tuple[int]): The shape of the second operand.
     """
-    config_key = (a_shape, b_shape)
+    config_key = f"beaver_conv2d_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
@@ -311,8 +320,8 @@ def conv2d_store_add(
 @register_primitive_store_get("beaver_conv2d")
 def conv2d_store_get(
     store: Dict[Tuple[int, int], List[Any]],
-    a_shape: Tuple[int],
-    b_shape: Tuple[int],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
     remove: bool = True,
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
@@ -329,15 +338,19 @@ def conv2d_store_get(
         Any: The primitives required for the "conv2d" operation.
 
     Raises:
-        ValueError: If no primitive in the store for config_key.
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
-    config_key = (a_shape, b_shape)
-    primitives = store[config_key]
+    config_key = f"beaver_conv2d_{tuple(a_shape)}_{tuple(b_shape)}"
+
+    try:
+        primitives = store[config_key]
+    except KeyError:
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
 
     try:
         primitive = primitives[0]
-    except:
-        raise ValueError("No primitive in the store for {config_key}")
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
 
     if remove:
         del primitives[0]
@@ -381,7 +394,7 @@ def count_wraps_rand(
         tensor_type=torch.long,
         encoder_precision=0,
     )
-    wraps = count_wraps([share.data for share in r_shares])
+    wraps = count_wraps([share.tensor for share in r_shares])
 
     theta_r_shares = MPCTensor.generate_shares(
         secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0

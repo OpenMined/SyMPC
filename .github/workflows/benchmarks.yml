@@ -1,4 +1,4 @@
-name: Tests
+name: Benchmarks
 
 on:
   push:
@@ -6,20 +6,7 @@ on:
       - main
     paths:
       - "**.py"
-      - "**.ipynb"
-      - "setup.cfg"
       - ".github/workflows/**.yml"
-      - "requirements_dev.txt"
-      - "requirements.txt"
-
-  pull_request:
-    types: [opened, synchronize, reopened]
-    paths:
-      - "**.py"
-      - "setup.cfg"
-      - ".github/workflows/**.yml"
-      - "requirements_dev.txt"
-      - "requirements.txt"
 
 jobs:
   python-tests:
@@ -27,7 +14,7 @@ jobs:
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8]
 
     steps:
       - uses: actions/checkout@v2
@@ -56,23 +43,15 @@ jobs:
           pip install -r requirements.dev.txt
           pip install -e .
 
-      - id: file_changes  # get changed files.
-        uses: trilom/file-changes-action@v1.2.3
+      - name: Run benchmarks
+        run: |
+          pytest benchmarks/ --benchmark-json benchmarks/pytest_benchmarks_output.json
+          
+      - name: Store benchmark result
+        uses: rhysd/github-action-benchmark@v1
         with:
-          output: ' '
-
-      - uses: pre-commit/action@v2.0.0
-        with:
-          extra_args: --files ${{ steps.file_changes.outputs.files}}  # apply only to changed files.
-
-      - name: Check docstring coverage
-        run: |
-          interrogate -mvp src/ -f 80
-
-      - name: Scan for security issues
-        run: |
-          bandit -r src
-
-      - name: Run tests
-        run: |
-          pytest tests/ --deselect=tests/notebooks -n auto
+          name: Pytest-benchmarks
+          tool: "pytest"
+          output-file-path: benchmarks/pytest_benchmarks_output.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
