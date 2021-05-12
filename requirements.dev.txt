@@ -19,3 +19,4 @@ pytest-benchmark==3.4.1
 pytest-cov==2.10.1
 pytest-xdist[psutil]
 git+git://github.com/OpenMined/PySyft.git@dev#egg=syft
+safety
