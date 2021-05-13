@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620860825267,
+  "lastUpdate": 1620941327825,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -310,6 +310,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.1022160260641643",
             "extra": "mean: 3.872587970399991 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "danielorihuela@users.noreply.github.com",
+            "name": "danielorihuela",
+            "username": "danielorihuela"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1a9ebab9cc61b6e43a06908a1b6055e32b3743d7",
+          "message": "fix: add lacking methods (#170)\n\n* fix: add lacking methods\r\n\r\n* chore: add noqa",
+          "timestamp": "2021-05-13T22:26:25+01:00",
+          "tree_id": "5263909492909421e7e1d52ef8d16ea5f1109c2d",
+          "url": "https://github.com/OpenMined/SyMPC/commit/1a9ebab9cc61b6e43a06908a1b6055e32b3743d7"
+        },
+        "date": 1620941326817,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.25872413400974914,
+            "unit": "iter/sec",
+            "range": "stddev: 0.210549758410243",
+            "extra": "mean: 3.865120676999999 sec\nrounds: 5"
           }
         ]
       }
