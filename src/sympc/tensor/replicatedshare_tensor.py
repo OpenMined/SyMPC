@@ -146,8 +146,10 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         and return the result
          * if we call "T" we want to call it on the underlying tensor
         but we want to wrap it in the same tensor type
+
         Args:
             property_name (str): property to hook
+
         Returns:
             A hooked property
         """
@@ -178,18 +180,21 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
         and return the result
          * if we call "unsqueeze" we want to call it on the underlying tensor
         but we want to wrap it in the same tensor type
+
         Args:
             method_name (str): method to hook
+
         Returns:
             A hooked method
+
         """
 
-        def method_new_RS_tensor(
+        def method_new_rs_tensor(
             _self: "ReplicatedShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
             method = getattr(_self.tensor, method_name)
             tensor = method(*args, **kwargs)
-            res = ReplicatedShareTensor(session=_self.session)
+            res = ReplicatedShareTensor(session=_self.session, shares=_self.shares)
             res.tensor = tensor
             return res
 
@@ -201,7 +206,7 @@ class ReplicatedShareTensor(metaclass=SyMPCTensor):
             return res
 
         if method_name in METHODS_NEW_SHARE_TENSOR:
-            res = method_new_RS_tensor
+            res = method_new_rs_tensor
         else:
             res = method
 
