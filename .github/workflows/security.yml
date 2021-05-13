@@ -9,12 +9,12 @@ on:
       - ".github/workflows/*.yml"
 
 jobs:
-  python-tests:
+  Security-check:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 4
+      max-parallel: 1
       matrix:
-        python-version: [3.7, 3.8, 3.9]
+        python-version: [3.8]
 
     steps:
       - uses: actions/checkout@v2
