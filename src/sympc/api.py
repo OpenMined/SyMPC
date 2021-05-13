@@ -46,7 +46,6 @@ allowed_external_classes = [
     ),
 ]
 
-
 allowed_external_attrs = [
     ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
     ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),

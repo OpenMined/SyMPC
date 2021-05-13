@@ -8,7 +8,6 @@ For the moment it has some basic functionality, but more would come in the follo
 from pkg_resources import DistributionNotFound
 from pkg_resources import get_distribution
 
-from . import api
 from . import approximations  # noqa: 401
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
@@ -18,6 +17,84 @@ from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 
 from . import module  # noqa: 401 isort: skip
+
+
+from .api import allowed_external_modules
+from .api import allowed_external_classes
+# from .api import allowed_external_attrs
+
+allowed_external_attrs = [
+    ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
+    ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
+    ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),
+    ("sympc.protocol.fss.fss.mask_builder", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.fss.fss.evaluate", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.spdz.spdz.mul_parties", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.spdz.spdz.spdz_mask", "syft.lib.python.Tuple"),
+    ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.session.Session.przs_generate_random_share",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.store.CryptoStore.populate_store",
+        "syft.lib.python._SyNone",
+    ),
+    (
+        "sympc.utils.get_new_generator",
+        "torch.Generator",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__add__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__sub__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__rmul__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__mul__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__matmul__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__truediv__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.__rmatmul__",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.t",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.sum",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.clone",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.numel",
+        "syft.lib.python.Int",  # FIXME: Can't we just return an int??
+    ),
+    (
+        "sympc.tensor.ShareTensor.T",
+        "sympc.tensor.ShareTensor",
+    ),
+    ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
+]
 
 try:
     # third party
