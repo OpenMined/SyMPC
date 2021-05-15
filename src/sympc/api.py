@@ -113,6 +113,18 @@ allowed_external_attrs = [
         "sympc.tensor.ShareTensor",
     ),
     (
+        "sympc.tensor.ShareTensor.t",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.sum",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.ShareTensor.clone",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
         "sympc.tensor.ShareTensor.numel",
         "syft.lib.python.Int",  # FIXME: Can't we just return an int??
     ),

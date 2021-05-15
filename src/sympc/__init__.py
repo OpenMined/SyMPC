@@ -8,6 +8,7 @@ For the moment it has some basic functionality, but more would come in the follo
 from pkg_resources import DistributionNotFound
 from pkg_resources import get_distribution
 
+from . import api  # noqa: 401
 from . import approximations  # noqa: 401
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
