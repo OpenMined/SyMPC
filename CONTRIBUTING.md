@@ -250,7 +250,7 @@ Navigate to the page and click the fork button:
 https://github.com/OpenMined/SyMPC
 
 You will now have a URL like this with your copy:
-https://github.com/<your-username>/SyMPC
+https://github.com/\<your-username>/SyMPC
 
 ### Clone GitHub Repo
 
