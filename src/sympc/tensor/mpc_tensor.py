@@ -25,6 +25,9 @@ from sympc.utils import islocal
 from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
+# external member functions of MPCTensor
+from .static import *
+
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
@@ -128,6 +131,11 @@ class MPCTensor(metaclass=SyMPCTensor):
         "transpose",
     }
     PROPERTIES_FORWARD = {"T"}
+
+    # define all member functions that are defined outside of the class
+    dict_functions = {
+        "argmax":argmax,
+    }
 
     def __init__(
         self,
@@ -823,6 +831,13 @@ class MPCTensor(metaclass=SyMPCTensor):
         Returns:
             The attribute specific for this instance
         """
+        # Add all member functions that are defined outside of this class
+        # TODO: why do I get this error when I remove the first if? 
+        # TODO: does it make sense to define dict_funstions as class variable? 
+        if attr_name == 'argmax':
+            if attr_name in self.dict_functions.keys():
+                return functools.partial(self.dict_functions[attr_name], self)
+
         # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
         from sympc.tensor.static import STATIC_FUNCS
@@ -987,7 +1002,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":
-        """Lower or than operator.
+        """Lower or equal operator.
 
         Args:
             other (MPCTensor): MPCTensor to compare.

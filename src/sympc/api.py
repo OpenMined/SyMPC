@@ -60,6 +60,7 @@ allowed_external_classes = [
     ),
 ]
 
+
 allowed_external_attrs = [
     ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
     ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
@@ -109,18 +110,6 @@ allowed_external_attrs = [
     ),
     (
         "sympc.tensor.ShareTensor.__rmatmul__",
-        "sympc.tensor.ShareTensor",
-    ),
-    (
-        "sympc.tensor.ShareTensor.t",
-        "sympc.tensor.ShareTensor",
-    ),
-    (
-        "sympc.tensor.ShareTensor.sum",
-        "sympc.tensor.ShareTensor",
-    ),
-    (
-        "sympc.tensor.ShareTensor.clone",
         "sympc.tensor.ShareTensor",
     ),
     (
