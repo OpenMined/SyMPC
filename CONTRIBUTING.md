@@ -31,6 +31,7 @@ We follow the [Contribution Guidelines of PySyft](https://github.com/OpenMined/P
     - [Pipenv](#pipenv-1)
     - [Install Python Dependencies](#install-python-dependencies)
     - [Linking the SyMPC src](#linking-the-sympc-src)
+    - [Linking the PySyft src](#linking-the-pysyft-src)
   - [Code Quality](#code-quality)
     - [Formatting and Linting](#formatting-and-linting)
     - [Tests and CI](#tests-and-ci)
@@ -175,7 +176,7 @@ If you do not fully understand what a Virtual Environment is and why you need it
 
 ### What is a Virtual Environment
 
-Ever wonder how python finds your packages that you have installed? The simple answer is, it recursively searches up a few folders from where ever the binary `python` or `python.exe` looking for a folder called site-packages.
+Ever wonder how python finds your packages that you have installed? The simple answer is, it recursively searches up a few folders from where ever the binary `python` looking for a folder called site-packages.
 
 When you open a shell try typing:
 
@@ -382,9 +383,10 @@ If they pass then you know everything is set up correctly.
 ### Linking the PySyft src
 
 SyMPC is a companion library for PySyft. For the moment they are highly coupled.
-One of the SyMPC goals is to convert it into a standalone library. Thus, PySyft
-will depend on SyMPC, but not the other way around. This point is not yet reached
-and this adds some complications when applying some changes that in SyMPC that requires changes in PySyft to work.
+PySyft depends on SyMPC and SyMPC depends on PySyft. One of the SyMPC goals is to
+convert it into a standalone library. Thus, PySyft will depend on SyMPC, but not
+the other way around. This point is not yet reached and this adds some complications
+when applying some changes that in SyMPC that requires changes in PySyft to work.
 
 **Example**: You implement a new function on a ShareTensor in SyMPC. In your test, you call that function from a PySyft object pointer `share_pointer_in_pysyft.new_method()`.  Clearly, this test will not work until PySyft uses this new SyMPC version you are developing.
 
@@ -493,14 +495,6 @@ You can now navigate to http://0.0.0.0:8000/.
 ## Pre-Commit
 
 We are using a tool called [pre-commit](https://pre-commit.com/) which is a plugin system that allows easy configuration of popular code quality tools such as linting, formatting, testing and security checks.
-
-### MacOS
-
-First, install the pre-commit tool:
-
-```
-$ brew install pre-commit
-```
 
 Now make sure to install the pre-commit hooks for this repo:
 
