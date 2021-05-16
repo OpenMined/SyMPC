@@ -14,7 +14,7 @@ We follow the [Contribution Guidelines of PySyft](https://github.com/OpenMined/P
     - [MacOS](#macos-1)
   - [Python Versions](#python-versions)
     - [MacOS](#macos-2)
-    - [For Linux/WSL based Systems](#for-linuxwsl-based-systems)
+    - [For Linux](#for-linux)
     - [Using pyenv](#using-pyenv)
   - [Virtual Environments](#virtual-environments)
     - [What is a Virtual Environment](#what-is-a-virtual-environment)
@@ -127,7 +127,7 @@ Install the `pyenv` tool with `brew`:
 $ brew install pyenv
 ```
 
-### For Linux/WSL based Systems
+### For Linux
 
 Follow the instructions provided in the repo : https://github.com/pyenv/pyenv-installer
 
