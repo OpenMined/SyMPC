@@ -313,7 +313,7 @@ You should now see that the prompt has changed and if you run the following:
 
 ```
 $ which python
-/Users/madhavajay/.local/share/virtualenvs/PySyft-lHlz_cKe/bin/python
+/Users/.../.local/share/virtualenvs/PySyft-lHlz_cKe/bin/python
 ```
 
 Okay, any time we are inside the virtualenv every python and pip command we run will use this isolated version that we defined and will not affect the rest of the system or other projects.
@@ -395,7 +395,6 @@ As a little summary, you need to:
 ```bash
 $ git clone https://github.com/OpenMined/PySyft.git
 $ cd PySyft/packages
-$ pip install -r 'requirements.txt'
 $ pip install -e syft
 ```
 
@@ -410,8 +409,8 @@ A change that implies both libraries looks like:
 
 1. Change SyMPC code
 2. Change PySyft code
-3. Install SyMPC with `pip install -e .`
-4. Install PySyft with `pip install -e syft`
+3. (Optional, only if you have not done this step before) Install SyMPC with `pip install -e .`
+4. (Optional, only if you have not done this step before) Install PySyft with `pip install -e syft`
 5. Run SyMPC tests
 6. Run PySyft tests
 
@@ -434,7 +433,7 @@ To make sure your code will pass these CI checks before you push you should use 
 We aim to have a 100% test coverage, and the GitHub Actions CI will fail if the coverage is below a certain value. You can evaluate your coverage using the following commands.
 
 ```
-$ pytest -m fast -n auto
+$ pytest -n auto
 ```
 
 ### Writing Test Cases
@@ -537,4 +536,4 @@ If your check fails, don't worry, you will still be able to make changes and mak
 
 ## Support
 
-For support in contributing to this project and like to follow along with any code changes to the library, please join the #code_sympc and #cryptography Slack channel. [Click here to join our Slack community!](https://slack.openmined.org/)
+For support in contributing to this project and like to follow along with any code changes to the library, please join the #cryptography Slack channel. [Click here to join our Slack community!](https://slack.openmined.org/)
