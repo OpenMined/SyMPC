@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1620941327825,
+  "lastUpdate": 1621196148857,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -341,6 +341,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.210549758410243",
             "extra": "mean: 3.865120676999999 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1d5f6abbbb9e90dd94c6de31105581ea7b261ae4",
+          "message": "Initialise Replicated Shared Tensor  (#167)\n\n* initialize RSTensor\r\n\r\n* Update docstrings\r\n\r\n* Update docstrings\r\n\r\n* Make suggested changes",
+          "timestamp": "2021-05-16T21:13:01+01:00",
+          "tree_id": "cce555b8bd40f39cdb248f523e3695d38eebc2a0",
+          "url": "https://github.com/OpenMined/SyMPC/commit/1d5f6abbbb9e90dd94c6de31105581ea7b261ae4"
+        },
+        "date": 1621196147878,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.24575550833684484,
+            "unit": "iter/sec",
+            "range": "stddev: 0.11819067720899928",
+            "extra": "mean: 4.0690847857999985 sec\nrounds: 5"
           }
         ]
       }
