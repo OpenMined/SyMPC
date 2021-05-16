@@ -136,7 +136,7 @@ def argmax(self, dim=None, keepdim=False, one_hot=False) -> "MPCTensor":
     # for each share in MPCTensor
     #   do the algorithm protrayed in paper (helper_argmax_pairwise)
     #   results in creating two matrices and substracting them
-    args = [dim]
+    args = [[share_ptr_tensor, dim] for share_ptr_tensor in self.share_ptrs]
     shares = parallel_execution(helper_argmax_pairwise, self.session.parties)(args)
     # then create an MPCTensor tensor based on this results per share
     # (we can do that bc substraction can be done in mpc fashion out of the box)
@@ -152,13 +152,16 @@ def argmax(self, dim=None, keepdim=False, one_hot=False) -> "MPCTensor":
     result = pairwise_comparisons.sum(0)
     result = result >= (row_length - 1)
 
-    result = result.reshape(self.shape) if dim is None and len(self.shape) > 1 else result
+    result = (
+        result.reshape(self.shape) if dim is None and len(self.shape) > 1 else result
+    )
 
     if not one_hot:
         result = result._one_hot_to_index(dim, keepdim)
 
     # we return a boolean vector with the same shape as the input.
     return result
+
 
 # from syft < 0.3.0
 def helper_argmax_pairwise(self, dim=None):
