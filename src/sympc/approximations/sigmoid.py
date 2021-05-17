@@ -6,7 +6,7 @@ from typing import Any
 import torch
 
 from sympc.approximations.exponential import exp
-from sympc.approximations.reci import reciprocal
+from sympc.approximations.reciprocal import reciprocal
 from sympc.approximations.utils import sign
 
 
