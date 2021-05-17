@@ -180,6 +180,8 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 class FSS(metaclass=Protocol):
     """Function Secret Sharing."""
 
+    tensor_class = ShareTensor
+
     @staticmethod
     def eq(x1: MPCTensor, x2: MPCTensor) -> MPCTensor:
         """Equal operator.
@@ -205,6 +207,19 @@ class FSS(metaclass=Protocol):
             MPCTensor: Shares of the comparison.
         """
         return fss_op(x1, x2, "comp")
+
+    @staticmethod
+    def distribute_shares(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        """Forward the call to the tensor specific class.
+
+        Args:
+            *args (List[Any]): list of args to be forwarded
+            **kwargs(Dict[str, Any): list of named args to be forwarded
+
+        Returns:
+            The result returned by the tensor specific distribute_shares method
+        """
+        return FSS.tensor_class.distribute_shares(*args, **kwargs)
 
 
 """ Register Crypto Store capabilities for FSS """
