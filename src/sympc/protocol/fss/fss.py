@@ -27,6 +27,7 @@ from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
+from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import parallel_execution
 
 ttp_generator = csprng.create_random_device_generator()
@@ -180,7 +181,8 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 class FSS(metaclass=Protocol):
     """Function Secret Sharing."""
 
-    tensor_class = ShareTensor
+    """ Used for Share Level static operations like distrubuting the shares."""
+    share_class: SyMPCTensor = ShareTensor
 
     @staticmethod
     def eq(x1: MPCTensor, x2: MPCTensor) -> MPCTensor:
@@ -219,7 +221,7 @@ class FSS(metaclass=Protocol):
         Returns:
             The result returned by the tensor specific distribute_shares method
         """
-        return FSS.tensor_class.distribute_shares(*args, **kwargs)
+        return FSS.share_class.distribute_shares(*args, **kwargs)
 
 
 """ Register Crypto Store capabilities for FSS """
