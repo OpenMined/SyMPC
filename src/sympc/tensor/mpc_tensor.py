@@ -528,6 +528,42 @@ class MPCTensor(metaclass=SyMPCTensor):
         else:
             return convolution
 
+    def conv_transpose2d(
+        self,
+        weight: Union["MPCTensor", torch.Tensor, float, int],
+        bias: Optional[torch.Tensor] = None,
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
+        groups: int = 1,
+    ) -> "MPCTensor":
+        """Apply the "conv_transpose2d" operation between "self" and "y".
+
+        Args:
+            weight: the convolution kernel
+            bias: optional bias
+            stride: stride
+            padding: padding
+            dilation: dilation
+            groups: groups
+
+        Returns:
+            MPCTensor. Result of the operation.
+        """
+        kwargs = {
+            "bias": bias,
+            "stride": stride,
+            "padding": padding,
+            "dilation": dilation,
+            "groups": groups,
+        }
+
+        bias = kwargs.pop("bias", None)
+
+        convolution = self.__apply_op(weight, "conv_transpose2d", kwargs_=kwargs)
+
+        return convolution
+
     def rmatmul(self, y: torch.Tensor) -> "MPCTensor":
         """Apply the "rmatmul" operation between "y" and "self".
 
@@ -638,7 +674,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
             )
 
-        if op_str in {"mul", "matmul", "conv2d"}:
+        if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
             from sympc.protocol.spdz import spdz
 
             result = spdz.mul_master(self, y, op_str, kwargs_)

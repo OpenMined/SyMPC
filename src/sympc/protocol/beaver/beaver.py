@@ -24,7 +24,6 @@ from sympc.store import register_primitive_store_get
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
-from sympc.utils import count_wraps
 
 ttp_generator = csprng.create_random_device_generator()
 
@@ -77,6 +76,8 @@ def _get_triples(
 
     if op_str == "conv2d":
         cmd = torch.conv2d
+    elif op_str == "conv_transpose2d":
+        cmd = torch.conv_transpose2d
     else:
         cmd = getattr(operator, op_str)
 
@@ -358,53 +359,84 @@ def conv2d_store_get(
     return primitive
 
 
-""" Beaver Operations defined for Counting the Wrap-Arounds """
+""" Beaver Operations defined for Convolution 2D """
 
 
-@register_primitive_generator("beaver_wraps")
-def count_wraps_rand(
-    nr_parties: int, shape: Tuple[int]
-) -> Tuple[List[ShareTensor], List[ShareTensor]]:
-    """Count wraps random.
-
-    The Trusted Third Party (TTP) or Crypto provider should generate:
-
-    - a set of shares for a random number
-    - a set of shares for the number of wraparounds for that number
-
-    Those shares are used when doing a public division, such that the
-    end result would be the correct one.
+@register_primitive_generator("beaver_conv_tanspose2d")
+def get_triples_tanspose2d(
+    *args: List[Any], **kwargs: Dict[Any, Any]
+) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
+    """Get the beaver triples for the conv2d operation.
 
     Args:
-        nr_parties (int): Number of parties
-        shape (Tuple[int]): The shape for the random value
+        *args: Arguments for _get_triples.
+        **kwargs: Keyword arguments for _get_triples.
 
     Returns:
-        List[List[List[ShareTensor, ShareTensor]]: a list of instaces with the shares
-        for a random integer value and shares for the number of wraparounds that are done when
-        reconstructing the random value
+        Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]: The generated
+        triples a,b,c for each party.
     """
-    rand_val = torch.empty(size=shape, dtype=torch.long).random_(
-        generator=ttp_generator
-    )
+    return _get_triples("conv_tanspose2d", *args, **kwargs)
 
-    r_shares = MPCTensor.generate_shares(
-        secret=rand_val,
-        nr_parties=nr_parties,
-        tensor_type=torch.long,
-        encoder_precision=0,
-    )
-    wraps = count_wraps([share.tensor for share in r_shares])
 
-    theta_r_shares = MPCTensor.generate_shares(
-        secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
-    )
+@register_primitive_store_add("beaver_conv_tanspose2d")
+def conv_tanspose2d_store_add(
+    store: Any,
+    primitives: Iterable[Any],
+    a_shape: Tuple[int],
+    b_shape: Tuple[int],
+) -> None:
+    """Add the primitives required for the "conv2d" operation to the CryptoStore.
 
-    # We are always creating only an instance
-    primitives_sequential = [(r_shares, theta_r_shares)]
+    Args:
+        store (Any): The CryptoStore.
+        primitives (Iterable[Any]): The list of primitives.
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+    """
+    config_key = f"beaver_conv_tanspose2d_{a_shape}_{b_shape}"
+    if config_key in store:
+        store[config_key].extend(primitives)
+    else:
+        store[config_key] = primitives
 
-    primitives = list(
-        map(list, zip(*map(lambda x: map(list, zip(*x)), primitives_sequential)))
-    )
 
-    return primitives
+@register_primitive_store_get("beaver_conv_tanspose2d")
+def conv_tanspose2d_store_get(
+    store: Dict[Tuple[int, int], List[Any]],
+    a_shape: Tuple[int, ...],
+    b_shape: Tuple[int, ...],
+    remove: bool = True,
+) -> Any:
+    """Retrieve the primitives from the CryptoStore.
+
+    Those are needed for executing the "conv2d" operation.
+
+    Args:
+        store: the CryptoStore
+        a_shape (Tuple[int]): The shape of the first operand.
+        b_shape (Tuple[int]): The shape of the second operand.
+        remove (bool): True if the primitives should be removed from the store.
+
+    Returns:
+        Any: The primitives required for the "conv2d" operation.
+
+    Raises:
+        EmptyPrimitiveStore: If no primitive in the store for config_key.
+    """
+    config_key = f"beaver_conv_tanspose2d_{tuple(a_shape)}_{tuple(b_shape)}"
+
+    try:
+        primitives = store[config_key]
+    except KeyError:
+        raise EmptyPrimitiveStore(f"{config_key} does not exists in the store")
+
+    try:
+        primitive = primitives[0]
+    except Exception:
+        raise EmptyPrimitiveStore(f"No primitive in the store for {config_key}")
+
+    if remove:
+        del primitives[0]
+
+    return primitive

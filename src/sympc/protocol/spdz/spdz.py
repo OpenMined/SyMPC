@@ -25,7 +25,7 @@ from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
 from sympc.utils import parallel_execution
 
-EXPECTED_OPS = {"mul", "matmul", "conv2d"}
+EXPECTED_OPS = {"mul", "matmul", "conv2d", "conv_transpose2d"}
 
 
 """ Functions that are executed at the orchestrator """
@@ -241,6 +241,8 @@ def mul_parties(
 
     if op_str == "conv2d":
         op = torch.conv2d
+    elif op_str == "conv_transpose2d":
+        op = torch.conv_transpose2d
     else:
         op = getattr(operator, op_str)
 
