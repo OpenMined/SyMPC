@@ -11,6 +11,4 @@ def get_session() -> Session:
     Returns:
         Session: MPC Session
     """
-    session = sympc.session.current_session
-    print("successfully retrieved:", sympc.session.current_session)
-    return session
+    return sympc.session.current_session
