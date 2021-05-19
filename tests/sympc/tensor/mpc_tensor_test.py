@@ -163,7 +163,8 @@ def test_ops_mpc_mpc_div(get_clients, nr_clients, op_str) -> None:
 @pytest.mark.parametrize("bias", [None, torch.ones(1)])
 @pytest.mark.parametrize("stride", [1, 2])
 @pytest.mark.parametrize("padding", [0, 1])
-def test_conv2d_mpc_mpc(get_clients, nr_clients, bias, stride, padding) -> None:
+@pytest.mark.parametrize("op_str", ["conv2d", "conv_transpose2d"])
+def test_conv_mpc_mpc(get_clients, nr_clients, bias, stride, padding, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -175,8 +176,10 @@ def test_conv2d_mpc_mpc(get_clients, nr_clients, bias, stride, padding) -> None:
 
     kwargs = {"bias": bias, "stride": stride, "padding": padding}
 
-    result = input.conv2d(weight, **kwargs).reconstruct()
-    expected_result = torch.nn.functional.conv2d(input_secret, weight_secret, **kwargs)
+    op = getattr(MPCTensor, op_str)
+    result = op(input, weight, **kwargs).reconstruct()
+    op = getattr(torch.nn.functional, op_str)
+    expected_result = op(input_secret, weight_secret, **kwargs)
 
     assert np.allclose(result, expected_result, rtol=10e-4)
 

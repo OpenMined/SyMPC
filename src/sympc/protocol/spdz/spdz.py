@@ -239,10 +239,8 @@ def mul_parties(
 
     a_share, b_share, c_share = primitives
 
-    if op_str == "conv2d":
-        op = torch.conv2d
-    elif op_str == "conv_transpose2d":
-        op = torch.conv_transpose2d
+    if op_str in ["conv2d", "conv_transpose2d"]:
+        op = getattr(torch, op_str)
     else:
         op = getattr(operator, op_str)
 

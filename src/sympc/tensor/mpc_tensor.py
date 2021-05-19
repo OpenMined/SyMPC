@@ -562,7 +562,10 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         convolution = self.__apply_op(weight, "conv_transpose2d", kwargs_=kwargs)
 
-        return convolution
+        if bias:
+            return convolution + bias.unsqueeze(1).unsqueeze(1)
+        else:
+            return convolution
 
     def rmatmul(self, y: torch.Tensor) -> "MPCTensor":
         """Apply the "rmatmul" operation between "y" and "self".
@@ -729,8 +732,8 @@ class MPCTensor(metaclass=SyMPCTensor):
                 f"Shapes should not be None; x_shape {x_shape}, y_shape {y_shape}"
             )
 
-        if op_str == "conv2d":
-            op = torch.conv2d
+        if op_str in ["conv2d", "conv_transpose2d"]:
+            op = getattr(torch, op_str)
         else:
             op = getattr(operator, op_str)
 

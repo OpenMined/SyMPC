@@ -74,10 +74,8 @@ def _get_triples(
         encoder_precision=0,
     )
 
-    if op_str == "conv2d":
-        cmd = torch.conv2d
-    elif op_str == "conv_transpose2d":
-        cmd = torch.conv_transpose2d
+    if op_str in ["conv2d", "conv_transpose2d"]:
+        cmd = getattr(torch, op_str)
     else:
         cmd = getattr(operator, op_str)
 
@@ -359,14 +357,14 @@ def conv2d_store_get(
     return primitive
 
 
-""" Beaver Operations defined for Convolution 2D """
+""" Beaver Operations defined for Convolution Transpose 2D """
 
 
-@register_primitive_generator("beaver_conv_tanspose2d")
-def get_triples_tanspose2d(
+@register_primitive_generator("beaver_conv_transpose2d")
+def get_triples_transpose2d(
     *args: List[Any], **kwargs: Dict[Any, Any]
 ) -> Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]:
-    """Get the beaver triples for the conv2d operation.
+    """Get the beaver triples for the conv_transpose2d operation.
 
     Args:
         *args: Arguments for _get_triples.
@@ -376,17 +374,17 @@ def get_triples_tanspose2d(
         Tuple[List[ShareTensor], List[ShareTensor], List[ShareTensor]]: The generated
         triples a,b,c for each party.
     """
-    return _get_triples("conv_tanspose2d", *args, **kwargs)
+    return _get_triples("conv_transpose2d", *args, **kwargs)
 
 
-@register_primitive_store_add("beaver_conv_tanspose2d")
-def conv_tanspose2d_store_add(
+@register_primitive_store_add("beaver_conv_transpose2d")
+def conv_transpose2d_store_add(
     store: Any,
     primitives: Iterable[Any],
     a_shape: Tuple[int],
     b_shape: Tuple[int],
 ) -> None:
-    """Add the primitives required for the "conv2d" operation to the CryptoStore.
+    """Add the primitives required for the "conv_transpose2d" operation to the CryptoStore.
 
     Args:
         store (Any): The CryptoStore.
@@ -394,15 +392,15 @@ def conv_tanspose2d_store_add(
         a_shape (Tuple[int]): The shape of the first operand.
         b_shape (Tuple[int]): The shape of the second operand.
     """
-    config_key = f"beaver_conv_tanspose2d_{a_shape}_{b_shape}"
+    config_key = f"beaver_conv_transpose2d_{a_shape}_{b_shape}"
     if config_key in store:
         store[config_key].extend(primitives)
     else:
         store[config_key] = primitives
 
 
-@register_primitive_store_get("beaver_conv_tanspose2d")
-def conv_tanspose2d_store_get(
+@register_primitive_store_get("beaver_conv_transpose2d")
+def conv_transpose2d_store_get(
     store: Dict[Tuple[int, int], List[Any]],
     a_shape: Tuple[int, ...],
     b_shape: Tuple[int, ...],
@@ -410,7 +408,7 @@ def conv_tanspose2d_store_get(
 ) -> Any:
     """Retrieve the primitives from the CryptoStore.
 
-    Those are needed for executing the "conv2d" operation.
+    Those are needed for executing the "conv_transpose2d" operation.
 
     Args:
         store: the CryptoStore
@@ -424,7 +422,7 @@ def conv_tanspose2d_store_get(
     Raises:
         EmptyPrimitiveStore: If no primitive in the store for config_key.
     """
-    config_key = f"beaver_conv_tanspose2d_{tuple(a_shape)}_{tuple(b_shape)}"
+    config_key = f"beaver_conv_transpose2d_{tuple(a_shape)}_{tuple(b_shape)}"
 
     try:
         primitives = store[config_key]
