@@ -20,7 +20,7 @@ import torch as th
 import torchcsprng as csprng  # type: ignore
 
 from sympc.protocol.protocol import Protocol
-from sympc.session.session_utils import get_session
+from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
