@@ -24,6 +24,7 @@ from sympc.store import register_primitive_store_get
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
+from sympc.utils import count_wraps
 
 ttp_generator = csprng.create_random_device_generator()
 
@@ -438,3 +439,55 @@ def conv_transpose2d_store_get(
         del primitives[0]
 
     return primitive
+
+
+""" Beaver Operations defined for Counting the Wrap-Arounds """
+
+
+@register_primitive_generator("beaver_wraps")
+def count_wraps_rand(
+    nr_parties: int, shape: Tuple[int]
+) -> Tuple[List[ShareTensor], List[ShareTensor]]:
+    """Count wraps random.
+
+    The Trusted Third Party (TTP) or Crypto provider should generate:
+
+    - a set of shares for a random number
+    - a set of shares for the number of wraparounds for that number
+
+    Those shares are used when doing a public division, such that the
+    end result would be the correct one.
+
+    Args:
+        nr_parties (int): Number of parties
+        shape (Tuple[int]): The shape for the random value
+
+    Returns:
+        List[List[List[ShareTensor, ShareTensor]]: a list of instaces with the shares
+        for a random integer value and shares for the number of wraparounds that are done when
+        reconstructing the random value
+    """
+    rand_val = torch.empty(size=shape, dtype=torch.long).random_(
+        generator=ttp_generator
+    )
+
+    r_shares = MPCTensor.generate_shares(
+        secret=rand_val,
+        nr_parties=nr_parties,
+        tensor_type=torch.long,
+        encoder_precision=0,
+    )
+    wraps = count_wraps([share.tensor for share in r_shares])
+
+    theta_r_shares = MPCTensor.generate_shares(
+        secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
+    )
+
+    # We are always creating only an instance
+    primitives_sequential = [(r_shares, theta_r_shares)]
+
+    primitives = list(
+        map(list, zip(*map(lambda x: map(list, zip(*x)), primitives_sequential)))
+    )
+
+    return primitives
