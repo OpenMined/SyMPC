@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621605784473,
+  "lastUpdate": 1621624432182,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -434,6 +434,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.15897235727383152",
             "extra": "mean: 4.296438720200001 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5fe901a30744525caafcefa714f2c71f2fd02247",
+          "message": "POC sharing at protocol level (#178)\n\n* POC sharing at protocol level\r\n\r\n* Fix comments\r\n\r\n* Add tests",
+          "timestamp": "2021-05-21T20:11:08+01:00",
+          "tree_id": "22b6f159cf1a62c7b5b48022d3a6b5c6b7f7ffee",
+          "url": "https://github.com/OpenMined/SyMPC/commit/5fe901a30744525caafcefa714f2c71f2fd02247"
+        },
+        "date": 1621624431586,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.2386627296746943,
+            "unit": "iter/sec",
+            "range": "stddev: 0.13097348566082334",
+            "extra": "mean: 4.19001325160001 sec\nrounds: 5"
           }
         ]
       }
