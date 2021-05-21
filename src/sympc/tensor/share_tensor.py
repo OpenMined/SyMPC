@@ -11,6 +11,7 @@ from typing import Set
 from typing import Union
 
 # third party
+from syft.core.node.common.client import Client
 import torch
 
 from sympc.encoder import FixedPointEncoder
@@ -445,6 +446,23 @@ class ShareTensor(metaclass=SyMPCTensor):
             res = method
 
         return res
+
+    @staticmethod
+    def distribute_shares(shares: List["ShareTensor"], parties: List[Client]):
+        """Distribute a list of shares.
+
+        Args:
+            shares (List[ShareTensor): list of shares to distribute.
+            parties (List[Client]): list to parties to distribute.
+
+        Returns:
+            List of ShareTensorPointers.
+        """
+        share_ptrs = []
+        for share, party in zip(shares, parties):
+            share_ptrs.append(share.send(party))
+
+        return share_ptrs
 
     __add__ = add
     __radd__ = add
