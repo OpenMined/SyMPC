@@ -19,7 +19,15 @@ from sympc.session import Session
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
-METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {
+    "unsqueeze",
+    "view",
+    "t",
+    "sum",
+    "clone",
+    "flatten",
+    "reshape",
+}
 
 
 class ShareTensor(metaclass=SyMPCTensor):
@@ -55,7 +63,16 @@ class ShareTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze", "t", "view", "sum", "clone"}
+    METHODS_FORWARD: Set[str] = {
+        "numel",
+        "unsqueeze",
+        "t",
+        "view",
+        "sum",
+        "clone",
+        "flatten",
+        "reshape",
+    }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
     def __init__(
