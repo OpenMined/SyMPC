@@ -17,8 +17,7 @@ from syft.core.node.common.client import Client
 import torch
 import torchcsprng as csprng  # type: ignore
 
-from sympc.approximations import sigmoid
-from sympc.approximations.reci import reciprocal
+from sympc.approximations import APPROXIMATIONS
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
@@ -29,7 +28,15 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
-METHODS_FORWARD_ALL_SHARES = {"t", "unsqueeze", "view", "sum", "clone"}
+METHODS_FORWARD_ALL_SHARES = {
+    "t",
+    "unsqueeze",
+    "view",
+    "sum",
+    "clone",
+    "flatten",
+    "reshape",
+}
 
 
 def wrapper_getattribute(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -100,10 +107,17 @@ class MPCTensor(metaclass=SyMPCTensor):
         "nr_out_edges",
     }
 
-    AUTOGRAD_IS_ON: bool = True
-
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
+    METHODS_FORWARD = {
+        "numel",
+        "t",
+        "unsqueeze",
+        "view",
+        "sum",
+        "clone",
+        "flatten",
+        "reshape",
+    }
     PROPERTIES_FORWARD = {"T"}
 
     def __init__(
@@ -435,6 +449,19 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         return self.__apply_op(y, "add")
 
+    def isub(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply the "isub" operation between "self" and "y".
+
+        Args:
+            y (Union["MPCTensor", torch.Tensor, float, int]): self - y
+
+        Returns:
+            MPCTensor. Result of the operation.
+        """
+        res = self.__apply_op(y, "sub")
+        self.share_ptrs = res.share_ptrs
+        return self
+
     def sub(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "sub" operation between "self" and "y".
 
@@ -565,6 +592,8 @@ class MPCTensor(metaclass=SyMPCTensor):
                 raise ValueError(
                     "Private division currently works with a maximum of two parties only."
                 )
+
+            reciprocal = APPROXIMATIONS["reciprocal"]
             return self.mul(reciprocal(y))
 
         from sympc.protocol.spdz import spdz
@@ -572,7 +601,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         result = spdz.public_divide(self, y)
         return result
 
-    def mpc_pow(self, power: int) -> "MPCTensor":
+    def pow(self, power: int) -> "MPCTensor":
         """Compute integer power of a number by recursion using mul.
 
         - Divide power by 2 and multiply base to itself (if the power is even)
@@ -776,13 +805,15 @@ class MPCTensor(metaclass=SyMPCTensor):
         # Take the attribute and check if we need to assign a gradient function
         # Implementation similar to CrypTen
         grad_fn = GRAD_FUNCS.get(attr_name, None)
-        if grad_fn and MPCTensor.AUTOGRAD_IS_ON:
-            requires_grad = object.__getattribute__(self, "requires_grad")
-            if requires_grad:
-                # TODO: Fix this
-                from sympc.tensor.grads import forward
+        session = object.__getattribute__(self, "session")
+        if grad_fn and session.autograd_active:
+            from sympc.tensor.grads import forward
 
-                return functools.partial(forward, self, grad_fn)
+            return functools.partial(forward, self, grad_fn)
+
+        approx_func = APPROXIMATIONS.get(attr_name, None)
+        if approx_func is not None:
+            return functools.partial(approx_func, self)
 
         return object.__getattribute__(self, attr_name)
 
@@ -799,10 +830,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         if not self.requires_grad:
             return
 
-        MPCTensor.AUTOGRAD_IS_ON = False
+        self.session.autograd_active = False
 
         if gradient is None:
-            if len(self.shape) != 1:
+            if len(self.shape) not in {0, 1}:
                 raise ValueError("Need to provide gradient if not scalar!")
             gradient = MPCTensor(secret=torch.ones(self.shape), session=self.session)
 
@@ -812,9 +843,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             self.grad = self.grad + gradient
 
         if len(self.parents) == 0:
-            print(
-                f"We can not propagate from this node {self} because it does not have parents"
-            )
+            # We can not propagate from this node {self} because it does not have parents
             return
 
         self.nr_out_edges -= 1
@@ -833,7 +862,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         for idx, parent in enumerate(self.parents):
             parent.backward(gradient=grad[idx])
 
-        MPCTensor.AUTOGRAD_IS_ON = True
+        self.session.autograd_active = True
 
     @staticmethod
     def __check_or_convert(value, session) -> "MPCTensor":
@@ -1017,28 +1046,17 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
-    # TODO: Move the method arg to Session level
-    def sigmoid(self, method: str = "exp") -> "MPCTensor":
-        """Compute the sigmoid function (approximation).
-
-        Args:
-            method (str): Method to be used for the approximation
-
-        Returns:
-            The sigmoid approximation for the MPCTensor
-        """
-        return sigmoid(self, method=method)
-
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
     __sub__ = wrapper_getattribute(sub)
+    __isub__ = wrapper_getattribute(isub)
     __rsub__ = wrapper_getattribute(rsub)
     __mul__ = wrapper_getattribute(mul)
     __rmul__ = wrapper_getattribute(mul)
     __matmul__ = wrapper_getattribute(matmul)
     __rmatmul__ = wrapper_getattribute(rmatmul)
     __truediv__ = wrapper_getattribute(truediv)
-    __pow__ = wrapper_getattribute(mpc_pow)
+    __pow__ = wrapper_getattribute(pow)
     __le__ = wrapper_getattribute(le)
     __ge__ = wrapper_getattribute(ge)
     __lt__ = wrapper_getattribute(lt)

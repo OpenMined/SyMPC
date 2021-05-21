@@ -2,7 +2,7 @@
 import pytest
 import torch
 
-from sympc.approximations.reci import reciprocal
+from sympc.approximations.reciprocal import reciprocal
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor.mpc_tensor import MPCTensor

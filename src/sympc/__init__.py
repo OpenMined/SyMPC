@@ -18,6 +18,8 @@ from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 
 from . import module  # noqa: 401 isort: skip
+from . import optim  # noqa: 401 isort: skip
+
 
 try:
     # third party
@@ -52,5 +54,6 @@ except DistributionNotFound:
     __version__ = "unknown"
 finally:
     del get_distribution, DistributionNotFound
+
 
 add_methods_tensor_syft()
