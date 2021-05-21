@@ -24,8 +24,18 @@ class Protocol(type):
 
         Returns:
             Protocol: Defined protocol.
+
+        Raises:
+            ValueError: if the protocol we want to register does not have a 'share_class' attribute
+                        if the protocol is already registered with the same name
         """
         new_cls = super().__new__(cls, name, bases, dct)
+
+        if getattr(new_cls, "share_class", None) is None:
+            raise ValueError(
+                "share_class attribut should be present in the protocol class"
+            )
+
         Protocol.registered_protocols[name] = new_cls
 
         def __init__(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> None:  # noqa

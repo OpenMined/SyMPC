@@ -8,15 +8,23 @@ from sympc.protocol.beaver.beaver import mul_store_get
 from sympc.protocol.fss.fss import _generate_primitive
 from sympc.protocol.fss.fss import get_primitive
 from sympc.store.exceptions import EmptyPrimitiveStore
+from sympc.tensor import ShareTensor
 
 
 class TestProtocol(metaclass=Protocol):
-    pass
+    share_class = ShareTensor
 
 
 def test_register_protocol() -> None:
     assert "TestProtocol" in Protocol.registered_protocols
     assert Protocol.registered_protocols["TestProtocol"] == TestProtocol
+
+
+def test_exception_no_share_class() -> None:
+    with pytest.raises(ValueError):
+
+        class TestProtocolException(metaclass=Protocol):
+            ...
 
 
 def test_exception_unsupported_fss_operation():
