@@ -1,5 +1,6 @@
 # third party
 import numpy as np
+import pytest
 import torch
 
 from sympc.module.nn import mse_loss
@@ -23,7 +24,8 @@ def test_relu(get_clients) -> None:
     assert all(res.reconstruct() == res_expected)
 
 
-def test_mse_loss(get_clients) -> None:
+@pytest.mark.parametrize("reduction", ["sum", "mean"])
+def test_mse_loss(get_clients, reduction) -> None:
     clients = get_clients(4)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -34,7 +36,7 @@ def test_mse_loss(get_clients) -> None:
     y_pred = torch.Tensor([0.1, 0.3, 0.4, 0.2])
     y_pred_mpc = MPCTensor(secret=y_pred, session=session)
 
-    res = mse_loss(y_mpc, y_pred_mpc)
-    res_expected = torch.nn.functional.mse_loss(y_secret, y_pred, reduction="sum")
+    res = mse_loss(y_mpc, y_pred_mpc, reduction)
+    res_expected = torch.nn.functional.mse_loss(y_secret, y_pred, reduction=reduction)
 
     assert np.allclose(res.reconstruct(), res_expected, atol=1e-4)
