@@ -13,7 +13,6 @@ from typing import Tuple
 from typing import Union
 
 # third party
-from syft.core.node.common.client import Client
 import torch
 import torchcsprng as csprng  # type: ignore
 
@@ -189,7 +188,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 )
 
         if not ispointer(shares[0]):
-            shares = MPCTensor.distribute_shares(shares, self.session.parties)
+            shares = self.session.protocol.distribute_shares(
+                shares, self.session.parties
+            )
 
         self.share_ptrs = shares
 
@@ -204,23 +205,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         self.grad = None
         self.grad_fn = None
         self.parents: List["MPCTensor"] = []
-
-    @staticmethod
-    def distribute_shares(shares: List[ShareTensor], parties: List[Client]):
-        """Distribute a list of shares.
-
-        Args:
-            shares (List[ShareTensor): list of shares to distribute.
-            parties (List[Client]): list to parties to distribute.
-
-        Returns:
-            List of ShareTensorPointers.
-        """
-        share_ptrs = []
-        for share, party in zip(shares, parties):
-            share_ptrs.append(share.send(party))
-
-        return share_ptrs
 
     @staticmethod
     def sanity_checks(
