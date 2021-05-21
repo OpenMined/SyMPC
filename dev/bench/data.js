@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621293903015,
+  "lastUpdate": 1621605784473,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -403,6 +403,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.11921164140953354",
             "extra": "mean: 3.9235782711999945 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lihu723@gmail.com",
+            "name": "libra",
+            "username": "libratiger"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3f9f0ef9b5ecfbf16df1b014e2ee57c12fb1dc42",
+          "message": "Add the mean reduction for mse_loss (#180)\n\n* Add the `mean` reduction method for `mse_loss`\r\n\r\nAdd the `mean` reduction method for `mse_loss`, try to keep the same with pytorch\r\n\r\n* Fix the mse_loss\r\n\r\n* fix the mse_loss",
+          "timestamp": "2021-05-21T19:30:13+05:30",
+          "tree_id": "55b871e1b57873399bfb34aea974b9da78beaf9f",
+          "url": "https://github.com/OpenMined/SyMPC/commit/3f9f0ef9b5ecfbf16df1b014e2ee57c12fb1dc42"
+        },
+        "date": 1621605783906,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.2327509049060636,
+            "unit": "iter/sec",
+            "range": "stddev: 0.15897235727383152",
+            "extra": "mean: 4.296438720200001 sec\nrounds: 5"
           }
         ]
       }
