@@ -479,6 +479,23 @@ $ bandit .
 
 ### Generating Documentation
 
+We use sphinx to generate the documentation. Depending on your OS you will need to install it with a different command. Check [sphinx documentation](https://www.sphinx-doc.org/en/master/usage/installation.html) for additional information.
+
+* Linux
+  ```
+  $ apt-get install python3-sphinx
+  ```
+
+* Mac
+  ```
+  $ brew install sphinx-doc
+  ```
+
+* Windows
+  ```
+  $ choco install sphinx
+  ```
+
 You can execute the following command from the root directory of the project. It will:
 
 1. Navigate to the docs folder
