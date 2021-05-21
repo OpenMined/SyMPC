@@ -16,7 +16,9 @@ def relu(x: MPCTensor) -> MPCTensor:
     return res
 
 
-def mse_loss(pred: MPCTensor, target: MPCTensor, reduction: str = "mean") -> MPCTensor:
+def mse_loss(pred: MPCTensor,
+             target: MPCTensor,
+             reduction: str = "mean") -> MPCTensor:
     """Mean Squared Error loss.
 
     Args:
@@ -31,7 +33,7 @@ def mse_loss(pred: MPCTensor, target: MPCTensor, reduction: str = "mean") -> MPC
         ValueError: If `reduction` not in supported methods
     """
     if reduction == "mean":
-        result = (pred - target).pow(2).sum() * 1.0 / len(pred)
+        result = (pred - target).pow(2).sum() / pred.shape[0]
     elif reduction == "sum":
         result = (pred - target).pow(2).sum()
     else:
