@@ -35,6 +35,10 @@ METHODS_FORWARD_ALL_SHARES = {
     "clone",
     "flatten",
     "reshape",
+    "repeat",
+    "narrow",
+    "dim",
+    "transpose",
 }
 
 
@@ -115,6 +119,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         "clone",
         "flatten",
         "reshape",
+        "repeat",
+        "narrow",
+        "dim",
+        "transpose",
     }
     PROPERTIES_FORWARD = {"T"}
 

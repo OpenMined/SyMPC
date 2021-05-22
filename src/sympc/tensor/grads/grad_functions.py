@@ -13,11 +13,14 @@ from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # third party
 import torch
 
 from sympc.tensor import MPCTensor
+from sympc.tensor import ShareTensor
+from sympc.utils.utils import parallel_execution
 
 
 def _reverse_broadcast(x: MPCTensor, wanted_shape: Tuple[int, ...]) -> MPCTensor:
@@ -432,6 +435,159 @@ class GradFlatten(GradFunc):
         return grad.reshape(shape)
 
 
+class GradConv2d(GradFunc):
+    """The multiplication gradient function."""
+
+    @staticmethod
+    def function_aux(
+        grad_output, input_size, stride, padding, kernel_size, dilation, session
+    ):
+        """Auxillary function to find grad input padding.
+
+        Args:
+            grad_output: grad
+            input_size: the input size
+            stride: stride
+            padding: padding
+            kernel_size: kernal_size
+            dilation: dilation
+            session: session
+
+        Returns:
+            (ShareTensorPointer): The result of the conv2d operation
+        """
+        new_tuple = torch.nn.grad._grad_input_padding(
+            grad_output=grad_output.tensor,
+            input_size=input_size,
+            stride=(stride, stride),
+            padding=(padding, padding),
+            kernel_size=kernel_size,
+            dilation=(dilation, dilation),
+        )
+
+        share_tensor = ShareTensor(torch.tensor(new_tuple), session=session)
+        return share_tensor
+
+    @staticmethod
+    def forward(
+        ctx: Dict[str, Any],
+        input: Union["MPCTensor", torch.Tensor, float, int],
+        weight: Union["MPCTensor", torch.Tensor, float, int],
+        bias: None,
+        stride: int,
+        padding: int,
+        dilation: int,
+        groups: int,
+    ) -> MPCTensor:
+        """Perform the feedforward and compute the result for the conv2d operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            input: the input
+            weight: the convolution kernel
+            bias: optional bias
+            stride: stride
+            padding: padding
+            dilation: dilation
+            groups: groups
+
+        Returns:
+            (MPCTensor): The result of the conv2d operation
+        """
+        ctx["input"] = input
+        ctx["weight"] = weight
+        ctx["stride"] = stride
+        ctx["padding"] = padding
+        ctx["dilation"] = dilation
+        ctx["groups"] = groups
+
+        return input.conv2d(weight, bias, stride, padding, dilation, groups)
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
+        """Perform the backward pass for the conv2d operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            (input_grad, weight_grad) (Tuple[MPCTensor]): The gradients passed
+            to the input and kernal nodes.
+        """
+        input = ctx["input"]
+        weight = ctx["weight"]
+        stride = ctx["stride"]
+        padding = ctx["padding"]
+        dilation = ctx["dilation"]
+        groups = ctx["groups"]
+        weight_size = (weight.shape[2], weight.shape[3])
+        in_channels = input.shape[1]
+        out_channels = grad.shape[1]
+        min_batch = input.shape[0]
+
+        common_args = [
+            tuple(input.shape),
+            stride,
+            padding,
+            weight_size,
+            dilation,
+            grad.session,
+        ]
+        args = [[el] + common_args for el in grad.share_ptrs]
+
+        shares = parallel_execution(GradConv2d.function_aux, grad.session.parties)(args)
+        grad_input_padding = MPCTensor(shares=shares, session=grad.session)
+
+        output_padding_tensor = grad_input_padding.reconstruct()
+        output_padding = tuple(output_padding_tensor.to(torch.int).tolist())
+
+        input_grad = grad.conv_transpose2d(
+            weight, None, stride, output_padding, dilation, groups
+        )
+
+        # Gradient w.r.t weights of the Conv.
+        grad = grad.repeat(1, in_channels // groups, 1, 1)
+
+        grad = grad.view(grad.shape[0] * grad.shape[1], 1, grad.shape[2], grad.shape[3])
+
+        input = input.view(
+            1, input.shape[0] * input.shape[1], input.shape[2], input.shape[3]
+        )
+
+        weight_grad = input.conv2d(
+            weight=grad,
+            bias=None,
+            dilation=stride,
+            padding=padding,
+            stride=dilation,
+            groups=in_channels * min_batch,
+        )
+
+        weight_grad = weight_grad.view(
+            min_batch,
+            weight_grad.shape[1] // min_batch,
+            weight_grad.shape[2],
+            weight_grad.shape[3],
+        )
+
+        weight_grad = (
+            weight_grad.sum(0)
+            .view(
+                in_channels // groups,
+                out_channels,
+                weight_grad.shape[2],
+                weight_grad.shape[3],
+            )
+            .transpose(0, 1)
+        )
+
+        weight_grad = weight_grad.narrow(2, 0, weight_size[1])
+        weight_grad = weight_grad.narrow(3, 0, weight_size[0])
+
+        return input_grad, weight_grad
+
+
 def forward(
     _self: MPCTensor, grad_fn: GradFunc, *args: List[Any], **kwargs: Dict[str, Any]
 ) -> Any:
@@ -473,4 +629,5 @@ GRAD_FUNCS: Dict[str, GradFunc] = {
     "sum": GradSum,
     "sigmoid": GradSigmoid,
     "flatten": GradFlatten,
+    "conv2d": GradConv2d,
 }
