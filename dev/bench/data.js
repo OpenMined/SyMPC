@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621714537062,
+  "lastUpdate": 1621718347031,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -496,6 +496,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.17210085472287695",
             "extra": "mean: 4.470630929599986 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "danielorihuela@users.noreply.github.com",
+            "name": "danielorihuela",
+            "username": "danielorihuela"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "80250b1f951667bb19e1b181dab249a337850ae2",
+          "message": "docs: contributing (#174)\n\n* docs: contributing\r\n\r\nCopied and modified from PySyft contributing.\r\n\r\n* docs: escape symbol\r\n\r\n* fix: docs link\r\n\r\n* docs: change python 3.6 to python 3.7\r\n\r\n* docs: change some examples, steps and commands\r\n\r\n* docs: improve explanations\r\n\r\n* docs: remove wsl based systems\r\n\r\n* build: macos and windows python tests\r\n\r\n* docs: how to install sphinx\r\n\r\nCo-authored-by: George-Cristian Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2021-05-22T22:16:18+01:00",
+          "tree_id": "647dc834316a9f00d92b3521bedae302dcfdcab8",
+          "url": "https://github.com/OpenMined/SyMPC/commit/80250b1f951667bb19e1b181dab249a337850ae2"
+        },
+        "date": 1621718346041,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.24308014331799532,
+            "unit": "iter/sec",
+            "range": "stddev: 0.12393075634008337",
+            "extra": "mean: 4.113869550799995 sec\nrounds: 5"
           }
         ]
       }
