@@ -1,17 +1,14 @@
 """Expose various objects related to SyMPC library.
-
 This file exposes lists of allowed modules, classes and attributes that PySyft uses to build
 an Abstract Syntax Tree representing the SyMPC library. This lists could be in PySyft.
 They were in the past. However, this had a problem. Whenever we wanted to add a new "operation"
 to the ShareTensor list (allowed_external_attrs) and call it from a share tensor pointer, some
 steps where needed to introduce that change and make all test pass.
-
 1. Create a PR in the SyMPC (tests fail)
 2. Create a PR in PySyft (tests fail)
 3. Merge PySyft PR with failing tests
 4. Now that SyMPC has PySyft changes, run PySyft tests and merge the PR if all is correct
 5. Now that PySyft merged the PR, rerun SyMPC tests and if all is correct merge the PR
-
 With this lists here, SyMPC has the control and this "Double PR tests error" is solved.
 """
 
@@ -43,11 +40,6 @@ allowed_external_classes = [
         "sympc.tensor.ShareTensor",
         "sympc.tensor.ShareTensor",
         tensor.ShareTensor,
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor",
-        "sympc.tensor.ReplicatedShareTensor",
-        tensor.ReplicatedShareTensor,
     ),
 ]
 
@@ -122,57 +114,4 @@ allowed_external_attrs = [
     ),
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__add__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__sub__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__rmul__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__mul__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__matmul__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__truediv__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.__rmatmul__",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.t",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.sum",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.clone",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.numel",
-        "syft.lib.python.Int",  # FIXME: Can't we just return an int??
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.T",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    (
-        "sympc.tensor.ReplicatedShareTensor.unsqueeze",
-        "sympc.tensor.ReplicatedShareTensor",
-    ),
-    ("sympc.tensor.ReplicatedShareTensor.view", "sympc.tensor.ReplicatedShareTensor"),
 ]
