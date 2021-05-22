@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621624432182,
+  "lastUpdate": 1621714537062,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -465,6 +465,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.13097348566082334",
             "extra": "mean: 4.19001325160001 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7875f1692c1dbcc3256f6b548981fb9113aa3767",
+          "message": "Init RS Tensor (#186)\n\n* Modify SyMPC PySyft API file for RSTensor\r\n\r\n* Add RSTensor to __init__.py\r\n\r\n* Fix wrong import\r\n\r\n* Init RSTensor\r\n\r\n* Precommit hook\r\n\r\n* Add a RSTensor test\r\n\r\n* Add a test\r\n\r\n* Add import test\r\n\r\n* Modify hook methods\r\n\r\n* Modify API.py\r\n\r\n* Precommit hook",
+          "timestamp": "2021-05-22T21:12:43+01:00",
+          "tree_id": "88bde98b62ca1be8b65ac971fac40963f071361d",
+          "url": "https://github.com/OpenMined/SyMPC/commit/7875f1692c1dbcc3256f6b548981fb9113aa3767"
+        },
+        "date": 1621714536511,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.22368207435308823,
+            "unit": "iter/sec",
+            "range": "stddev: 0.17210085472287695",
+            "extra": "mean: 4.470630929599986 sec\nrounds: 5"
           }
         ]
       }
