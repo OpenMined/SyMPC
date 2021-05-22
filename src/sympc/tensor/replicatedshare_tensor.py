@@ -154,13 +154,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             A hooked property
         """
 
-        def property_new_share_tensor_getter(_self: "ReplicatedShareTensor") -> Any:
+        def property_new_share_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
             tensor = getattr(_self.tensor, property_name)
-            res = ReplicatedShareTensor(session=_self.session)
+            res = ReplicatedSharedTensor(session=_self.session)
             res.tensor = tensor
             return res
 
-        def property_getter(_self: "ReplicatedShareTensor") -> Any:
+        def property_getter(_self: "ReplicatedSharedTensor") -> Any:
             prop = getattr(_self.tensor, property_name)
             return prop
 
@@ -190,16 +190,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
 
         def method_new_rs_tensor(
-            _self: "ReplicatedShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+            _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
             method = getattr(_self.tensor, method_name)
             tensor = method(*args, **kwargs)
-            res = ReplicatedShareTensor(session=_self.session, shares=_self.shares)
+            res = ReplicatedSharedTensor(session=_self.session, shares=_self.shares)
             res.tensor = tensor
             return res
 
         def method(
-            _self: "ReplicatedShareTensor", *args: List[Any], **kwargs: Dict[Any, Any]
+            _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
             method = getattr(_self.tensor, method_name)
             res = method(*args, **kwargs)
