@@ -1,0 +1,1 @@
+from sympc.tensor import ReplicatedSharedTensor
