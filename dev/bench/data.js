@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621765894579,
+  "lastUpdate": 1621772225402,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -558,6 +558,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.09797851708885029",
             "extra": "mean: 3.8067321028000096 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "be0f3b09117b0988f6fa1b68d771084fb4c00ed3",
+          "message": "Add RSTensor SyMPC API  (#185)\n\n* Modify SyMPC PySyft API file for RSTensor\r\n\r\n* Add RSTensor to __init__.py\r\n\r\n* Fix wrong import\r\n\r\n* Modify API to include ReplicatedSharedTensor\r\n\r\n* Update replicatedshare_tensor.py\r\n\r\n* Precommit hook\r\n\r\nCo-authored-by: George-Cristian Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2021-05-23T13:14:29+01:00",
+          "tree_id": "38d1abe2a0c148e0a261f80615faa387efc30664",
+          "url": "https://github.com/OpenMined/SyMPC/commit/be0f3b09117b0988f6fa1b68d771084fb4c00ed3"
+        },
+        "date": 1621772224837,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.2425339594370461,
+            "unit": "iter/sec",
+            "range": "stddev: 0.15939222600030367",
+            "extra": "mean: 4.123133940999992 sec\nrounds: 5"
           }
         ]
       }
