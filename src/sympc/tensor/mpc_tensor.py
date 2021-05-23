@@ -99,7 +99,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         # If not, we could use the self.tensor requires_grad
         # Use for training
         "requires_grad",
-        "grad",
         "grad_fn",
         "ctx",
         "parents",
