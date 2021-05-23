@@ -18,8 +18,8 @@ from typing import Union
 # third party
 import torch
 
-from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
+from sympc.tensor.mpc_tensor import MPCTensor
 from sympc.utils.utils import parallel_execution
 
 
