@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621718347031,
+  "lastUpdate": 1621765894579,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -527,6 +527,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.12393075634008337",
             "extra": "mean: 4.113869550799995 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George Muraru",
+            "username": "gmuraru"
+          },
+          "distinct": true,
+          "id": "3583cc9d89449dc2d5c7fed020e89e1a0b9384f4",
+          "message": "Change name for benchmark jobs",
+          "timestamp": "2021-05-23T11:28:54+01:00",
+          "tree_id": "2a396f59bbd80aa874ce08d9da0acf4ed870a0bd",
+          "url": "https://github.com/OpenMined/SyMPC/commit/3583cc9d89449dc2d5c7fed020e89e1a0b9384f4"
+        },
+        "date": 1621765893554,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.26269250711508135,
+            "unit": "iter/sec",
+            "range": "stddev: 0.09797851708885029",
+            "extra": "mean: 3.8067321028000096 sec\nrounds: 5"
           }
         ]
       }
