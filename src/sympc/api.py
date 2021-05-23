@@ -44,6 +44,11 @@ allowed_external_classes = [
         "sympc.tensor.ShareTensor",
         tensor.ShareTensor,
     ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.ReplicatedSharedTensor",
+        tensor.ReplicatedSharedTensor,
+    ),
 ]
 
 allowed_external_attrs = [
@@ -117,4 +122,57 @@ allowed_external_attrs = [
     ),
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__add__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__sub__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__rmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__mul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__matmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__truediv__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__rmatmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.t",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.sum",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.clone",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.numel",
+        "syft.lib.python.Int",  # FIXME: Can't we just return an int??
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.T",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.unsqueeze",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    ("sympc.tensor.ReplicatedSharedTensor.view", "sympc.tensor.ReplicatedSharedTensor"),
 ]
