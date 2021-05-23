@@ -7,7 +7,7 @@
 SyMPC **/ˈsɪmpəθi/** is a library which extends [PySyft](https://github.com/OpenMined/PySyft) ≥0.3 with SMPC support. It allows to compute over encrypted data, to evaluate and to train neural networks.
 
 
-## Get started
+## Get startedhasd
 
 You can learn how to use SyMPC by discovering our [Introduction](./examples/introduction.ipynb) notebook!
 
