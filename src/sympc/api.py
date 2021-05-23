@@ -45,9 +45,9 @@ allowed_external_classes = [
         tensor.ShareTensor,
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor",
-        "sympc.tensor.ReplicatedShareTensor",
-        tensor.ReplicatedShareTensor,
+        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.ReplicatedSharedTensor",
+        tensor.ReplicatedSharedTensor,
     ),
 ]
 
@@ -123,56 +123,56 @@ allowed_external_attrs = [
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
     (
-        "sympc.tensor.ReplicatedShareTensor.__add__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__add__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.__sub__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__sub__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.__rmul__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__rmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.__mul__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__mul__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.__matmul__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__matmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.__truediv__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__truediv__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.__rmatmul__",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.__rmatmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.t",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.t",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.sum",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.sum",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.clone",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.clone",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.numel",
+        "sympc.tensor.ReplicatedSharedTensor.numel",
         "syft.lib.python.Int",  # FIXME: Can't we just return an int??
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.T",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.T",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedShareTensor.unsqueeze",
-        "sympc.tensor.ReplicatedShareTensor",
+        "sympc.tensor.ReplicatedSharedTensor.unsqueeze",
+        "sympc.tensor.ReplicatedSharedTensor",
     ),
-    ("sympc.tensor.ReplicatedShareTensor.view", "sympc.tensor.ReplicatedShareTensor"),
+    ("sympc.tensor.ReplicatedSharedTensor.view", "sympc.tensor.ReplicatedSharedTensor"),
 ]
