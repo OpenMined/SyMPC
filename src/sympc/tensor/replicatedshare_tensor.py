@@ -12,6 +12,7 @@ from .tensor import SyMPCTensor
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
 METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 
+
 class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     """RSTensor is used when a party holds more than a single share,required by various protocols.
 
