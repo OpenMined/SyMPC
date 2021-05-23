@@ -17,6 +17,7 @@ import torch
 import torchcsprng as csprng  # type: ignore
 
 from sympc.approximations import APPROXIMATIONS
+from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
@@ -128,7 +129,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
     def __init__(
         self,
-        session: Optional[Session] = None,
+        session: Session,
         secret: Optional[Union[ShareTensor, torch.Tensor, float, int]] = None,
         shape: Optional[Union[torch.Size, List[int], Tuple[int, ...]]] = None,
         shares: Optional[List[ShareTensor]] = None,
@@ -141,7 +142,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         - secret is not known by the orchestrator (PRZS is employed).
 
         Args:
-            session (Optional[Session]): The session. Defaults to None.
+            session (Session): The session used for the mpc computation
             secret (Optional[Union[ShareTensor, torch.Tensor, float, int]]): In case the secret is
                 known by the orchestrator it is split in shares and given to multiple
                 parties. Defaults to None.
@@ -156,14 +157,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If session is not provided as argument or in the ShareTensor.
         """
-        if session is None and (
-            not isinstance(secret, ShareTensor) or secret.session is None
-        ):
-            raise ValueError(
-                "Need to provide a session, as argument or the secret should be a ShareTensor"
-            )
-
-        self.session = session if session is not None else secret.session
+        self.session = session
 
         if len(self.session.session_ptrs) == 0:
             raise ValueError("setup_mpc was not called on the session")
@@ -190,14 +184,13 @@ class MPCTensor(metaclass=SyMPCTensor):
                 tensor_type = self.session.tensor_type
                 shares = MPCTensor.generate_shares(
                     secret=secret,
+                    config=self.session.config,
                     nr_parties=self.session.nr_parties,
                     tensor_type=tensor_type,
                 )
 
         if not ispointer(shares[0]):
-            shares = self.session.protocol.distribute_shares(
-                shares, self.session.parties
-            )
+            shares = MPCTensor.distribute_shares(shares, self.session)
 
         self.share_ptrs = shares
 
@@ -212,6 +205,28 @@ class MPCTensor(metaclass=SyMPCTensor):
         self.grad = None
         self.grad_fn = None
         self.parents: List["MPCTensor"] = []
+
+    @staticmethod
+    def distribute_shares(shares: List[ShareTensor], session: Session):
+        """Distribute a list of shares.
+
+        Args:
+            shares (List[ShareTensor): list of shares to distribute.
+            session (Session): Session for which those shares were generated
+
+        Returns:
+            List of ShareTensorPointers.
+        """
+        rank_to_uuid = session.rank_to_uuid
+        parties = session.parties
+
+        share_ptrs = []
+        for rank, share in enumerate(shares):
+            share.session_uuid = rank_to_uuid[rank]
+            party = parties[rank]
+            share_ptrs.append(share.send(party))
+
+        return share_ptrs
 
     @staticmethod
     def sanity_checks(
@@ -252,7 +267,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 secret = torch.tensor(data=[secret])
 
             if isinstance(secret, torch.Tensor):
-                secret = ShareTensor(data=secret, session=session)
+                secret = ShareTensor(data=secret, config=session.config)
 
             shape = secret.shape
 
@@ -277,12 +292,8 @@ class MPCTensor(metaclass=SyMPCTensor):
         shape = tuple(shape)
 
         shares = []
-        for session_ptr, generators_ptr in zip(
-            session.session_ptrs, session.przs_generators
-        ):
-            share_ptr = session_ptr.przs_generate_random_share(
-                shape=shape, generators=generators_ptr
-            )
+        for session_ptr in session.session_ptrs:
+            share_ptr = session_ptr.przs_generate_random_share(shape=shape)
             shares.append(share_ptr)
 
         return shares
@@ -291,8 +302,8 @@ class MPCTensor(metaclass=SyMPCTensor):
     def generate_shares(
         secret: Union[ShareTensor, torch.Tensor, float, int],
         nr_parties: int,
+        config: Optional[Config] = None,
         tensor_type: Optional[torch.dtype] = None,
-        **kwargs,
     ) -> List[ShareTensor]:
         """Generate shares from secret.
 
@@ -302,8 +313,8 @@ class MPCTensor(metaclass=SyMPCTensor):
         Args:
             secret (Union[ShareTensor, torch.Tensor, float, int]): Secret to split.
             nr_parties (int): Number of parties to split the scret.
+            config (Config): Configuration used for the Share Tensor (in case it is needed).
             tensor_type (torch.dtype, optional): tensor type. Defaults to None.
-            **kwargs: keywords arguments passed to ShareTensor.
 
         Returns:
             List[ShareTensor]. List of ShareTensor.
@@ -328,9 +339,11 @@ class MPCTensor(metaclass=SyMPCTensor):
                 | Data: tensor([-14933121.])]
         """
         if isinstance(secret, (torch.Tensor, float, int)):
-            secret = ShareTensor(secret, **kwargs)
+            # if secret is not a ShareTensor, a new instance is created
+            secret = ShareTensor(secret, config=config)
+        else:
+            config = secret.config
 
-        # if secret is not a ShareTensor, a new instance is created
         if not isinstance(secret, ShareTensor):
             raise ValueError(
                 "Secret should be a ShareTensor, torchTensor, float or int."
@@ -346,7 +359,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             rand_value = torch.empty(size=shape, dtype=tensor_type).random_(
                 generator=generator
             )
-            share = ShareTensor(session=secret.session)
+            share = ShareTensor(data=rand_value, config=config)
             share.tensor = rand_value
 
             random_shares.append(share)

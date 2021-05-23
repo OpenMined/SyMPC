@@ -9,13 +9,16 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+from uuid import UUID
 
 # third party
 from syft.core.node.common.client import Client
 import torch
 
+import sympc
+from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
-from sympc.session import Session
+from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
 
@@ -53,8 +56,9 @@ class ShareTensor(metaclass=SyMPCTensor):
         description (Optional[str]): an optional string used to describe the session
 
         tensor (Any): the value of the share
-        session (Session): keep track from which session  this share belongs to
-        fp_encoder (FixedPointEncoder): the encoder used to convert a share from/to fixed point
+        session_uuid (Optional[UUID]): keep track from which session the share belongs to
+        encoder_precision (int): precision for the encoder
+        encoder_base (int): base for the encoder
     """
 
     __slots__ = {
@@ -63,8 +67,10 @@ class ShareTensor(metaclass=SyMPCTensor):
         "tags",
         "description",
         "tensor",
-        "session",
+        "session_uuid",
+        "config",
         "fp_encoder",
+        "ring_size",
     }
 
     # Used by the SyMPCTensor metaclass
@@ -87,43 +93,32 @@ class ShareTensor(metaclass=SyMPCTensor):
     def __init__(
         self,
         data: Optional[Union[float, int, torch.Tensor]] = None,
-        session: Optional[Session] = None,
-        encoder_base: int = 2,
-        encoder_precision: int = 16,
+        config: Config = Config(encoder_base=16, encoder_precision=2),
+        session_uuid: Optional[UUID] = None,
         ring_size: int = 2 ** 64,
     ) -> None:
         """Initialize ShareTensor.
 
         Args:
             data (Optional[Any]): The share a party holds. Defaults to None
-            session (Optional[Any]): The session from which this shares belongs to.
-                Defaults to None.
-            encoder_base (int): The base for the encoder. Defaults to 2.
-            encoder_precision (int): the precision for the encoder. Defaults to 16.
+            config (Config): The configuration where we keep the encoder precision and base.
+            session_uuid (Optional[UUID]): Used to keep track of a share that is associated with a
+                remote session
             ring_size (int): field used for the operations applied on the shares
                 Defaults to 2**64
         """
-        if session is None:
-            self.session = Session(
-                ring_size=ring_size,
-            )
-            self.session.config.encoder_precision = encoder_precision
-            self.session.config.encoder_base = encoder_base
+        self.session_uuid = session_uuid
+        self.ring_size = ring_size
 
-        else:
-            self.session = session
-            encoder_precision = self.session.config.encoder_precision
-            encoder_base = self.session.config.encoder_base
-
-        # TODO: It looks like the same logic as above
+        self.config = config
         self.fp_encoder = FixedPointEncoder(
-            base=encoder_base, precision=encoder_precision
+            base=config.encoder_base, precision=config.encoder_precision
         )
 
         self.tensor: Optional[torch.Tensor] = None
         if data is not None:
-            tensor_type = self.session.tensor_type
-            self.tensor = self._encode(data).type(tensor_type)
+            tensor_type = get_type_from_ring(ring_size)
+            self.tensor = self._encode(data).to(tensor_type)
 
     def _encode(self, data):
         return self.fp_encoder.encode(data)
@@ -153,9 +148,24 @@ class ShareTensor(metaclass=SyMPCTensor):
         Returns:
             ShareTensor: the converted y value.
 
+        Raises:
+            ValueError: if both values are shares and they have different uuids
         """
         if not isinstance(y, ShareTensor):
-            y = ShareTensor(data=y, session=x.session)
+            if x.session_uuid is not None:
+                session = sympc.session.get_session(str(x.session_uuid))
+                ring_size = session.ring_size
+                config = session.config
+            else:
+                ring_size = x.ring_size
+                config = x.config
+
+            y = ShareTensor(data=y, ring_size=ring_size, config=config)
+
+        elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
+            raise ValueError(
+                f"Session UUIDS did not match {x.session_uuid} {y.session_uuid}"
+            )
 
         return y
 
@@ -178,7 +188,17 @@ class ShareTensor(metaclass=SyMPCTensor):
         else:
             value = op(self.tensor, y)
 
-        res = ShareTensor(session=self.session)
+        session_uuid = self.session_uuid or y.session_uuid
+        if session_uuid is not None:
+            session = sympc.session.get_session(str(session_uuid))
+            ring_size = session.ring_size
+            config = session.config
+        else:
+            # Use the values from "self"
+            ring_size = self.ring_size
+            config = self.config
+
+        res = ShareTensor(ring_size=ring_size, session_uuid=session_uuid, config=config)
         res.tensor = value
         return res
 
@@ -233,7 +253,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         y = ShareTensor.sanity_checks(self, y, "mul")
         res = self.apply_function(y, "mul")
 
-        if self.session.nr_parties == 0:
+        if self.session_uuid is None and y.session_uuid is None:
             # We are using a simple share without usig the MPCTensor
             # In case we used the MPCTensor - the division would have
             # been done in the protocol
@@ -250,13 +270,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         Returns:
             ShareTensor: Result of the operation.
         """
-        res = ShareTensor(session=self.session)
-
-        if isinstance(y, ShareTensor):
-            res.tensor = self.tensor ^ y.tensor
-        else:
-            res.tensor = self.tensor ^ y
-
+        res = self.apply_function(y, "xor")
         return res
 
     def matmul(
@@ -273,7 +287,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         y = ShareTensor.sanity_checks(self, y, "matmul")
         res = self.apply_function(y, "matmul")
 
-        if self.session.nr_parties == 0:
+        if self.session_uuid is None and y.session_uuid is None:
             # We are using a simple share without usig the MPCTensor
             # In case we used the MPCTensor - the division would have
             # been done in the protocol
@@ -308,9 +322,9 @@ class ShareTensor(metaclass=SyMPCTensor):
         if not isinstance(y, (int, torch.LongTensor)):
             raise ValueError("Div works (for the moment) only with integers!")
 
-        res = ShareTensor(session=self.session)
+        res = ShareTensor(session_uuid=self.session_uuid, config=self.config)
+        # res = self.apply_function(y, "floordiv")
         res.tensor = self.tensor // y
-
         return res
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
@@ -347,6 +361,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         """
         type_name = type(self).__name__
         out = f"[{type_name}]"
+        out = f"{out}\n\t| Session UUID: {self.session_uuid}"
         out = f"{out}\n\t| {self.fp_encoder}"
         out = f"{out}\n\t| Data: {self.tensor}"
 
@@ -376,7 +391,10 @@ class ShareTensor(metaclass=SyMPCTensor):
         if not (self.tensor == other.tensor).all():
             return False
 
-        if not (self.session == other.session):
+        if not self.config == other.config:
+            return False
+
+        if not (self.session_uuid == other.session_uuid):
             return False
 
         return True
@@ -400,7 +418,7 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         def property_new_share_tensor_getter(_self: "ShareTensor") -> Any:
             tensor = getattr(_self.tensor, property_name)
-            res = ShareTensor(session=_self.session)
+            res = ShareTensor(session_uuid=_self.session_uuid, config=_self.config)
             res.tensor = tensor
             return res
 
@@ -437,7 +455,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         ) -> Any:
             method = getattr(_self.tensor, method_name)
             tensor = method(*args, **kwargs)
-            res = ShareTensor(session=_self.session)
+            res = ShareTensor(session_uuid=_self.session_uuid, config=_self.config)
             res.tensor = tensor
             return res
 
