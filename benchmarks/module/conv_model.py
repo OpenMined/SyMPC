@@ -4,6 +4,7 @@
 from typing import Any
 from typing import Callable
 from typing import List
+from typing import Tuple
 
 # third party
 import syft as sy
@@ -48,11 +49,16 @@ class ConvNet(sy.Module):
         return x
 
 
-def run_conv_model(get_clients: Callable[[int], List[Any]]):
+def set_up_model(
+    get_clients: Callable[[int], List[Any]]
+) -> Tuple[sy.Module, sy.Module, MPCTensor]:
     """Create a convolutional network and do a feedforwad.
 
-    Arguments:
+    Args:
         get_clients: Fixture that returns a list of clients
+
+    Returns:
+        A tuple with three items: (origin Model, Syft Model, MPCTensor)
     """
     model = ConvNet(torch)
 
@@ -68,10 +74,23 @@ def run_conv_model(get_clients: Callable[[int], List[Any]]):
 
     model.eval()
 
-    # For the moment we have only inference
     expected = model(x_secret)
 
-    res_mpc = mpc_model(x_mpc)
+    return (expected, mpc_model, x_mpc)
 
+
+def run_inference_conv_model(
+    expected: sy.Module, mpc_model: sy.Module, x_mpc: MPCTensor
+):
+    """Run the inference on the passed in model.
+
+    Args:
+        expected: the origin model
+        mpc_model: the Syft model
+        x_mpc: the MPCTensor
+    """
+    """Run the inference on the passed in model"""
+    res_mpc = mpc_model(x_mpc)
     res_mpc.reconstruct()
+
     expected = expected.detach().numpy()
