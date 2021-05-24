@@ -1,5 +1,5 @@
-"""FALCON  Protocol."""
+"""Falcon  Protocol."""
 
-from .falcon import FALCON
+from .falcon import Falcon
 
-__all__ = ["FALCON"]
+__all__ = ["Falcon"]

@@ -1,6 +1,6 @@
-"""FALCON Protocol.
+"""Falcon Protocol.
 
-FALCON : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
+Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
@@ -13,8 +13,8 @@ from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 
 
-class FALCON(metaclass=Protocol):
-    """FALCON Protocol Implementation."""
+class Falcon(metaclass=Protocol):
+    """Falcon Protocol Implementation."""
 
     """Used for Share Level static operations like distrubuting the shares."""
     share_class: SyMPCTensor = ReplicatedSharedTensor
@@ -30,4 +30,4 @@ class FALCON(metaclass=Protocol):
         Returns:
             The result returned by the tensor specific distribute_shares method
         """
-        return FALCON.share_class.distribute_shares(*args, **kwargs)
+        return Falcon.share_class.distribute_shares(*args, **kwargs)
