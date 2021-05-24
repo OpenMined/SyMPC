@@ -1,5 +1,6 @@
-"""Add the share/reconstruct method to the Syft Module defined here:
+"""Implementations of the different neural network layers.
 
+Add the share/reconstruct method to the Syft Module defined here:
 https://github.com/OpenMined/PySyft/blob/dev/src/syft/lib/torch/module.py
 """
 
@@ -25,11 +26,18 @@ MAP_TORCH_TO_SYMPC = {
 
 MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items()})
 
+SKIP_LAYERS_NAME = {"Flatten"}
+
 
 def share(_self, session: Session) -> sy.Module:
-    parties = session.parties
-    nr_parties = session.nr_parties
+    """Share remote state dictionary between the parties of the session.
 
+    Arguments:
+        session: Session holding different information like the parties and the computed data.
+
+    Returns:
+        Neural network module with the possibility to share remote state dictionary
+    """
     mpc_module = copy.copy(_self)
 
     mpc_module._modules = OrderedDict()
@@ -38,15 +46,23 @@ def share(_self, session: Session) -> sy.Module:
     for name, module in _self.modules.items():
         state_dict = module.state_dict()
         name_layer = type(module).__name__
-        sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
-        sympc_layer = sympc_type_layer(session=session)
-        sympc_layer.share_state_dict(state_dict)
-        mpc_module._modules[name] = sympc_layer
+        if name_layer in SKIP_LAYERS_NAME:
+            mpc_module._modules[name] = module
+        else:
+            sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
+            sympc_layer = sympc_type_layer(session=session)
+            sympc_layer.share_state_dict(state_dict)
+            mpc_module._modules[name] = sympc_layer
 
     return mpc_module
 
 
-def reconstruct(_self):
+def reconstruct(_self) -> sy.Module:
+    """Get back the shares from all the parties and reconstruct the underlying value.
+
+    Returns:
+        Neural network module with the secret reconstructed
+    """
     syft_module = copy.copy(_self)
 
     # For this we will need to fetch the syft_module locally

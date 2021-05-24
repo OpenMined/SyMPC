@@ -79,6 +79,7 @@ class Session:
         "min_value",
         "max_value",
         "tensor_type",
+        "autograd_active",
     }
 
     def __init__(
@@ -147,6 +148,8 @@ class Session:
         self.ring_size = ring_size
         self.min_value = -(ring_size) // 2
         self.max_value = (ring_size - 1) // 2
+
+        self.autograd_active = False
 
     def get_protocol(self) -> Protocol:
         """Get protocol.

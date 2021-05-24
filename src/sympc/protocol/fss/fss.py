@@ -5,11 +5,13 @@ arXiv:2006.04593 [cs.LG]
 """
 # stdlib
 import multiprocessing
+import os
 from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Tuple
+import warnings
 
 # third party
 import numpy as np
@@ -25,6 +27,7 @@ from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
+from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import parallel_execution
 
 ttp_generator = csprng.create_random_device_generator()
@@ -124,12 +127,21 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
     Returns:
         MPCTensor: Shares of the comparison.
     """
-    assert not th.cuda.is_available()  # nosec
+    if th.cuda.is_available():
+        # FSS is currently not supported on GPU.
+        # https://stackoverflow.com/a/62145307/8878627
+
+        # When the CUDA_VISIBLE_DEVICES environment variable is not set,
+        # CUDA is not used even if available. Hence, we default to None
+        cuda_visible_devices = os.environ.get("CUDA_VISIBLE_DEVICES", None)
+        os.environ["CUDA_VISIBLE_DEVICES"] = ""
+        warnings.warn("Temporarily disabling CUDA as FSS does not support it")
+    else:
+        cuda_visible_devices = None
 
     # FIXME: Better handle the case where x1 or x2 is not a MPCTensor. For the moment
     # FIXME: we cast it into a MPCTensor at the expense of extra communication
     session = x1.session
-    dtype = session.tensor_type
 
     shape = MPCTensor._get_shape("sub", x1.shape, x2.shape)
     n_values = shape.numel()
@@ -159,11 +171,18 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 
     response = MPCTensor(session=session, shares=shares, shape=shape)
     response.shape = shape
+
+    if cuda_visible_devices is not None:
+        os.environ["CUDA_VISIBLE_DEVICES"] = cuda_visible_devices
+
     return response
 
 
 class FSS(metaclass=Protocol):
     """Function Secret Sharing."""
+
+    """ Used for Share Level static operations like distrubuting the shares."""
+    share_class: SyMPCTensor = ShareTensor
 
     @staticmethod
     def eq(x1: MPCTensor, x2: MPCTensor) -> MPCTensor:
@@ -190,6 +209,19 @@ class FSS(metaclass=Protocol):
             MPCTensor: Shares of the comparison.
         """
         return fss_op(x1, x2, "comp")
+
+    @staticmethod
+    def distribute_shares(*args: List[Any], **kwargs: Dict[str, Any]) -> Any:
+        """Forward the call to the tensor specific class.
+
+        Args:
+            *args (List[Any]): list of args to be forwarded
+            **kwargs(Dict[str, Any): list of named args to be forwarded
+
+        Returns:
+            The result returned by the tensor specific distribute_shares method
+        """
+        return FSS.share_class.distribute_shares(*args, **kwargs)
 
 
 """ Register Crypto Store capabilities for FSS """

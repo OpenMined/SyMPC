@@ -11,6 +11,7 @@ from typing import Set
 from typing import Union
 
 # third party
+from syft.core.node.common.client import Client
 import torch
 
 from sympc.encoder import FixedPointEncoder
@@ -19,7 +20,15 @@ from sympc.session import Session
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
-METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view"}
+METHODS_NEW_SHARE_TENSOR: Set[str] = {
+    "unsqueeze",
+    "view",
+    "t",
+    "sum",
+    "clone",
+    "flatten",
+    "reshape",
+}
 
 
 class ShareTensor(metaclass=SyMPCTensor):
@@ -55,7 +64,16 @@ class ShareTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD: Set[str] = {"numel", "unsqueeze"}
+    METHODS_FORWARD: Set[str] = {
+        "numel",
+        "unsqueeze",
+        "t",
+        "view",
+        "sum",
+        "clone",
+        "flatten",
+        "reshape",
+    }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
     def __init__(
@@ -95,7 +113,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         )
 
         self.tensor: Optional[torch.Tensor] = None
-
         if data is not None:
             tensor_type = self.session.tensor_type
             self.tensor = self._encode(data).type(tensor_type)
@@ -212,7 +229,7 @@ class ShareTensor(metaclass=SyMPCTensor):
             # We are using a simple share without usig the MPCTensor
             # In case we used the MPCTensor - the division would have
             # been done in the protocol
-            res.tensor = res.tensor // self.fp_encoder.scale
+            res.tensor //= self.fp_encoder.scale
 
         return res
 
@@ -286,19 +303,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         res = ShareTensor(session=self.session)
         res.tensor = self.tensor // y
 
-        return res
-
-    def __getattr__(self, attr_name: str) -> Any:
-        """Access to tensor attributes.
-
-        Args:
-            attr_name (str): Name of the attribute.
-
-        Returns:
-            Any: Attribute.
-        """
-        tensor = self.tensor
-        res = getattr(tensor, attr_name)
         return res
 
     def __gt__(self, y: Union["ShareTensor", torch.Tensor, int]) -> bool:
@@ -443,23 +447,22 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         return res
 
-    def view(self, *args: List[Any], **kwargs: Dict[Any, Any]) -> Any:
-        """Tensor with the same data but new dimensions/view.
+    @staticmethod
+    def distribute_shares(shares: List["ShareTensor"], parties: List[Client]):
+        """Distribute a list of shares.
 
         Args:
-            *args: Arguments to tensor.view.
-            **kwargs: Keyword arguments passed to tensor.view.
+            shares (List[ShareTensor): list of shares to distribute.
+            parties (List[Client]): list to parties to distribute.
 
         Returns:
-            Any: ShareTensor with new view.
-
-        References:
-            https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
+            List of ShareTensorPointers.
         """
-        tensor = self.tensor.view(*args, **kwargs)
-        res = ShareTensor(session=self.session)
-        res.tensor = tensor
-        return res
+        share_ptrs = []
+        for share, party in zip(shares, parties):
+            share_ptrs.append(share.send(party))
+
+        return share_ptrs
 
     __add__ = add
     __radd__ = add
