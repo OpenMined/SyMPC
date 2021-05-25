@@ -93,7 +93,7 @@ class ShareTensor(metaclass=SyMPCTensor):
     def __init__(
         self,
         data: Optional[Union[float, int, torch.Tensor]] = None,
-        config: Config = Config(encoder_base=16, encoder_precision=2),
+        config: Config = Config(encoder_base=2, encoder_precision=16),
         session_uuid: Optional[UUID] = None,
         ring_size: int = 2 ** 64,
     ) -> None:
@@ -394,7 +394,13 @@ class ShareTensor(metaclass=SyMPCTensor):
         if not self.config == other.config:
             return False
 
-        if not (self.session_uuid == other.session_uuid):
+        if (
+            self.session_uuid
+            and other.session_uuid
+            and self.session_uuid != other.session_uuid
+        ):
+            # If both shares have a session_uuid we consider them not equal
+            # else they are
             return False
 
         return True

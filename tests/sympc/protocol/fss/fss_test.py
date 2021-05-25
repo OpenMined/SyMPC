@@ -1,6 +1,7 @@
 # third party
 import torch
 
+from sympc.config import Config
 from sympc.protocol import FSS
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
@@ -13,7 +14,7 @@ def test_share_tensor(get_clients) -> None:
     clients = get_clients(3)
 
     secret = torch.tensor([-1, 0, 1])
-    shares = MPCTensor.generate_shares(secret, nr_parties=3)
+    shares = MPCTensor.generate_shares(secret, nr_parties=3, config=Config())
 
     distributed_shares = FSS.distribute_shares(shares, parties=clients)
 

@@ -302,7 +302,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     def generate_shares(
         secret: Union[ShareTensor, torch.Tensor, float, int],
         nr_parties: int,
-        config: Optional[Config] = None,
+        config: Config = Config(),
         tensor_type: Optional[torch.dtype] = None,
     ) -> List[ShareTensor]:
         """Generate shares from secret.
@@ -314,6 +314,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             secret (Union[ShareTensor, torch.Tensor, float, int]): Secret to split.
             nr_parties (int): Number of parties to split the scret.
             config (Config): Configuration used for the Share Tensor (in case it is needed).
+                Use default Config if nothing provided. The ShareTensor config would have priority.
             tensor_type (torch.dtype, optional): tensor type. Defaults to None.
 
         Returns:

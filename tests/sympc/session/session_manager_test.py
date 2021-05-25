@@ -2,21 +2,19 @@
 
 # stdlib
 from uuid import UUID
-from uuid import uuid4
+
+# third party
+import pytest
 
 from sympc.session import Session
 from sympc.session import SessionManager
 
 
-def test_session_manager_init():
+def test_session_manager_throw_exception_init():
     """Test correct initialisation of the SessionManager class."""
     # Test default init
-    session = SessionManager()
-    assert isinstance(session.uuid, UUID)
-    # Test custom init
-    uuid = uuid4()
-    session = Session(uuid=uuid)
-    assert session.uuid == uuid
+    with pytest.raises(NotImplementedError):
+        SessionManager()
 
 
 def test_setup_mpc(get_clients):
@@ -24,27 +22,6 @@ def test_setup_mpc(get_clients):
     alice_client, bob_client = get_clients(2)
     session = Session(parties=[alice_client, bob_client])
     SessionManager.setup_mpc(session)
-    assert session.rank == 1
-    assert len(session.session_ptrs) == 2
-
-
-def test_setup_przs(get_clients):
-    """Test _setup_przs method for session."""
-    alice_client, bob_client = get_clients(2)
-    session = Session(parties=[alice_client, bob_client])
-    assert len(session.przs_generators) == 0
-    SessionManager._setup_przs(session)
-    assert len(session.przs_generators) == 2
-
-
-def test_eq():
-    """Test __eq__ for SessionManager."""
-    session_manager = SessionManager()
-    other1 = SessionManager()
-    other2 = session_manager
-    # Test different instances:
-    assert session_manager != 1
-    # Test different session_managers:
-    assert session_manager != other1
-    # Test equal session_managers:
-    assert session_manager == other2
+    assert isinstance(session.uuid, UUID)
+    assert list(session.rank_to_uuid.keys()) == [0, 1]
+    assert all(isinstance(e, UUID) for e in session.rank_to_uuid.values())

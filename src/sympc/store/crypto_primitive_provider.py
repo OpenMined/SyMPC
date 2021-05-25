@@ -54,7 +54,6 @@ class CryptoPrimitiveProvider:
         for remote_session_uuid, primitive in zip(
             session.rank_to_uuid.values(), primitives
         ):
-            print(remote_session_uuid)
             for share in itertools.chain(*primitive):
                 share.session_uuid = remote_session_uuid
 
@@ -146,7 +145,7 @@ class CryptoPrimitiveProvider:
             for (p_kwargs, g_kwargs) in args:
                 CryptoPrimitiveProvider.generate_primitives(
                     op_str=op_str,
-                    sessions=session.session_ptrs,
+                    session=session,
                     g_kwargs=g_kwargs,
                     p_kwargs=p_kwargs,
                 )

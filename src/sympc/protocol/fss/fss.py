@@ -108,11 +108,8 @@ def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
     dtype_options = {None: th.long, "int": th.int32, "long": th.long}
     result = th.tensor(result_share, dtype=dtype_options[dtype])
 
-    # stdlib
-    import dataclasses
-
     share_result = ShareTensor(
-        data=result, session_uuid=session.uuid, **dataclasses.asdict(session.config)
+        data=result, session_uuid=session.uuid, config=session.config
     )
 
     return share_result

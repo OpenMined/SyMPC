@@ -264,8 +264,6 @@ def mul_parties(
     # Step 2. Divide by scale
     # This is done here to reduce one round of communication
     if session.nr_parties == 2:
-        print(share.fp_encoder.precision)
-        print(share.fp_encoder.scale)
         share.tensor //= share.fp_encoder.scale
 
     return share

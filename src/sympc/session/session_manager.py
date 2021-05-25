@@ -4,9 +4,7 @@ This class holds the static methods used for the Session.
 """
 
 # stdlib
-import operator
 import secrets
-from typing import Any
 from typing import Dict
 from uuid import UUID
 from uuid import uuid4
@@ -92,18 +90,3 @@ class SessionManager:
         for rank, remote_session in enumerate(session.session_ptrs):
             next_rank = (rank + 1) % session.nr_parties
             remote_session.init_generators(seeds[rank], seeds[next_rank])
-
-    def __eq__(self, other: Any) -> bool:
-        """Check if "self" is equal with another object given a set of attributes to compare.
-
-        Args:
-            other (Any): Session to compare.
-
-        Returns:
-            Bool. True if equal False if not.
-        """
-        if not isinstance(other, self.__class__):
-            return False
-
-        attr_getters = [operator.attrgetter(attr) for attr in self.__slots__]
-        return all(getter(self) == getter(other) for getter in attr_getters)
