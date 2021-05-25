@@ -526,6 +526,7 @@ class GradConv2d(GradFunc):
         out_channels = grad.shape[1]
         min_batch = input.shape[0]
 
+        # Gradient w.r.t input of the Conv.
         common_args = [
             tuple(input.shape),
             stride,

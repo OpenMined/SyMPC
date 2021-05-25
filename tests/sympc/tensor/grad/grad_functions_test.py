@@ -308,7 +308,7 @@ def test_grad_conv2d_forward(get_clients) -> None:
 
 
 def test_grad_conv2d_backward(get_clients) -> None:
-    parties = get_clients(2)
+    parties = get_clients(4)
 
     grad = torch.Tensor([[[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]])
 

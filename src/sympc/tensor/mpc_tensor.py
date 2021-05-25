@@ -783,7 +783,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
-        if op_str in {"mul", "matmul", "conv2d"} and (
+        if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"} and (
             not is_private or self.session.nr_parties > 2
         ):
             # For private op we do the division in the mul_parties function from spdz

@@ -159,7 +159,7 @@ def test_ops_mpc_mpc_div(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, rtol=10e-4)
 
 
-@pytest.mark.parametrize("nr_clients", [2])
+@pytest.mark.parametrize("nr_clients", [2, 3, 4])
 @pytest.mark.parametrize("bias", [None, torch.ones(1)])
 @pytest.mark.parametrize("stride", [1, 2])
 @pytest.mark.parametrize("padding", [0, 1])
