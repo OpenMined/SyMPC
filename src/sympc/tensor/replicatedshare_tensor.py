@@ -24,8 +24,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     """RSTensor is used when a party holds more than a single share,required by various protocols.
 
     Arguments:
-       session (Session): the session
-       shares: The shares held by the party
+       shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
+           from which RSTensor is created.
+       session (Optional[Session]): The session.
 
     Attributes:
        shares: The shares held by the party
@@ -39,13 +40,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
     def __init__(
         self,
-        shares: Optional[Union[float, int, torch.Tensor]] = None,
+        shares: Optional[List[Union[float, int, torch.Tensor]]] = None,
         session: Optional[Session] = None,
     ):
         """Initialize ShareTensor.
 
         Args:
-            shares (Optional[Union[float,int,torch.Tensor]]): Shares from which RSTensor is created.
+            shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
+                from which RSTensor is created.
             session (Optional[Session]): The session. Defaults to None.
         """
         self.session = session
@@ -167,9 +169,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         def property_new_rs_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
             shares = []
-            nr_parties = _self.session.nr_parties
 
-            for i in range(nr_parties - 1):  # each party has n-1 shares.
+            for i in range(len(_self.shares)):
                 tensor = getattr(_self.shares[i], property_name)
                 shares.append(tensor)
 
@@ -210,8 +211,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
             shares = []
-            nr_parties = _self.session.nr_parties
-            for i in range(nr_parties - 1):  # each party has n-1 shares
+            for i in range(len(_self.shares)):
                 tensor = getattr(_self.shares[i], method_name)(*args, **kwargs)
                 shares.append(tensor)
 

@@ -12,8 +12,8 @@ def test_import_RSTensor() -> None:
 
 
 def test_hook_method(get_clients) -> None:
-    alice, bob = get_clients(2)
-    session = Session(parties=[alice, bob])
+    alice, bob, charlie = get_clients(3)
+    session = Session(parties=[alice, bob, charlie])
     SessionManager.setup_mpc(session)
 
     x = torch.randn(1, 3)
@@ -30,8 +30,8 @@ def test_hook_method(get_clients) -> None:
 
 
 def test_hook_property(get_clients) -> None:
-    alice, bob = get_clients(2)
-    session = Session(parties=[alice, bob])
+    alice, bob, charlie = get_clients(3)
+    session = Session(parties=[alice, bob, charlie])
     SessionManager.setup_mpc(session)
 
     x = torch.randn(1, 3)
