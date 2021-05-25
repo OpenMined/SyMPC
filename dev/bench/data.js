@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621772225402,
+  "lastUpdate": 1621952540130,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -589,6 +589,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.15939222600030367",
             "extra": "mean: 4.123133940999992 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "c7ddbdc28ec115ac51fdef14ffde276955512c35",
+          "message": "Initialize FALCON Protocol (#189)\n\n* Intialize FALCON Protocol\r\n\r\n* Added test for session\r\n\r\n* Modified Protocol name convention\r\n\r\n* Modified worklows Parallel Execution",
+          "timestamp": "2021-05-25T19:49:17+05:30",
+          "tree_id": "e51a6aa89271afc5c2c2df9b1e3de8f3d86f7e14",
+          "url": "https://github.com/OpenMined/SyMPC/commit/c7ddbdc28ec115ac51fdef14ffde276955512c35"
+        },
+        "date": 1621952539451,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_conv_model",
+            "value": 0.2322375686139575,
+            "unit": "iter/sec",
+            "range": "stddev: 0.10087103494405986",
+            "extra": "mean: 4.305935538199998 sec\nrounds: 5"
           }
         ]
       }
