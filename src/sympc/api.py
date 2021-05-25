@@ -29,6 +29,8 @@ allowed_external_modules = [
     ("sympc.tensor", tensor),
     ("sympc.protocol", protocol),
     ("sympc.store", store),
+    ("sympc.protocol.falcon", protocol.falcon),
+    ("sympc.protocol.falcon.falcon", protocol.falcon.falcon),
     ("sympc.protocol.fss", protocol.fss),
     ("sympc.protocol.fss.fss", protocol.fss.fss),
     ("sympc.protocol.spdz", protocol.spdz),
