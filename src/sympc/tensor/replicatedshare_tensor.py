@@ -7,6 +7,8 @@ from typing import Dict
 from typing import List
 from typing import Set
 
+from sympc.tensor import ShareTensor
+
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
@@ -155,13 +157,23 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
 
         def property_new_share_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
-            tensor = getattr(_self.tensor, property_name)
-            res = ReplicatedSharedTensor(session=_self.session)
-            res.tensor = tensor
+            tensor1 = getattr(_self.shares[0].tensor, property_name)
+            tensor2 = getattr(_self.shares[1].tensor, property_name)
+            share1 = ShareTensor(session=_self.session)
+            share1.tensor = (
+                tensor1  # assign after instance creation to prevent FP encoding.
+            )
+            share2 = ShareTensor(session=_self.session)
+            share2.tensor = (
+                tensor2  # assign after instance creation to prevent FP encoding
+            )
+            shares = [share1, share2]
+            res = ReplicatedSharedTensor(session=_self.session, shares=shares)
+
             return res
 
         def property_getter(_self: "ReplicatedSharedTensor") -> Any:
-            prop = getattr(_self.tensor, property_name)
+            prop = getattr(_self.shares[0].tensor, property_name)
             return prop
 
         if property_name in PROPERTIES_NEW_SHARE_TENSOR:
@@ -192,16 +204,25 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         def method_new_rs_tensor(
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
-            method = getattr(_self.tensor, method_name)
-            tensor = method(*args, **kwargs)
-            res = ReplicatedSharedTensor(session=_self.session, shares=_self.shares)
-            res.tensor = tensor
+            tensor1 = getattr(_self.shares[0].tensor, method_name)(*args, **kwargs)
+            tensor2 = getattr(_self.shares[1].tensor, method_name)(*args, **kwargs)
+            share1 = ShareTensor(session=_self.session)
+            share1.tensor = (
+                tensor1  # assign after instance creation to prevent FP encoding
+            )
+            share2 = ShareTensor(data=tensor2, session=_self.session)
+            share2.tensor = (
+                tensor2  # assign after instance creation to prevent FP encoding
+            )
+            shares = [share1, share2]
+            res = ReplicatedSharedTensor(session=_self.session, shares=shares)
+
             return res
 
         def method(
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
-            method = getattr(_self.tensor, method_name)
+            method = getattr(_self.shares[0].tensor, method_name)
             res = method(*args, **kwargs)
             return res
 
