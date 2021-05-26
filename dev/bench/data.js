@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1621952540130,
+  "lastUpdate": 1622027943331,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -620,6 +620,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.10087103494405986",
             "extra": "mean: 4.305935538199998 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "lihu723@gmail.com",
+            "name": "libra",
+            "username": "libratiger"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "fcd7a40f066cf9b3278ac78013b3c24d4fb5436c",
+          "message": "Add the benchmkar for the inference (#191)",
+          "timestamp": "2021-05-26T16:46:19+05:30",
+          "tree_id": "1194475e020762341c4bd307f617a2907a41f8fa",
+          "url": "https://github.com/OpenMined/SyMPC/commit/fcd7a40f066cf9b3278ac78013b3c24d4fb5436c"
+        },
+        "date": 1622027941710,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.32250782570318476,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06947869721977652",
+            "extra": "mean: 3.100699953000009 sec\nrounds: 5"
           }
         ]
       }
