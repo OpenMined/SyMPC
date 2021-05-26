@@ -120,8 +120,11 @@ allowed_external_attrs = [
         "sympc.tensor.ShareTensor.T",
         "sympc.tensor.ShareTensor",
     ),
+    ("sympc.tensor.ShareTensor.squeeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.stack", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.cat", "sympc.tensor.ShareTensor"),
     (
         "sympc.tensor.ReplicatedSharedTensor.__add__",
         "sympc.tensor.ReplicatedSharedTensor",

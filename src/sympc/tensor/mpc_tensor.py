@@ -29,12 +29,15 @@ from .tensor import SyMPCTensor
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
 METHODS_FORWARD_ALL_SHARES = {
     "t",
+    "squeeze",
     "unsqueeze",
     "view",
     "sum",
     "clone",
     "flatten",
     "reshape",
+    "stack",
+    "cat",
 }
 
 
@@ -110,12 +113,15 @@ class MPCTensor(metaclass=SyMPCTensor):
     METHODS_FORWARD = {
         "numel",
         "t",
+        "squeeze",
         "unsqueeze",
         "view",
         "sum",
         "clone",
         "flatten",
         "reshape",
+        "stack",
+        "cat",
     }
     PROPERTIES_FORWARD = {"T"}
 
