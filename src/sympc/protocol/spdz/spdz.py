@@ -21,6 +21,7 @@ import torch
 from sympc.config import Config
 from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
+from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
@@ -58,18 +59,26 @@ def mul_master(
 
     args = [list(el) + [op_str] for el in zip(x.share_ptrs, y.share_ptrs)]
 
-    CryptoPrimitiveProvider.generate_primitives(
-        f"beaver_{op_str}",
-        session=session,
-        g_kwargs={
-            "a_shape": shape_x,
-            "b_shape": shape_y,
-            "nr_parties": session.nr_parties,
-            **kwargs_,
-        },
-        p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
-    )
-    mask = parallel_execution(spdz_mask, session.parties)(args)
+    args = [
+        list(el) + [op_str]
+        for el in zip(session.session_ptrs, x.share_ptrs, y.share_ptrs)
+    ]
+
+    try:
+        mask = parallel_execution(spdz_mask, session.parties)(args)
+    except EmptyPrimitiveStore:
+        CryptoPrimitiveProvider.generate_primitives(
+            f"beaver_{op_str}",
+            sessions=session.session_ptrs,
+            g_kwargs={
+                "a_shape": shape_x,
+                "b_shape": shape_y,
+                "nr_parties": session.nr_parties,
+                **kwargs_,
+            },
+            p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
+        )
+        mask = parallel_execution(spdz_mask, session.parties)(args)
 
     eps_shares, delta_shares = zip(*mask)
 
