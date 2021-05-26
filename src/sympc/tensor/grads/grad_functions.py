@@ -439,7 +439,7 @@ class GradConv2d(GradFunc):
     """The multiplication gradient function."""
 
     @staticmethod
-    def function_aux(
+    def get_grad_input_padding(
         grad_output, input_size, stride, padding, kernel_size, dilation, session
     ):
         """Auxillary function to find grad input padding.
@@ -464,7 +464,6 @@ class GradConv2d(GradFunc):
             kernel_size=kernel_size,
             dilation=(dilation, dilation),
         )
-
         share_tensor = ShareTensor(torch.tensor(new_tuple), session=session)
         return share_tensor
 
@@ -537,10 +536,13 @@ class GradConv2d(GradFunc):
         ]
         args = [[el] + common_args for el in grad.share_ptrs]
 
-        shares = parallel_execution(GradConv2d.function_aux, grad.session.parties)(args)
+        shares = parallel_execution(
+            GradConv2d.get_grad_input_padding, grad.session.parties
+        )(args)
         grad_input_padding = MPCTensor(shares=shares, session=grad.session)
 
         output_padding_tensor = grad_input_padding.reconstruct()
+        output_padding_tensor /= grad.session.nr_parties
         output_padding = tuple(output_padding_tensor.to(torch.int).tolist())
 
         input_grad = grad.conv_transpose2d(

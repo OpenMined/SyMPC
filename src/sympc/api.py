@@ -187,7 +187,7 @@ allowed_external_attrs = [
     ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.dim", "syft.lib.python.Int"),
     (
-        "sympc.tensor.grads.grad_functions.GradConv2d.function_aux",
+        "sympc.tensor.grads.grad_functions.GradConv2d.get_grad_input_padding",
         "sympc.tensor.ShareTensor",
     ),
     ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),

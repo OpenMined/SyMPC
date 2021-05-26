@@ -1,8 +1,14 @@
+# stdlib
+from typing import List
+
 # third party
 import numpy as np
 import pytest
 import torch
 
+from sympc.session import Session
+from sympc.session import SessionManager
+from sympc.tensor import MPCTensor
 from sympc.tensor.grads.grad_functions import GradAdd
 from sympc.tensor.grads.grad_functions import GradConv2d
 from sympc.tensor.grads.grad_functions import GradFunc
@@ -11,6 +17,7 @@ from sympc.tensor.grads.grad_functions import GradSigmoid
 from sympc.tensor.grads.grad_functions import GradSub
 from sympc.tensor.grads.grad_functions import GradSum
 from sympc.tensor.grads.grad_functions import GradT
+from sympc.utils import parallel_execution
 
 
 def test_grad_func_abstract_forward_exception() -> None:
@@ -346,3 +353,38 @@ def test_grad_conv2d_backward(get_clients) -> None:
 
     assert np.allclose(res_mpc_input.reconstruct(), expected_input, rtol=1e-3)
     assert np.allclose(res_mpc_weight.reconstruct(), expected_weight, rtol=1e-3)
+
+
+@pytest.mark.parametrize(
+    "common_args", [[(6, 6), 2, 1, (3, 3), 1], [(4, 4), 1, 0, (2, 2), 1]]
+)
+@pytest.mark.parametrize("nr_parties", [2, 3, 4])
+def test_get_grad_input_padding(get_clients, common_args: List, nr_parties) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    grad = torch.Tensor([[[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]])
+    grad_mpc = MPCTensor(secret=grad, session=session)
+
+    input_size, stride, padding, kernel_size, dilation = common_args
+
+    expected_padding = torch.nn.functional.grad._grad_input_padding(
+        grad,
+        input_size,
+        (stride, stride),
+        (padding, padding),
+        kernel_size,
+        (dilation, dilation),
+    )
+
+    args = [[el] + common_args + [session] for el in grad_mpc.share_ptrs]
+    shares = parallel_execution(
+        GradConv2d.get_grad_input_padding, grad_mpc.session.parties
+    )(args)
+    grad_input_padding = MPCTensor(shares=shares, session=grad_mpc.session)
+    output_padding_tensor = grad_input_padding.reconstruct()
+    output_padding_tensor /= grad_mpc.session.nr_parties
+    calculated_padding = tuple(output_padding_tensor.to(torch.int).tolist())
+
+    assert calculated_padding == expected_padding
