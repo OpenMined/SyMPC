@@ -35,6 +35,10 @@ METHODS_FORWARD_ALL_SHARES = {
     "clone",
     "flatten",
     "reshape",
+    "repeat",
+    "narrow",
+    "dim",
+    "transpose",
 }
 
 
@@ -115,6 +119,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         "clone",
         "flatten",
         "reshape",
+        "repeat",
+        "narrow",
+        "dim",
+        "transpose",
     }
     PROPERTIES_FORWARD = {"T"}
 
@@ -528,6 +536,45 @@ class MPCTensor(metaclass=SyMPCTensor):
         else:
             return convolution
 
+    def conv_transpose2d(
+        self,
+        weight: Union["MPCTensor", torch.Tensor, float, int],
+        bias: Optional[torch.Tensor] = None,
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
+        groups: int = 1,
+    ) -> "MPCTensor":
+        """Apply the "conv_transpose2d" operation between "self" and "y".
+
+        Args:
+            weight: the convolution kernel
+            bias: optional bias
+            stride: stride
+            padding: padding
+            dilation: dilation
+            groups: groups
+
+        Returns:
+            MPCTensor. Result of the operation.
+        """
+        kwargs = {
+            "bias": bias,
+            "stride": stride,
+            "padding": padding,
+            "dilation": dilation,
+            "groups": groups,
+        }
+
+        bias = kwargs.pop("bias", None)
+
+        convolution = self.__apply_op(weight, "conv_transpose2d", kwargs_=kwargs)
+
+        if bias:
+            return convolution + bias.unsqueeze(1).unsqueeze(1)
+        else:
+            return convolution
+
     def rmatmul(self, y: torch.Tensor) -> "MPCTensor":
         """Apply the "rmatmul" operation between "y" and "self".
 
@@ -638,7 +685,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
             )
 
-        if op_str in {"mul", "matmul", "conv2d"}:
+        if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
             from sympc.protocol.spdz import spdz
 
             result = spdz.mul_master(self, y, op_str, kwargs_)
@@ -693,8 +740,8 @@ class MPCTensor(metaclass=SyMPCTensor):
                 f"Shapes should not be None; x_shape {x_shape}, y_shape {y_shape}"
             )
 
-        if op_str == "conv2d":
-            op = torch.conv2d
+        if op_str in ["conv2d", "conv_transpose2d"]:
+            op = getattr(torch, op_str)
         else:
             op = getattr(operator, op_str)
 
@@ -736,7 +783,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
-        if op_str in {"mul", "matmul", "conv2d"} and (
+        if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"} and (
             not is_private or self.session.nr_parties > 2
         ):
             # For private op we do the division in the mul_parties function from spdz

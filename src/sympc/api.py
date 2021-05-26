@@ -36,6 +36,12 @@ allowed_external_modules = [
     ("sympc.protocol.spdz", protocol.spdz),
     ("sympc.protocol.spdz.spdz", protocol.spdz.spdz),
     ("sympc.utils", utils),
+    ("sympc.tensor.grads", tensor.grads),
+    ("sympc.tensor.grads.grad_functions", tensor.grads.grad_functions),
+    (
+        "sympc.tensor.grads.grad_functions.GradConv2d",
+        tensor.grads.grad_functions.GradConv2d,
+    ),
 ]
 
 allowed_external_classes = [
@@ -177,4 +183,12 @@ allowed_external_attrs = [
         "sympc.tensor.ReplicatedSharedTensor",
     ),
     ("sympc.tensor.ReplicatedSharedTensor.view", "sympc.tensor.ReplicatedSharedTensor"),
+    ("sympc.tensor.ShareTensor.repeat", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.dim", "syft.lib.python.Int"),
+    (
+        "sympc.tensor.grads.grad_functions.GradConv2d.get_grad_input_padding",
+        "sympc.tensor.ShareTensor",
+    ),
+    ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
 ]
