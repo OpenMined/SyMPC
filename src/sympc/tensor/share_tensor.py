@@ -30,6 +30,7 @@ METHODS_NEW_SHARE_TENSOR: Set[str] = {
     "flatten",
     "reshape",
     "stack",
+    "_stack_share_tensor",
     "cat",
 }
 
@@ -78,6 +79,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         "flatten",
         "reshape",
         "stack",
+        "_stack_share_tensor",
         "cat",
     }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}

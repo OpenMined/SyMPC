@@ -37,6 +37,7 @@ METHODS_FORWARD_ALL_SHARES = {
     "flatten",
     "reshape",
     "stack",
+    "_stack_share_tensor",
     "cat",
 }
 
@@ -121,6 +122,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         "flatten",
         "reshape",
         "stack",
+        "_stack_share_tensor",
         "cat",
     }
     PROPERTIES_FORWARD = {"T"}

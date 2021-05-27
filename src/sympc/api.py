@@ -27,6 +27,7 @@ allowed_external_modules = [
     ("sympc", sympc),
     ("sympc.session", session),
     ("sympc.tensor", tensor),
+    ("sympc.tensor.static", tensor.static),
     ("sympc.protocol", protocol),
     ("sympc.store", store),
     ("sympc.protocol.fss", protocol.fss),
@@ -124,6 +125,7 @@ allowed_external_attrs = [
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.stack", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor._stack_share_tensor", "syft.lib.python.Tuple"),
     ("sympc.tensor.ShareTensor.cat", "sympc.tensor.ShareTensor"),
     (
         "sympc.tensor.ReplicatedSharedTensor.__add__",
