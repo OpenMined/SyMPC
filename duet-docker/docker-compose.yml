@@ -1,0 +1,18 @@
+version: '3'
+services:
+  data-owner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PORT=8888
+    ports:
+      - 8888:8888
+  data-scientist:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - PORT=8889
+    ports:
+      - 8889:8889
