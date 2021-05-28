@@ -1,7 +1,7 @@
 name: Security-check
 
 on:
-  pull_request: # change to push before merging code
+  push:
     branches:
       - main
     paths:
@@ -57,7 +57,7 @@ jobs:
           bandit -r src
           safety check
 
-      - name: Synk security check
+      - name: Snyk security check
         uses: snyk/actions/python-3.8@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
