@@ -28,6 +28,10 @@ METHODS_NEW_SHARE_TENSOR: Set[str] = {
     "clone",
     "flatten",
     "reshape",
+    "repeat",
+    "narrow",
+    "dim",
+    "transpose",
 }
 
 
@@ -73,6 +77,10 @@ class ShareTensor(metaclass=SyMPCTensor):
         "clone",
         "flatten",
         "reshape",
+        "repeat",
+        "narrow",
+        "dim",
+        "transpose",
     }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
