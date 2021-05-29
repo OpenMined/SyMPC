@@ -12,12 +12,12 @@ def test_import_RSTensor() -> None:
 
 
 def test_hook_method(get_clients) -> None:
-    alice, bob, charlie = get_clients(3)
-    session = Session(parties=[alice, bob, charlie])
+    clients = get_clients(3)
+    session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
     x = torch.randn(1, 3)
-    y = torch.randn(1, 3)  # noqa: F841
+    y = torch.randn(1, 3)
     shares = [x, y]
 
     rst = ReplicatedSharedTensor(shares=shares, session=session)
@@ -28,16 +28,23 @@ def test_hook_method(get_clients) -> None:
     assert (rst.view(3, 1).shares[0] == x.view(3, 1)).all()
     assert (rst.sum().shares[0] == x.sum()).all()
 
+    assert rst.numel() == y.numel()
+    assert (rst.t().shares[1] == y.t()).all()
+    assert (rst.unsqueeze(dim=0).shares[1] == y.unsqueeze(dim=0)).all()
+    assert (rst.view(3, 1).shares[1] == y.view(3, 1)).all()
+    assert (rst.sum().shares[1] == y.sum()).all()
+
 
 def test_hook_property(get_clients) -> None:
-    alice, bob, charlie = get_clients(3)
-    session = Session(parties=[alice, bob, charlie])
+    clients = get_clients(3)
+    session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
     x = torch.randn(1, 3)
-    y = torch.randn(1, 3)  # noqa: F841
+    y = torch.randn(1, 3)
     shares = [x, y]
 
     rst = ReplicatedSharedTensor(shares=shares, session=session)
 
     assert (rst.T.shares[0] == x.T).all()
+    assert (rst.T.shares[1] == y.T).all()
