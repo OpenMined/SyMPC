@@ -37,3 +37,8 @@ License
 -------
 
 This project is licensed under the [MIT License](https://github.com/OpenMined/SyMPC/blob/main/LICENSE.txt)
+
+Disclaimer
+----------
+
+This library should not be used in a production environment because it is still a prototype.
