@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622050965351,
+  "lastUpdate": 1622275690601,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -682,6 +682,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.021635432999829892",
             "extra": "mean: 3.0942684912000002 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "36797859+Param-29@users.noreply.github.com",
+            "name": "Param Mirani",
+            "username": "Param-29"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6437f0456c9fc70434b45a1457f441b81827dcf3",
+          "message": "safety, synk added to CI (#166)\n\n* safety added to CI\r\n\r\n* adding synk:\r\n\r\nIt will run after code is merged as it requires a secret token(to be set up yet..)\r\n\r\n* Making suggested changes\r\n: test names reverted\r\n: moved git-PySyft to the end of the file\r\n\r\n* Making suggested changes\r\n: thanks, aanurraj\r\n\r\n* Change with SNYK secrets\r\n\r\n* Change to push on main\r\n\r\nCo-authored-by: George Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2021-05-29T13:28:26+05:30",
+          "tree_id": "2d8786e06630eaffc7a9a2ac6d62550507a47777",
+          "url": "https://github.com/OpenMined/SyMPC/commit/6437f0456c9fc70434b45a1457f441b81827dcf3"
+        },
+        "date": 1622275679960,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.3079287760341951,
+            "unit": "iter/sec",
+            "range": "stddev: 0.011573617402594999",
+            "extra": "mean: 3.247504221200006 sec\nrounds: 5"
           }
         ]
       }
