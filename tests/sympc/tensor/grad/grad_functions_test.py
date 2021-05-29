@@ -13,6 +13,7 @@ from sympc.tensor.grads.grad_functions import GradAdd
 from sympc.tensor.grads.grad_functions import GradConv2d
 from sympc.tensor.grads.grad_functions import GradFunc
 from sympc.tensor.grads.grad_functions import GradMul
+from sympc.tensor.grads.grad_functions import GradReshape
 from sympc.tensor.grads.grad_functions import GradSigmoid
 from sympc.tensor.grads.grad_functions import GradSub
 from sympc.tensor.grads.grad_functions import GradSum
@@ -136,7 +137,7 @@ def test_grad_sum_forward(get_clients) -> None:
     assert (res == expected).all()
 
 
-def test_grad_sum_bacward(get_clients) -> None:
+def test_grad_sum_backward(get_clients) -> None:
     parties = get_clients(4)
     grad = torch.tensor(420)
 
@@ -388,3 +389,37 @@ def test_get_grad_input_padding(get_clients, common_args: List, nr_parties) -> N
     calculated_padding = tuple(output_padding_tensor.to(torch.int).tolist())
 
     assert calculated_padding == expected_padding
+
+
+def test_grad_reshape_forward(get_clients) -> None:
+    parties = get_clients(4)
+    x = torch.Tensor([[1, 2], [3, -4], [-9, 0]])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+    shape = (3, 2)
+    res_mpc = GradReshape.forward(ctx, x_mpc, shape)
+
+    assert "x_shape" in ctx
+
+    res_shape = res_mpc.shape
+
+    assert res_shape == shape
+
+
+def test_grad_reshape_backward(get_clients) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([[1, 2, 3], [3, 4, 7]])
+    x = torch.Tensor([[1, 2], [3, -4], [5, 8]])
+
+    x_mpc = x.share(parties=parties)
+    grad_mpc = grad.share(parties=parties)
+
+    ctx = {"x_shape": x_mpc.shape}
+
+    res_mpc_grad = GradReshape.backward(ctx, grad_mpc)
+    res_mpc_grad_shape = res_mpc_grad.shape
+
+    assert res_mpc_grad_shape == x_mpc.shape

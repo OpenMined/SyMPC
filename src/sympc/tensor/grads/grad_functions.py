@@ -591,6 +591,39 @@ class GradConv2d(GradFunc):
         return input_grad, weight_grad
 
 
+class GradReshape(GradFunc):
+    """The Reshape gradient function."""
+
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: MPCTensor, shape: tuple) -> MPCTensor:
+        """Perform the feedforward and compute the result for the reshape operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): the MPCTensor to be reshaped
+            shape (tuple): the new shape
+
+        Returns:
+            res (MPCTensor): The result of the reshape operation
+        """
+        ctx["x_shape"] = x.shape
+        return x.reshape(shape)
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the reshape operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            grad (MPCTensor): The gradients passed to the X node.
+        """
+        shape = tuple(ctx["x_shape"])
+        return grad.reshape(shape)
+
+
 def forward(
     _self: MPCTensor, grad_fn: GradFunc, *args: List[Any], **kwargs: Dict[str, Any]
 ) -> Any:
@@ -633,4 +666,5 @@ GRAD_FUNCS: Dict[str, GradFunc] = {
     "sigmoid": GradSigmoid,
     "flatten": GradFlatten,
     "conv2d": GradConv2d,
+    "reshape": GradReshape,
 }
