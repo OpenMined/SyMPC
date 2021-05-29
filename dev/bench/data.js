@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622275690601,
+  "lastUpdate": 1622287071132,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -713,6 +713,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.011573617402594999",
             "extra": "mean: 3.247504221200006 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e6fc61af5610cb6d4b5d162c4c2a2fae61477de0",
+          "message": "Revert \"safety, synk added to CI (#166)\" (#200)\n\nThis reverts commit 6437f0456c9fc70434b45a1457f441b81827dcf3.",
+          "timestamp": "2021-05-29T12:15:16+01:00",
+          "tree_id": "4c21db13a76b71a4f77e1972efc96b79b948d70f",
+          "url": "https://github.com/OpenMined/SyMPC/commit/e6fc61af5610cb6d4b5d162c4c2a2fae61477de0"
+        },
+        "date": 1622287070490,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.32420852608159506,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07769171378023677",
+            "extra": "mean: 3.0844346140000196 sec\nrounds: 5"
           }
         ]
       }
