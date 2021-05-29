@@ -5,7 +5,15 @@ from typing import Any
 from typing import Callable
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Set
+from typing import Union
+
+# third party
+import torch
+
+from sympc.encoder import FixedPointEncoder
+from sympc.session import Session
 
 from .tensor import SyMPCTensor
 
@@ -17,8 +25,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     """RSTensor is used when a party holds more than a single share,required by various protocols.
 
     Arguments:
-       session (Session): the session
-       shares: The shares held by the party
+       shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
+           from which RSTensor is created.
+       session (Optional[Session]): The session.
 
     Attributes:
        shares: The shares held by the party
@@ -30,15 +39,50 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
     PROPERTIES_FORWARD = {"T"}
 
-    def __init__(self, shares=None, session=None):
+    def __init__(
+        self,
+        shares: Optional[List[Union[float, int, torch.Tensor]]] = None,
+        session: Optional[Session] = None,
+    ):
         """Initialize ShareTensor.
 
         Args:
-            shares (Optional[List[ShareTensor]]): Shares from which RSTensor is created.
+            shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
+                from which RSTensor is created.
             session (Optional[Session]): The session. Defaults to None.
         """
         self.session = session
-        self.shares = shares
+
+        encoder_base = self.session.config.encoder_base
+        encoder_precision = self.session.config.encoder_precision
+
+        self.fp_encoder = FixedPointEncoder(
+            base=encoder_base, precision=encoder_precision
+        )
+        tensor_type = self.session.tensor_type
+        self.shares = []
+        for i in range(len(shares)):
+            self.shares.append(self._encode(shares[i]).type(tensor_type))
+
+    def _encode(self, data):
+        return self.fp_encoder.encode(data)
+
+    def decode(self):
+        """Decode via FixedPrecisionEncoder.
+
+        Returns:
+            torch.Tensor: Decoded value
+        """
+        return self._decode()
+
+    def _decode(self):
+
+        shares = []
+        for i in range(len(self.shares)):
+            tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
+            shares.append(tensor)
+
+        return shares
 
     def add(self, y):
         """Apply the "add" operation between "self" and "y".
