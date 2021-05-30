@@ -22,18 +22,14 @@ def test_send_get(get_clients, precision, base) -> None:
     assert x_share == x_ptr.get()
 
 
-@pytest.mark.parametrize("precision", [12, 3])
-@pytest.mark.parametrize("base", [4, 6])
-def test_send_get_orchestrator(get_clients, precision, base) -> None:
-    clients = get_clients(3)  # Testing it with session initliazed by orchestrator
-    session = Session(parties=clients)
+def test_send_get_orchestrator(get_clients) -> None:
+    client = get_clients(1)  # Testing it with session initliazed by orchestrator
+    session = Session(parties=client)
     SessionManager.setup_mpc(session)
     x = torch.Tensor([0.122, 1.342, 4.67])
-    x_share = ShareTensor(
-        data=x, encoder_precision=precision, encoder_base=base, session=session
-    )
+    x_share = ShareTensor(data=x, session=session)
 
-    x_ptr = x_share.send(clients[0])
+    x_ptr = x_share.send(client[0])
 
     assert x_share == x_ptr.get()
 
