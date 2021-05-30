@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622395423408,
+  "lastUpdate": 1622396998147,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -775,6 +775,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.02921424735613735",
             "extra": "mean: 3.4856324000000085 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e653498a602700d9bc0715230379ffb007a289d4",
+          "message": "added GradFlatten Tests (#204)",
+          "timestamp": "2021-05-30T18:21:54+01:00",
+          "tree_id": "7ce84fa6368cc0db53640a9b9ef165475087aeb1",
+          "url": "https://github.com/OpenMined/SyMPC/commit/e653498a602700d9bc0715230379ffb007a289d4"
+        },
+        "date": 1622396997656,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.36368413808403444,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06104047818001348",
+            "extra": "mean: 2.749638753199997 sec\nrounds: 5"
           }
         ]
       }
