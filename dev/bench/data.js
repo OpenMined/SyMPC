@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622396998147,
+  "lastUpdate": 1622400180937,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -806,6 +806,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.06104047818001348",
             "extra": "mean: 2.749638753199997 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "0ba4feab9c55fbfed9c3d7c734a489a8ac3a2ef2",
+          "message": "added support for  GradReshape (#198)\n\n* added GradReshape\r\n\r\n* test improvement\r\n\r\n* resolved conflicts",
+          "timestamp": "2021-05-30T19:40:41+01:00",
+          "tree_id": "68bae76ed9178ef8a66df16f3e3bba6b875e1f41",
+          "url": "https://github.com/OpenMined/SyMPC/commit/0ba4feab9c55fbfed9c3d7c734a489a8ac3a2ef2"
+        },
+        "date": 1622400180365,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.34577954651084963,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0187890722762834",
+            "extra": "mean: 2.8920160550000107 sec\nrounds: 5"
           }
         ]
       }
