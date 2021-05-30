@@ -408,8 +408,8 @@ def test_grad_reshape_forward(get_clients) -> None:
 
     assert res_shape == shape
     assert np.allclose(res_mpc.reconstruct(), x.reshape(shape), rtol=1e-3)
-    
-    
+
+
 def test_grad_reshape_backward(get_clients) -> None:
     parties = get_clients(4)
 
@@ -426,8 +426,8 @@ def test_grad_reshape_backward(get_clients) -> None:
 
     assert res_mpc_grad_shape == x_mpc.shape
     assert np.allclose(res_mpc_grad.reconstruct(), grad.reshape(x_mpc.shape), rtol=1e-3)
-    
-    
+
+
 @pytest.mark.parametrize("args", [[0, -1], [1, -1], [0, 1]])
 def test_grad_flatten_forward(get_clients, args: list) -> None:
     parties = get_clients(4)
@@ -443,8 +443,8 @@ def test_grad_flatten_forward(get_clients, args: list) -> None:
 
     expected = torch.flatten(x, start_dim=start_dim, end_dim=end_dim)
     assert np.allclose(res_mpc.reconstruct(), expected, rtol=1e-3)
-    
-    
+
+
 def test_grad_flatten_backward(get_clients) -> None:
     parties = get_clients(4)
 
