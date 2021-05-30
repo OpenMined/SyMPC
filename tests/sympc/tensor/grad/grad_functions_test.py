@@ -406,6 +406,7 @@ def test_grad_reshape_forward(get_clients) -> None:
     res_shape = res_mpc.shape
 
     assert res_shape == shape
+    assert np.allclose(res_mpc.reconstruct(), x.reshape(shape), rtol=1e-3)
 
 
 def test_grad_reshape_backward(get_clients) -> None:
@@ -423,3 +424,4 @@ def test_grad_reshape_backward(get_clients) -> None:
     res_mpc_grad_shape = res_mpc_grad.shape
 
     assert res_mpc_grad_shape == x_mpc.shape
+    assert np.allclose(res_mpc_grad.reconstruct(), grad.reshape(x_mpc.shape), rtol=1e-3)
