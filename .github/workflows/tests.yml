@@ -80,6 +80,6 @@ jobs:
           pytest tests/ --deselect=tests/notebooks -n auto
 
       - name: Run codecov
-      - if: matrix.os == 'ubuntu-latest'
+      - if: ${{ matrix.os } == 'ubuntu-latest'
         run: |
           bash <(curl -s https://codecov.io/bash) -t 7ca04b7c-a541-485e-ad98-8adc99f6700f -X gcov
