@@ -11,6 +11,7 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor.grads.grad_functions import GradAdd
 from sympc.tensor.grads.grad_functions import GradConv2d
+from sympc.tensor.grads.grad_functions import GradFlatten
 from sympc.tensor.grads.grad_functions import GradFunc
 from sympc.tensor.grads.grad_functions import GradMul
 from sympc.tensor.grads.grad_functions import GradSigmoid
@@ -388,3 +389,36 @@ def test_get_grad_input_padding(get_clients, common_args: List, nr_parties) -> N
     calculated_padding = tuple(output_padding_tensor.to(torch.int).tolist())
 
     assert calculated_padding == expected_padding
+
+
+@pytest.mark.parametrize("args", [[0, -1], [1, -1], [0, 1]])
+def test_grad_flatten_forward(get_clients, args: list) -> None:
+    parties = get_clients(4)
+    x = torch.tensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+    start_dim, end_dim = args
+    res_mpc = GradFlatten.forward(ctx, x_mpc, start=start_dim, end=end_dim)
+
+    assert "x_shape" in ctx
+
+    expected = torch.flatten(x, start_dim=start_dim, end_dim=end_dim)
+    assert np.allclose(res_mpc.reconstruct(), expected, rtol=1e-3)
+
+
+def test_grad_flatten_backward(get_clients) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([1, 2, 3, 4, 5, 6, 7, 8])
+    x = torch.Tensor([[[1, 2], [3, 4]], [[5, 6], [7, 8]]])
+
+    x_mpc = x.share(parties=parties)
+    grad_mpc = grad.share(parties=parties)
+
+    ctx = {"x_shape": x_mpc.shape}
+
+    res_mpc_grad = GradFlatten.backward(ctx, grad_mpc)
+
+    assert np.allclose(res_mpc_grad.reconstruct(), x, rtol=1e-3)
