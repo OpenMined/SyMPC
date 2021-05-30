@@ -22,19 +22,6 @@ on:
       - "requirements.txt"
 
 jobs:
-  CodeCov:
-    strategy:
-      max-parallel: 1
-      matrix:
-        os: [ ubuntu-latest ]
-
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v2
-      - name: Run codecov
-        run: |
-        bash <(curl -s https://codecov.io/bash) -t 7ca04b7c-a541-485e-ad98-8adc99f6700f -X gcov
-
   python-tests:
     strategy:
       max-parallel: 9
@@ -91,3 +78,16 @@ jobs:
       - name: Run tests
         run: |
           pytest tests/ --deselect=tests/notebooks -n auto
+
+  CodeCov:
+    strategy:
+      max-parallel: 1
+      matrix:
+        os: [ ubuntu-latest ]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run codecov
+        run: |
+        bash <(curl -s https://codecov.io/bash) -t 7ca04b7c-a541-485e-ad98-8adc99f6700f -X gcov
