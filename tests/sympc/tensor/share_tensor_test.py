@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 import torch
 
+from sympc.session import Session
+from sympc.session import SessionManager
 from sympc.tensor import ShareTensor
 
 
@@ -16,6 +18,18 @@ def test_send_get(get_clients, precision, base) -> None:
     x_share = ShareTensor(data=x, encoder_precision=precision, encoder_base=base)
     client = get_clients(1)[0]
     x_ptr = x_share.send(client)
+
+    assert x_share == x_ptr.get()
+
+
+def test_send_get_orchestrator(get_clients) -> None:
+    client = get_clients(1)  # Testing it with session initliazed by orchestrator
+    session = Session(parties=client)
+    SessionManager.setup_mpc(session)
+    x = torch.Tensor([0.122, 1.342, 4.67])
+    x_share = ShareTensor(data=x, session=session)
+
+    x_ptr = x_share.send(client[0])
 
     assert x_share == x_ptr.get()
 
