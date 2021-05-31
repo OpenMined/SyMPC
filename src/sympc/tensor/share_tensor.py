@@ -87,18 +87,12 @@ class ShareTensor(metaclass=SyMPCTensor):
         "clone",
         "flatten",
         "reshape",
-<<<<<<< HEAD
         "repeat",
         "narrow",
         "dim",
         "transpose",
         "expand",
         "roll",
-=======
-        "stack",
-        "_stack_share_tensor",
-        "cat",
->>>>>>> 71e09a8... WIP Code
     }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 
