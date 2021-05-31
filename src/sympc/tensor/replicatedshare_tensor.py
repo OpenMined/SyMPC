@@ -7,6 +7,9 @@ from typing import Dict
 from typing import List
 from typing import Set
 
+# third party
+import torch
+
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
@@ -129,6 +132,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         """
 
+        if not (torch.cat(self.shares) == torch.cat(y.shares)).all():
+            return False
+
+        if not (self.session == y.session):
+            return False
+
+        return True
+
     def ne(self, y):
         """Not Equal operator.
 
@@ -222,3 +233,4 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     __rmatmul__ = rmatmul
     __truediv__ = truediv
     __xor__ = xor
+    __eq__ = eq
