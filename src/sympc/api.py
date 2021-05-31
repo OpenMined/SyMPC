@@ -129,7 +129,9 @@ allowed_external_attrs = [
         "sympc.tensor.ShareTensor",
     ),
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     (
         "sympc.tensor.ReplicatedSharedTensor.__add__",
         "sympc.tensor.ReplicatedSharedTensor",
@@ -191,4 +193,5 @@ allowed_external_attrs = [
         "sympc.tensor.ShareTensor",
     ),
     ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.flatten", "sympc.tensor.ShareTensor"),
 ]
