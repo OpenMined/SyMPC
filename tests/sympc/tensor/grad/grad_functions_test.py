@@ -7,6 +7,7 @@ import pytest
 import syft as sy
 import torch
 
+import sympc
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -15,6 +16,7 @@ from sympc.tensor.grads.grad_functions import GradConv2d
 from sympc.tensor.grads.grad_functions import GradFlatten
 from sympc.tensor.grads.grad_functions import GradFunc
 from sympc.tensor.grads.grad_functions import GradMatMul
+from sympc.tensor.grads.grad_functions import GradMaxPool2D
 from sympc.tensor.grads.grad_functions import GradMul
 from sympc.tensor.grads.grad_functions import GradPow
 from sympc.tensor.grads.grad_functions import GradReLU
@@ -24,6 +26,20 @@ from sympc.tensor.grads.grad_functions import GradSub
 from sympc.tensor.grads.grad_functions import GradSum
 from sympc.tensor.grads.grad_functions import GradT
 from sympc.utils import parallel_execution
+
+
+class LinearSyNet(sy.Module):
+    def __init__(self, torch_ref):
+        super(LinearSyNet, self).__init__(torch_ref=torch_ref)
+        self.fc1 = self.torch_ref.nn.Linear(3, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        return x
 
 
 def test_grad_func_abstract_forward_exception() -> None:
@@ -555,7 +571,16 @@ def test_grad_matmul_backward(get_clients) -> None:
     assert np.allclose(res_mpc_x.reconstruct(), grad @ y.T, rtol=1e-3)
     assert np.allclose(res_mpc_y.reconstruct(), x.T @ grad, rtol=1e-3)
 
-    # Test Value Error
+
+def test_grad_matmul_raise_value_error_mismatch_shape(get_clients) -> None:
+    parties = get_clients(4)
+
+    x = torch.Tensor([[1, 2], [3, -4]])
+    x_mpc = x.share(parties=parties)
+
+    grad = torch.Tensor([[1, 2], [3, 4]])
+    grad_mpc = grad.share(parties=parties)
+
     y = torch.Tensor([[1, -4], [8, 9], [10, 11]])
     y_mpc = y.share(parties=parties)
 
@@ -597,22 +622,8 @@ def test_grad_relu_backward(get_clients) -> None:
 
     res = res_mpc.reconstruct()
     expected = grad * mask
-
     assert np.allclose(res, expected, rtol=1e-3)
 
-
-class LinearSyNet(sy.Module):
-    def __init__(self, torch_ref):
-        super(LinearSyNet, self).__init__(torch_ref=torch_ref)
-        self.fc1 = self.torch_ref.nn.Linear(3, 10)
-        self.fc2 = self.torch_ref.nn.Linear(10, 1)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.torch_ref.nn.functional.relu(x)
-        x = self.fc2(x)
-        x = self.torch_ref.nn.functional.relu(x)
-        return x
 
 
 @pytest.mark.order(9)
@@ -641,3 +652,109 @@ def test_forward(get_clients) -> None:
     s_mpc.backward()
 
     assert np.allclose(x_mpc.grad.get(), x_secret.grad, rtol=1e-2)
+
+
+def test_grad_maxpool_2d_dilation_error(get_clients) -> None:
+    parties = get_clients(2)
+
+    secret = torch.Tensor(
+        [[[0.23, 0.32, 0.423], [0.2, -0.3, -0.53], [0.32, 0.42, -100]]]
+    )
+
+    x = secret.share(parties=parties)
+
+    with pytest.raises(ValueError):
+        GradMaxPool2D.forward({}, x, kernel_size=2, dilation=2)
+
+    with pytest.raises(ValueError):
+        GradMaxPool2D.forward({}, x, kernel_size=2, dilation=(1, 2))
+
+
+POSSIBLE_CONFIGS_MAXPOOL_2D = [
+    (1, 1, 0),
+    (2, 1, 0),
+    (2, 1, 1),
+    (2, 2, 0),
+    (2, 2, 1),
+    (3, 1, 0),
+    (3, 1, 1),
+    (3, 2, 0),
+    (3, 2, 1),
+    (3, 3, 0),
+    (3, 3, 1),
+]
+
+
+@pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
+def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> None:
+    parties = get_clients(2)
+
+    secret = torch.Tensor(
+        [[[0.23, 0.32, 0.423], [0.2, -0.3, -0.53], [0.32, 0.42, -100]]]
+    )
+
+    x = secret.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradMaxPool2D.forward(
+        ctx, x, kernel_size=kernel_size, stride=stride, padding=padding, dilation=1
+    )
+
+    assert "x_shape" in ctx
+    assert "kernel_size" in ctx
+    assert "stride" in ctx
+    assert "padding" in ctx
+    assert "dilation" in ctx
+    assert "indices" in ctx
+    assert "grad_output" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = torch.max_pool2d(
+        secret, kernel_size=kernel_size, stride=stride, padding=padding, dilation=1
+    )
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+@pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
+def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> None:
+    parties = get_clients(2)
+
+    secret = torch.tensor(
+        [[[0.23, 0.32, 0.423], [0.2, -0.3, -0.53], [0.32, 0.42, -100]]],
+        requires_grad=True,
+    )
+
+    output = torch.max_pool2d(
+        secret, kernel_size=kernel_size, stride=stride, padding=padding, dilation=1
+    )
+    grad_mpc = output.share(parties=parties)
+
+    x = secret.share(parties=parties)
+
+    grad, indices = sympc.module.nn.functional.max_pool2d(
+        x,
+        kernel_size=kernel_size,
+        stride=stride,
+        padding=padding,
+        dilation=1,
+    )
+
+    ctx = {
+        "x_shape": secret.shape,
+        "kernel_size": kernel_size,
+        "stride": stride,
+        "padding": padding,
+        "dilation": 1,
+        "grad_output": grad_mpc,
+        "indices": indices,
+    }
+
+    res_mpc = GradMaxPool2D.backward(ctx, grad_mpc)
+
+    res = res_mpc.reconstruct()
+
+    output.backward(gradient=output)
+    expected_grad = secret.grad
+
+    assert np.allclose(res, expected_grad, rtol=1e-3)

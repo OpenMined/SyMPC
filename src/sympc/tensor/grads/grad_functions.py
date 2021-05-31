@@ -12,16 +12,16 @@ from abc import abstractmethod
 from typing import Any
 from typing import Dict
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
 
 # third party
 import torch
 
+import sympc
 from sympc.approximations import APPROXIMATIONS
-from sympc.tensor import ShareTensor
 from sympc.tensor.mpc_tensor import MPCTensor
-from sympc.utils.utils import parallel_execution
 
 
 def _reverse_broadcast(x: MPCTensor, wanted_shape: Tuple[int, ...]) -> MPCTensor:
@@ -448,52 +448,23 @@ class GradConv2d(GradFunc):
     """The multiplication gradient function."""
 
     @staticmethod
-    def get_grad_input_padding(
-        grad_output, input_size, stride, padding, kernel_size, dilation, session
-    ):
-        """Auxillary function to find grad input padding.
-
-        Args:
-            grad_output: grad
-            input_size: the input size
-            stride: stride
-            padding: padding
-            kernel_size: kernal_size
-            dilation: dilation
-            session: session
-
-        Returns:
-            (ShareTensorPointer): The result of the conv2d operation
-        """
-        new_tuple = torch.nn.grad._grad_input_padding(
-            grad_output=grad_output.tensor,
-            input_size=input_size,
-            stride=(stride, stride),
-            padding=(padding, padding),
-            kernel_size=kernel_size,
-            dilation=(dilation, dilation),
-        )
-        share_tensor = ShareTensor(torch.tensor(new_tuple), config=session.config)
-        return share_tensor
-
-    @staticmethod
     def forward(
         ctx: Dict[str, Any],
-        input: Union["MPCTensor", torch.Tensor, float, int],
-        weight: Union["MPCTensor", torch.Tensor, float, int],
-        bias: None,
-        stride: int,
-        padding: int,
-        dilation: int,
-        groups: int,
+        x: Union[MPCTensor, torch.Tensor],
+        weight: Union[MPCTensor, torch.Tensor, float, int],
+        bias: Optional[Union[MPCTensor, torch.Tensor, float, int]] = None,
+        stride: Union[int, Tuple[int, int]] = 1,
+        padding: Union[int, Tuple[int, int]] = 0,
+        dilation: Union[int, Tuple[int, int]] = 1,
+        groups: int = 1,
     ) -> MPCTensor:
         """Perform the feedforward and compute the result for the conv2d operation.
 
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
-            input: the input
+            x: the input
             weight: the convolution kernel
-            bias: optional bias
+            bias (Optional[Union[MPCTensor, torch.Tensor, float, int]]): optional bias
             stride: stride
             padding: padding
             dilation: dilation
@@ -502,14 +473,14 @@ class GradConv2d(GradFunc):
         Returns:
             (MPCTensor): The result of the conv2d operation
         """
-        ctx["input"] = input
+        ctx["x"] = x
         ctx["weight"] = weight
         ctx["stride"] = stride
         ctx["padding"] = padding
         ctx["dilation"] = dilation
         ctx["groups"] = groups
 
-        return input.conv2d(weight, bias, stride, padding, dilation, groups)
+        return x.conv2d(weight, bias, stride, padding, dilation, groups)
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
@@ -520,39 +491,28 @@ class GradConv2d(GradFunc):
             grad (MPCTensor): The gradient that came from the child nodes
 
         Returns:
-            (input_grad, weight_grad) (Tuple[MPCTensor]): The gradients passed
+            (input_grad, weight_grad) (Tuple[MPCTensor, MPCTensor]): The gradients passed
             to the input and kernal nodes.
         """
-        input = ctx["input"]
+        x = ctx["x"]
         weight = ctx["weight"]
         stride = ctx["stride"]
         padding = ctx["padding"]
         dilation = ctx["dilation"]
         groups = ctx["groups"]
         weight_size = (weight.shape[2], weight.shape[3])
-        in_channels = input.shape[1]
+        in_channels = x.shape[1]
         out_channels = grad.shape[1]
-        min_batch = input.shape[0]
+        min_batch = x.shape[0]
 
-        # Gradient w.r.t input of the Conv.
-        common_args = [
-            tuple(input.shape),
-            stride,
-            padding,
-            weight_size,
-            dilation,
-            grad.session,
-        ]
-        args = [[el] + common_args for el in grad.share_ptrs]
-
-        shares = parallel_execution(
-            GradConv2d.get_grad_input_padding, grad.session.parties
-        )(args)
-        grad_input_padding = MPCTensor(shares=shares, session=grad.session)
-
-        output_padding_tensor = grad_input_padding.reconstruct()
-        output_padding_tensor /= grad.session.nr_parties
-        output_padding = tuple(output_padding_tensor.to(torch.int).tolist())
+        output_padding = torch.nn.grad._grad_input_padding(
+            grad_output=torch.empty(grad.shape),
+            input_size=x.shape,
+            stride=(stride, stride),
+            padding=(padding, padding),
+            kernel_size=weight_size,
+            dilation=(dilation, dilation),
+        )
 
         input_grad = grad.conv_transpose2d(
             weight, None, stride, output_padding, dilation, groups
@@ -563,11 +523,9 @@ class GradConv2d(GradFunc):
 
         grad = grad.view(grad.shape[0] * grad.shape[1], 1, grad.shape[2], grad.shape[3])
 
-        input = input.view(
-            1, input.shape[0] * input.shape[1], input.shape[2], input.shape[3]
-        )
+        x = x.view(1, x.shape[0] * x.shape[1], x.shape[2], x.shape[3])
 
-        weight_grad = input.conv2d(
+        weight_grad = x.conv2d(
             weight=grad,
             bias=None,
             dilation=stride,
@@ -604,13 +562,13 @@ class GradReshape(GradFunc):
     """The Reshape gradient function."""
 
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: MPCTensor, shape: tuple) -> MPCTensor:
+    def forward(ctx: Dict[str, Any], x: MPCTensor, shape: Tuple[int]) -> MPCTensor:
         """Perform the feedforward and compute the result for the reshape operation.
 
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
             x (MPCTensor): the MPCTensor to be reshaped
-            shape (tuple): the new shape
+            shape (Tuple[int]): the new shape
 
         Returns:
             res (MPCTensor): The result of the reshape operation
@@ -667,6 +625,86 @@ class GradReLU(GradFunc):
         return res_grad
 
 
+class GradMaxPool2D(GradFunc):
+    """The Reshape gradient function."""
+
+    @staticmethod
+    def forward(
+        ctx: Dict[str, Any],
+        x: MPCTensor,
+        kernel_size: Tuple[int, int],
+        stride: Optional[Union[int, Tuple[int, int]]] = None,
+        padding: Union[int, Tuple[int, int]] = 0,
+        dilation: Union[int, Tuple[int, int]] = 1,
+    ) -> MPCTensor:
+        """Perform the feedforward and compute the result for the MaxPool2D operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): the MPCTensor to apply the MaxPool2D
+            kernel_size (Union[int, Tuple[int, int]]): the kernel size
+                in case it is passed as an integer then that value is used for height and width
+            stride (Union[int, Tuple[int, int]]): the stride size
+                in case it is passed as an integer then that value is used for height and width
+            padding (Union[int, Tuple[int, int]]): the padding size
+                in case it is passed as an integer then that value is used for height and width
+            dilation (Union[int, Tuple[int, int]]): the dilation size
+                in case it is passed as an integer then that value is used for height and width
+
+        Returns:
+            res (MPCTensor): The result of the reshape operation
+
+        Raises:
+            ValueError: if dilation is specified with a different value that 1
+        """
+        if (isinstance(dilation, int) and dilation != 1) or (
+            isinstance(dilation, tuple) and dilation[0] != 1 and dilation[1] != 1
+        ):
+            raise ValueError("Dilation works only with value 1 at the moment!")
+
+        ctx["x_shape"] = x.shape
+        ctx["kernel_size"] = kernel_size
+        ctx["stride"] = stride
+        ctx["padding"] = padding
+        ctx["dilation"] = dilation
+
+        res, indices = sympc.module.nn.functional.max_pool2d(
+            x,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+        )
+
+        ctx["grad_output"] = res
+        ctx["indices"] = indices
+
+        return res
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the reshape operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            grad (MPCTensor): The gradients passed to the X node.
+        """
+        x_shape = ctx["x_shape"]
+        kernel_size = ctx["kernel_size"]
+        stride = ctx["stride"]
+        padding = ctx["padding"]
+        dilation = ctx["dilation"]
+        indices = ctx["indices"]
+
+        grad = sympc.module.nn.functional.max_pool2d_backward(
+            grad, x_shape, indices, kernel_size, stride, padding, dilation
+        )
+        return grad
+
+
 def forward(
     _self: MPCTensor, grad_fn: GradFunc, *args: List[Any], **kwargs: Dict[str, Any]
 ) -> Any:
@@ -711,4 +749,5 @@ GRAD_FUNCS: Dict[str, GradFunc] = {
     "conv2d": GradConv2d,
     "reshape": GradReshape,
     "relu": GradReLU,
+    "max_pool2d": GradMaxPool2D,
 }

@@ -210,7 +210,7 @@ def argmax(
         keepdim (bool): when one_hot is true and dim is set, keep all the dimensions of the tensor
 
     Returns:
-        The the index of the maximum value as an MPCTensor
+        The index of the maximum value as an MPCTensor
     """
     return helper_argmax(x, dim=dim, keepdim=keepdim, one_hot=False)
 
@@ -218,7 +218,8 @@ def argmax(
 def max_mpc(
     x: MPCTensor,
     dim: Optional[Union[int, Tuple[int]]] = None,
-    keepdim=False,
+    keepdim: bool = False,
+    one_hot: bool = False,
 ) -> Union[MPCTensor, Tuple[MPCTensor, MPCTensor]]:
     """Compute the maximum value for an MPCTensor.
 
@@ -226,6 +227,7 @@ def max_mpc(
         x (MPCTensor): MPCTensor to be computed the maximum value on.
         dim (Optional[Union[int, Tuple[int]]]): The dimension over which to compute the maximum.
         keepdim (bool): when one_hot is true and dim is set, keep all the dimensions of the tensor
+        one_hot (bool): to return the maximum indices as a one hot tensor
 
     Returns:
         A tuple representing (max MPCTensor, indices_max MPCTensor)
@@ -235,15 +237,18 @@ def max_mpc(
     if dim is None:
         res = max_mpc.sum()
     else:
-        shape = argmax_mpc.shape
-        size = [1 for _ in range(len(shape))]
-        size[dim] = shape[dim]
-        argmax_mpc = argmax_mpc * torch.Tensor([i for i in range(shape[dim])]).view(
-            size
-        )
 
+        if not one_hot:
+            shape = argmax_mpc.shape
+            size = [1 for _ in range(len(shape))]
+            size[dim] = shape[dim]
+            argmax_mpc = argmax_mpc * torch.Tensor([i for i in range(shape[dim])]).view(
+                size
+            )
+            argmax_mpc = argmax_mpc.sum(dim=dim, keepdim=keepdim), argmax_mpc
         max_mpc = max_mpc.sum(dim=dim, keepdim=keepdim)
-        res = max_mpc, argmax_mpc.sum(dim=dim, keepdim=keepdim)
+        res = max_mpc, argmax_mpc
+
     return res
 
 
