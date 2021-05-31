@@ -124,9 +124,7 @@ allowed_external_attrs = [
     ("sympc.tensor.ShareTensor.squeeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.stack", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor._stack_share_tensor", "syft.lib.python.Tuple"),
-    ("sympc.tensor.ShareTensor.cat", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
     (
         "sympc.tensor.ReplicatedSharedTensor.__add__",
         "sympc.tensor.ReplicatedSharedTensor",

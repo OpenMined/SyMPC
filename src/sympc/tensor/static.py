@@ -2,16 +2,22 @@
 # third party
 import torch
 
+from sympc.tensor.share_tensor import ShareTensor
 from sympc.utils import parallel_execution
 
 
 def stack(tensors, dim=0):
     """ TODO: Fill me """
     session = tensors[0].session
-    share_ptrs = [tensor.share_ptrs for tensor in tensors]
+
+    # Each MPCTensor has
+    # share_1, share_2 owned by
+    # Party1    Party2
+
+    share_ptrs = list(zip(*[tensor.share_ptrs for tensor in tensors]))
     args = share_ptrs
 
-    stack_shares = parallel_execution(_stack_share_tensor, session.parties)(args)
+    stack_shares = parallel_execution(stack_share_tensor, session.parties)(args)
     from sympc.tensor import MPCTensor
 
     result = MPCTensor(shares=stack_shares, session=session)
@@ -19,9 +25,10 @@ def stack(tensors, dim=0):
     return result
 
 
-def _stack_share_tensor(*shares):
+def stack_share_tensor(*shares):
     """ # TODO: Fill me """
-    result = torch.stack([*shares])
+    result = ShareTensor(session = shares[0].session)
+    result.tensor = torch.stack([share.tensor for share in shares])
     return result
 
 

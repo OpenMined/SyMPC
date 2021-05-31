@@ -36,8 +36,6 @@ METHODS_FORWARD_ALL_SHARES = {
     "clone",
     "flatten",
     "reshape",
-    "stack",
-    "_stack_share_tensor",
     "cat",
 }
 
@@ -121,8 +119,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         "clone",
         "flatten",
         "reshape",
-        "stack",
-        "_stack_share_tensor",
         "cat",
     }
     PROPERTIES_FORWARD = {"T"}
@@ -793,6 +789,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
+
+        if attr_name == "stack":
+            import sympc
+            return sympc.tensor.static.stack
 
         # Take the attribute and check if we need to assign a gradient function
         # Implementation similar to CrypTen
