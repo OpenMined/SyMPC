@@ -79,3 +79,8 @@ jobs:
       - name: Run tests
         run: |
           pytest tests/ --deselect=tests/notebooks -n auto
+
+      - name: Run codecov
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
