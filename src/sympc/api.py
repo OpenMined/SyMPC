@@ -29,11 +29,19 @@ allowed_external_modules = [
     ("sympc.tensor", tensor),
     ("sympc.protocol", protocol),
     ("sympc.store", store),
+    ("sympc.protocol.falcon", protocol.falcon),
+    ("sympc.protocol.falcon.falcon", protocol.falcon.falcon),
     ("sympc.protocol.fss", protocol.fss),
     ("sympc.protocol.fss.fss", protocol.fss.fss),
     ("sympc.protocol.spdz", protocol.spdz),
     ("sympc.protocol.spdz.spdz", protocol.spdz.spdz),
     ("sympc.utils", utils),
+    ("sympc.tensor.grads", tensor.grads),
+    ("sympc.tensor.grads.grad_functions", tensor.grads.grad_functions),
+    (
+        "sympc.tensor.grads.grad_functions.GradConv2d",
+        tensor.grads.grad_functions.GradConv2d,
+    ),
 ]
 
 allowed_external_classes = [
@@ -43,6 +51,11 @@ allowed_external_classes = [
         "sympc.tensor.ShareTensor",
         "sympc.tensor.ShareTensor",
         tensor.ShareTensor,
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.ReplicatedSharedTensor",
+        tensor.ReplicatedSharedTensor,
     ),
 ]
 
@@ -116,5 +129,69 @@ allowed_external_attrs = [
         "sympc.tensor.ShareTensor",
     ),
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__add__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__sub__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__rmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__mul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__matmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__truediv__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__rmatmul__",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.t",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.sum",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.clone",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.numel",
+        "syft.lib.python.Int",  # FIXME: Can't we just return an int??
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.T",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.unsqueeze",
+        "sympc.tensor.ReplicatedSharedTensor",
+    ),
+    ("sympc.tensor.ReplicatedSharedTensor.view", "sympc.tensor.ReplicatedSharedTensor"),
+    ("sympc.tensor.ShareTensor.repeat", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.dim", "syft.lib.python.Int"),
+    (
+        "sympc.tensor.grads.grad_functions.GradConv2d.get_grad_input_padding",
+        "sympc.tensor.ShareTensor",
+    ),
+    ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.flatten", "sympc.tensor.ShareTensor"),
 ]

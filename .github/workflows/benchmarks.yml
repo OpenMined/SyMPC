@@ -9,7 +9,7 @@ on:
       - ".github/workflows/**.yml"
 
 jobs:
-  python-tests:
+  python-benchmark:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
@@ -46,7 +46,7 @@ jobs:
       - name: Run benchmarks
         run: |
           pytest benchmarks/ --benchmark-json benchmarks/pytest_benchmarks_output.json
-          
+
       - name: Store benchmark result
         uses: rhysd/github-action-benchmark@v1
         with:
