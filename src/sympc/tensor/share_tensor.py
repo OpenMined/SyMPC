@@ -36,6 +36,8 @@ METHODS_NEW_SHARE_TENSOR: Set[str] = {
     "narrow",
     "dim",
     "transpose",
+    "expand",
+    "roll",
 }
 
 
@@ -89,6 +91,8 @@ class ShareTensor(metaclass=SyMPCTensor):
         "narrow",
         "dim",
         "transpose",
+        "expand",
+        "roll",
     }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 

@@ -40,7 +40,9 @@ def add_methods_tensor_syft() -> None:
     # third party
     import torch
 
-    for method in tensor.METHODS_TO_ADD:
+    from .tensor.mpc_tensor import METHODS_TO_ADD
+
+    for method in METHODS_TO_ADD:
         if getattr(torch.Tensor, method.__name__, None) is not None:
             raise ValueError(f"Method {method.__name__} already exists in tensor!")
         setattr(torch.Tensor, method.__name__, method)
