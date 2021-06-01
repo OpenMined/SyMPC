@@ -1,12 +1,9 @@
-"""Module level "static" functions.
+"""Module to keep static function that should usually stay in the library module.
 
-We use this to support torch.function(Tensor)
+Examples: torch.stack, torch.argmax
 """
-# future
-from __future__ import annotations
 
 # stdlib
-import math
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -130,19 +127,23 @@ def helper_argmax(
     keepdim: bool = False,
     one_hot: bool = False,
 ) -> MPCTensor:
-    """
-    Compute argmax using pairwise comparisons. Makes the number of rounds fixed, here it is 2.
+    """Compute argmax using pairwise comparisons. Makes the number of rounds fixed, here it is 2.
+
     This is inspired from CrypTen.
 
     Args:
+        x (MPCTensor): the MPCTensor on which to compute helper_argmax on
         dim (Union[int, Tuple[int]): compute argmax over a specific dimension(s)
         keepdim (bool): when one_hot is true, keep all the dimensions of the tensor
         one_hot (bool): return the argmax as a one hot vector
+
     Returns:
         Given the args, it returns a one hot encoding (as an MPCTensor) or the index
-    of the maximum value
-    """
+        of the maximum value
 
+    Raises:
+        ValueError: In case more max values are found and we need to return the index
+    """
     # for each share in MPCTensor
     #   do the algorithm portrayed in paper (helper_argmax_pairwise)
     #   results in creating two matrices and substracting them
@@ -201,17 +202,18 @@ def argmax(
     dim: Optional[Union[int, Tuple[int]]] = None,
     keepdim=False,
 ) -> MPCTensor:
-    """
-    Compute argmax using pairwise comparisons. Makes the number of rounds fixed, here it is 2.
+    """Compute argmax using pairwise comparisons. Makes the number of rounds fixed, here it is 2.
+
     This is inspired from CrypTen.
 
     Args:
+        x (MPCTensor): the MPCTensor that argmax will be computed on
         dim (Union[int, Tuple[int]): compute argmax over a specific dimension(s)
         keepdim (bool): when one_hot is true and dim is set, keep all the dimensions of the tensor
+
     Returns:
         The the index of the maximum value as an MPCTensor
     """
-
     return helper_argmax(x, dim=dim, keepdim=keepdim, one_hot=False)
 
 
@@ -226,6 +228,7 @@ def max_mpc(
         x (MPCTensor): MPCTensor to be computed the maximum value on.
         dim (Optional[Union[int, Tuple[int]]]): The dimension over which to compute the maximum.
         keepdim (bool): when one_hot is true and dim is set, keep all the dimensions of the tensor
+
     Returns:
         A new MPCTensor representing the max result.
     """
@@ -237,8 +240,7 @@ def max_mpc(
 def helper_argmax_pairwise(
     share: ShareTensor, dim: Optional[Union[int, Tuple[int]]] = None
 ) -> ShareTensor:
-    """Helper function that would compute the difference between all the elements
-    in a tensor.
+    """Helper function that would compute the difference between all the elements in a tensor.
 
     Args:
         share (ShareTensor): Share tensor
