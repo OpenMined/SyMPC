@@ -29,8 +29,6 @@ METHODS_NEW_SHARE_TENSOR: Set[str] = {
     "clone",
     "flatten",
     "reshape",
-    "stack",
-    "_stack_share_tensor",
     "cat",
 }
 
@@ -78,8 +76,6 @@ class ShareTensor(metaclass=SyMPCTensor):
         "clone",
         "flatten",
         "reshape",
-        "stack",
-        "_stack_share_tensor",
         "cat",
     }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
