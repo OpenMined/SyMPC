@@ -20,14 +20,17 @@ def stack(tensors, dim=0):
     stack_shares = parallel_execution(stack_share_tensor, session.parties)(args)
     from sympc.tensor import MPCTensor
 
-    result = MPCTensor(shares=stack_shares, session=session)
+    expected_shape = torch.stack(
+        [torch.empty(each_tensor.shape) for each_tensor in tensors], dim=dim
+    ).shape
+    result = MPCTensor(shares=stack_shares, session=session, shape=expected_shape)
 
     return result
 
 
 def stack_share_tensor(*shares):
     """ # TODO: Fill me """
-    result = ShareTensor(session = shares[0].session)
+    result = ShareTensor(session=shares[0].session)
     result.tensor = torch.stack([share.tensor for share in shares])
     return result
 

@@ -9,7 +9,7 @@ import torch
 
 from sympc.approximations.sigmoid import sigmoid
 from sympc.module.nn import relu
-from sympc.tensor.mpc_tensor import MPCTensor
+from sympc.tensor.static import stack
 
 
 def _tanh_sigmoid(tensor):
@@ -44,12 +44,10 @@ def tanh(tensor, method="sigmoid"):
         terms = 32
         coeffs = chebyshev_series(torch.tanh, 1, terms)[1::2]
         tanh_polys = _chebyshev_polynomials(tensor, terms)
-        tanh_polys_flipped = (
-            tanh_polys.unsqueeze(dim=-1).transpose(0, -1).squeeze(dim=0)
-        )
+        tanh_polys_flipped = tanh_polys.unsqueeze(dim=-1).T.squeeze(dim=0)
         out = tanh_polys_flipped.matmul(coeffs)
         # truncate outside [-maxval, maxval]
-        return out.hardtanh()
+        return hardtanh(out)
     else:
         raise ValueError(f"Invalid method {method} given for tanh function")
 
@@ -114,4 +112,4 @@ def _chebyshev_polynomials(tensor, terms):
         next_polynomial = y * polynomials[k - 1] - polynomials[k - 2]
         polynomials.append(next_polynomial)
 
-    return MPCTensor.stack(polynomials)
+    return stack(polynomials)
