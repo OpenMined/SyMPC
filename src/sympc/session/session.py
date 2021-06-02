@@ -58,7 +58,15 @@ class Session:
     """
 
     # Those values are not used at comparison
-    NOT_COMPARE = {"id", "description", "tags", "parties", "crypto_store"}
+    NOT_COMPARE = {
+        "id",
+        "description",
+        "tags",
+        "parties",
+        "crypto_store",
+        "przs_generators",
+        "session_ptrs",
+    }
 
     __slots__ = {
         # Populated in Syft
