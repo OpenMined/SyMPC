@@ -41,7 +41,7 @@ def tanh(tensor, method="sigmoid"):
     if method == "sigmoid":
         return _tanh_sigmoid(tensor)
     elif method == "chebyshev-crypten":
-        terms = 32
+        terms = 10
         coeffs = chebyshev_series(torch.tanh, 1, terms)[1::2]
         tanh_polys = _chebyshev_polynomials(tensor, terms)
         tanh_polys_flipped = tanh_polys.unsqueeze(dim=-1).T.squeeze(dim=0)
