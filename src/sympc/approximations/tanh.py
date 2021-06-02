@@ -40,12 +40,14 @@ def tanh(tensor, method="sigmoid"):
     """
     if method == "sigmoid":
         return _tanh_sigmoid(tensor)
+
     elif method == "chebyshev-crypten":
-        terms = 10
+        terms = 10  # Higher terms gives slower but more accurate results
         coeffs = chebyshev_series(torch.tanh, 1, terms)[1::2]
         tanh_polys = _chebyshev_polynomials(tensor, terms)
         tanh_polys_flipped = tanh_polys.unsqueeze(dim=-1).T.squeeze(dim=0)
         out = tanh_polys_flipped.matmul(coeffs)
+
         # truncate outside [-maxval, maxval]
         return hardtanh(out)
     else:
@@ -99,7 +101,21 @@ def chebyshev_series(func, width, terms):
 
 
 def _chebyshev_polynomials(tensor, terms):
-    # TODO: Docstring
+    r"""Evaluates odd degree Chebyshev polynomials at x.
+
+    Chebyshev Polynomials of the first kind are defined as
+        P_0(x) = 1, P_1(x) = x, P_n(x) = 2 P_{n - 1}(x) - P_{n-2}(x)
+
+    Args:
+        tensor (MPCTensor): input at which polynomials are evaluated
+        terms (int): highest degree of Chebyshev polynomials. Must be even and at least 6.
+
+    Returns:
+        MPCTensor: polynomials evaluated at self of shape `(terms, *self)`
+
+    Raises:
+        ValueError: if terms < 6 or is not divisible by 2
+    """
     if terms % 2 != 0 or terms < 6:
         raise ValueError("Chebyshev terms must be even and >= 6")
 

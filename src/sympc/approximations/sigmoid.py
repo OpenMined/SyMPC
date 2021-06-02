@@ -47,12 +47,17 @@ def sigmoid(tensor: Any, method: str = "exp") -> Any:
         return result
 
     elif method == "chebyshev":
+        from sympc.approximations.tanh import tanh
+
+        tanh_approx = tanh(tensor / 2, method=method)
+        return (tanh_approx / 2) + 0.5
+
+    elif method == "chebyshev-aliter":
         # Reference: http://www.nnw.cz/doi/2012/NNW.2012.22.023.pdf
         # Make sure the elements are all positive
         _sign = sign(tensor)
         positive_tensor_rescaled = tensor * _sign / 8
-        p = 4
-        q = 4
+        p = q = 4  # Higher p, q gives slower but more accurate results
         scaler = ((1 + positive_tensor_rescaled) / 2) ** (q + 1)
 
         def factorial(n):
@@ -71,10 +76,5 @@ def sigmoid(tensor: Any, method: str = "exp") -> Any:
 
         return ((1 - _sign) * (1 - result) + (1 + _sign) * (result)) / 2
 
-    elif method == "chebyshev-crypten":
-        from sympc.approximations.tanh import tanh
-
-        tanh_approx = tanh(tensor / 2, method=method)
-        return (tanh_approx / 2) + 0.5
     else:
         raise ValueError(f"Invalid method {method} given for sigmoid function")
