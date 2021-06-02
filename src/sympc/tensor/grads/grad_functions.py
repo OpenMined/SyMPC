@@ -464,7 +464,7 @@ class GradConv2d(GradFunc):
             kernel_size=kernel_size,
             dilation=(dilation, dilation),
         )
-        share_tensor = ShareTensor(torch.tensor(new_tuple), session=session)
+        share_tensor = ShareTensor(torch.tensor(new_tuple), config=session.config)
         return share_tensor
 
     @staticmethod

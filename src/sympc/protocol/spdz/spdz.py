@@ -59,17 +59,12 @@ def mul_master(
 
     args = [list(el) + [op_str] for el in zip(x.share_ptrs, y.share_ptrs)]
 
-    args = [
-        list(el) + [op_str]
-        for el in zip(session.session_ptrs, x.share_ptrs, y.share_ptrs)
-    ]
-
     try:
         mask = parallel_execution(spdz_mask, session.parties)(args)
     except EmptyPrimitiveStore:
         CryptoPrimitiveProvider.generate_primitives(
             f"beaver_{op_str}",
-            sessions=session.session_ptrs,
+            session=session,
             g_kwargs={
                 "a_shape": shape_x,
                 "b_shape": shape_y,

@@ -190,7 +190,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 )
 
         if not ispointer(shares[0]):
-            shares = MPCTensor.distribute_shares(shares, self.session)
+            shares = self.session.protocol.distribute_shares(shares, self.session)
 
         self.share_ptrs = shares
 
@@ -205,28 +205,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         self.grad = None
         self.grad_fn = None
         self.parents: List["MPCTensor"] = []
-
-    @staticmethod
-    def distribute_shares(shares: List[ShareTensor], session: Session):
-        """Distribute a list of shares.
-
-        Args:
-            shares (List[ShareTensor): list of shares to distribute.
-            session (Session): Session for which those shares were generated
-
-        Returns:
-            List of ShareTensorPointers.
-        """
-        rank_to_uuid = session.rank_to_uuid
-        parties = session.parties
-
-        share_ptrs = []
-        for rank, share in enumerate(shares):
-            share.session_uuid = rank_to_uuid[rank]
-            party = parties[rank]
-            share_ptrs.append(share.send(party))
-
-        return share_ptrs
 
     @staticmethod
     def sanity_checks(

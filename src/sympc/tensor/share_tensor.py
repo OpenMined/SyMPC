@@ -12,12 +12,12 @@ from typing import Union
 from uuid import UUID
 
 # third party
-from syft.core.node.common.client import Client
 import torch
 
 import sympc
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
+from sympc.session import Session
 from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
@@ -480,18 +480,23 @@ class ShareTensor(metaclass=SyMPCTensor):
         return res
 
     @staticmethod
-    def distribute_shares(shares: List["ShareTensor"], parties: List[Client]):
+    def distribute_shares(shares: List["ShareTensor"], session: Session):
         """Distribute a list of shares.
 
         Args:
             shares (List[ShareTensor): list of shares to distribute.
-            parties (List[Client]): list to parties to distribute.
+            session (Session): Session for which those shares were generated
 
         Returns:
             List of ShareTensorPointers.
         """
+        rank_to_uuid = session.rank_to_uuid
+        parties = session.parties
+
         share_ptrs = []
-        for share, party in zip(shares, parties):
+        for rank, share in enumerate(shares):
+            share.session_uuid = rank_to_uuid[rank]
+            party = parties[rank]
             share_ptrs.append(share.send(party))
 
         return share_ptrs

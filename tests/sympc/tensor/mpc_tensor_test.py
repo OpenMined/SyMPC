@@ -124,9 +124,6 @@ def test_local_secret_not_tensor(get_clients) -> None:
     assert np.allclose(torch.tensor(x_float), result)
 
 
-"""
-
-
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["mul", "matmul"])
 def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
@@ -144,9 +141,6 @@ def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
     expected_result = op(x_secret, y_secret)
 
     assert np.allclose(result, expected_result, rtol=10e-4)
-
-
-"""
 
 
 @pytest.mark.parametrize("nr_clients", [2])
@@ -236,9 +230,6 @@ def test_ops_divfloat_exception(get_clients, nr_parties) -> None:
         x / y
 
 
-"""
-
-
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
 def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
@@ -256,9 +247,6 @@ def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
     result = op(y_secret, x).reconstruct()
 
     assert np.allclose(result, expected_result, atol=10e-4)
-
-
-"""
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
@@ -316,26 +304,26 @@ def test_generate_shares() -> None:
 
     assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
 
-    x_share = ShareTensor(data=x_secret, encoder_precision=precision, encoder_base=base)
+    x_share = ShareTensor(
+        data=x_secret, config=Config(encoder_precision=precision, encoder_base=base)
+    )
 
     shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
     shares_from_secret = MPCTensor.generate_shares(
-        x_secret, 2, encoder_precision=precision, encoder_base=base
+        x_secret, 2, config=Config(encoder_precision=precision, encoder_base=base)
     )
 
     assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
 
 
-def test_generate_shares_session(get_clients) -> None:
-    clients = get_clients(2)
-    session = Session(parties=clients)
-    SessionManager.setup_mpc(session)
-
+def test_generate_shares_config(get_clients) -> None:
     x_secret = torch.Tensor([5.0])
-    x_share = ShareTensor(data=x_secret, session=session)
+    x_share = ShareTensor(data=x_secret)
 
     shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
-    shares_from_secret = MPCTensor.generate_shares(x_secret, 2, session=session)
+    shares_from_secret = MPCTensor.generate_shares(
+        x_secret, 2, config=Config(encoder_base=2, encoder_precision=16)
+    )
 
     assert sum(shares_from_share_tensor) == sum(shares_from_secret)
 
