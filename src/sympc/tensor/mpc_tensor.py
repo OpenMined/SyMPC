@@ -833,11 +833,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
+        from sympc.tensor.static import STATIC_FUNCS
 
-        if attr_name == "stack":
-            import sympc
-
-            return sympc.tensor.static.stack
+        if attr_name in STATIC_FUNCS.keys():
+            return functools.partial(STATIC_FUNCS[attr_name], self)
 
         # Take the attribute and check if we need to assign a gradient function
         # Implementation similar to CrypTen

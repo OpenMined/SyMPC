@@ -14,5 +14,6 @@ __all__ = [
     "ReplicatedSharedTensor",
     "MPCTensor",
     "METHODS_TO_ADD",
-    "static" "GRAD_FUNCS",
+    "static",
+    "GRAD_FUNCS",
 ]
