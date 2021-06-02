@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: check-added-large-files # Prevent giant files from being committed
       - id: check-ast # Check whether the files parse as valid python
@@ -20,7 +20,7 @@ repos:
       - id: isort
 
   - repo: https://github.com/psf/black
-    rev: 20.8b1
+    rev: 21.5b2
     hooks:
       - id: black
 
@@ -31,7 +31,7 @@ repos:
         additional_dependencies: [black==20.8b1]
 
   - repo: https://gitlab.com/PyCQA/flake8
-    rev: 3.9.1
+    rev: 3.9.2
     hooks:
       - id: flake8
 
@@ -44,7 +44,7 @@ repos:
 
 
   - repo: https://github.com/pycqa/pydocstyle
-    rev: 6.0.0  # pick a git hash / tag to point to
+    rev: 6.1.1  # pick a git hash / tag to point to
     hooks:
       - id: pydocstyle
         args:
