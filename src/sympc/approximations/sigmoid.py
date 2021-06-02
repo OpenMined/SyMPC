@@ -76,10 +76,5 @@ def sigmoid(tensor: Any, method: str = "exp") -> Any:
 
         return ((1 - _sign) * (1 - result) + (1 + _sign) * (result)) / 2
 
-    elif method == "chebyshev-crypten":
-        from sympc.approximations.tanh import tanh
-
-        tanh_approx = tanh(tensor / 2, method=method)
-        return (tanh_approx / 2) + 0.5
     else:
         raise ValueError(f"Invalid method {method} given for sigmoid function")
