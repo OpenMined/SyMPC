@@ -17,8 +17,8 @@ from sympc.session import Session
 
 from .tensor import SyMPCTensor
 
-PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
-METHODS_NEW_SHARE_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
+PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
+METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 
 
 class ReplicatedSharedTensor(metaclass=SyMPCTensor):
@@ -198,18 +198,23 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             A hooked property
         """
 
-        def property_new_share_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
-            tensor = getattr(_self.tensor, property_name)
-            res = ReplicatedSharedTensor(session=_self.session)
-            res.tensor = tensor
+        def property_new_rs_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
+            shares = []
+
+            for i in range(len(_self.shares)):
+                tensor = getattr(_self.shares[i], property_name)
+                shares.append(tensor)
+
+            res = ReplicatedSharedTensor(session=_self.session, shares=shares)
+
             return res
 
         def property_getter(_self: "ReplicatedSharedTensor") -> Any:
-            prop = getattr(_self.tensor, property_name)
+            prop = getattr(_self.shares[0], property_name)
             return prop
 
-        if property_name in PROPERTIES_NEW_SHARE_TENSOR:
-            res = property(property_new_share_tensor_getter, None)
+        if property_name in PROPERTIES_NEW_RS_TENSOR:
+            res = property(property_new_rs_tensor_getter, None)
         else:
             res = property(property_getter, None)
 
@@ -236,20 +241,23 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         def method_new_rs_tensor(
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
-            method = getattr(_self.tensor, method_name)
-            tensor = method(*args, **kwargs)
-            res = ReplicatedSharedTensor(session=_self.session, shares=_self.shares)
-            res.tensor = tensor
+            shares = []
+            for i in range(len(_self.shares)):
+                tensor = getattr(_self.shares[i], method_name)(*args, **kwargs)
+                shares.append(tensor)
+
+            res = ReplicatedSharedTensor(session=_self.session, shares=shares)
+
             return res
 
         def method(
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
-            method = getattr(_self.tensor, method_name)
+            method = getattr(_self.shares[0], method_name)
             res = method(*args, **kwargs)
             return res
 
-        if method_name in METHODS_NEW_SHARE_TENSOR:
+        if method_name in METHODS_NEW_RS_TENSOR:
             res = method_new_rs_tensor
         else:
             res = method
