@@ -18,6 +18,7 @@ from typing import Tuple
 import torch
 import torchcsprng as csprng  # type: ignore
 
+from sympc.config import Config
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
@@ -50,11 +51,11 @@ def _get_triples(
         b_shape (Tuple[int]): Shape of b part from beaver triples protocol.
         kwargs: Arbitrary keyword arguments for commands.
 
-
     Returns:
         List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]:
         The generated triples a,b,c for each party.
     """
+    config = Config(encoder_precision=0)
     a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
         generator=ttp_generator
     )
@@ -62,7 +63,7 @@ def _get_triples(
         secret=a_rand,
         nr_parties=nr_parties,
         tensor_type=torch.long,
-        encoder_precision=0,
+        config=config,
     )
 
     b_rand = torch.empty(size=b_shape, dtype=torch.long).random_(
@@ -72,7 +73,7 @@ def _get_triples(
         secret=b_rand,
         nr_parties=nr_parties,
         tensor_type=torch.long,
-        encoder_precision=0,
+        config=config,
     )
 
     if op_str in ["conv2d", "conv_transpose2d"]:
@@ -82,7 +83,7 @@ def _get_triples(
 
     c_val = cmd(a_rand, b_rand, **kwargs)
     c_shares = MPCTensor.generate_shares(
-        secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
+        secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, config=config
     )
 
     # We are always creating an instance
@@ -104,7 +105,9 @@ def _get_triples(
 
     The first party (party 0) receives Row 0 and the second party (party 1) receives Row 1
     """
+
     triple = list(map(list, zip(*map(lambda x: map(list, zip(*x)), triple_sequential))))
+
     return triple
 
 
@@ -471,16 +474,14 @@ def count_wraps_rand(
         generator=ttp_generator
     )
 
+    config = Config(encoder_precision=0)
     r_shares = MPCTensor.generate_shares(
-        secret=rand_val,
-        nr_parties=nr_parties,
-        tensor_type=torch.long,
-        encoder_precision=0,
+        secret=rand_val, nr_parties=nr_parties, tensor_type=torch.long, config=config
     )
     wraps = count_wraps([share.tensor for share in r_shares])
 
     theta_r_shares = MPCTensor.generate_shares(
-        secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, encoder_precision=0
+        secret=wraps, nr_parties=nr_parties, tensor_type=torch.long, config=config
     )
 
     # We are always creating only an instance

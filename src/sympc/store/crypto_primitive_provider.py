@@ -1,6 +1,7 @@
 """Crypto Primitives."""
 
 # stdlib
+import itertools
 import json
 from typing import Any
 from typing import Callable
@@ -25,7 +26,7 @@ class CryptoPrimitiveProvider:
     @staticmethod
     def generate_primitives(
         op_str: str,
-        sessions: List[Any],
+        session: Session,
         g_kwargs: Dict[str, Any] = {},
         p_kwargs: Dict[str, Any] = {},
     ) -> List[Any]:
@@ -33,7 +34,7 @@ class CryptoPrimitiveProvider:
 
         Args:
             op_str (str): Operator.
-            sessions (Session): Session.
+            session (Session): Session.
             g_kwargs: Generate kwargs passed to the registered function.
             p_kwargs: Populate kwargs passed to the registered populate function.
 
@@ -50,6 +51,12 @@ class CryptoPrimitiveProvider:
         generator = CryptoPrimitiveProvider._func_providers[op_str]
         primitives = generator(**g_kwargs)
 
+        for remote_session_uuid, primitive in zip(
+            session.rank_to_uuid.values(), primitives
+        ):
+            for share in itertools.chain(*primitive):
+                share.session_uuid = remote_session_uuid
+
         if CryptoPrimitiveProvider._LOGGING:
             CryptoPrimitiveProvider._ops_list[op_str].append((p_kwargs, g_kwargs))
 
@@ -57,7 +64,7 @@ class CryptoPrimitiveProvider:
             """Do not transfer the primitives if there is not specified a
             values for populate kwargs."""
             CryptoPrimitiveProvider._transfer_primitives_to_parties(
-                op_str, primitives, sessions, p_kwargs
+                op_str, primitives, session.session_ptrs, p_kwargs
             )
 
         # Since we do not have (YET!) the possiblity to return typed tuples from a remote
@@ -138,7 +145,7 @@ class CryptoPrimitiveProvider:
             for (p_kwargs, g_kwargs) in args:
                 CryptoPrimitiveProvider.generate_primitives(
                     op_str=op_str,
-                    sessions=session.session_ptrs,
+                    session=session,
                     g_kwargs=g_kwargs,
                     p_kwargs=p_kwargs,
                 )

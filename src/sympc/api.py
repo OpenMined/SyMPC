@@ -63,6 +63,8 @@ allowed_external_attrs = [
     ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
     ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
     ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),
+    ("sympc.session.Session.init_generators", "syft.lib.python._SyNone"),
+    ("sympc.session.Session.przs_generators", "syft.lib.python.List"),
     ("sympc.protocol.fss.fss.mask_builder", "sympc.tensor.ShareTensor"),
     ("sympc.protocol.fss.fss.evaluate", "sympc.tensor.ShareTensor"),
     ("sympc.protocol.spdz.spdz.mul_parties", "sympc.tensor.ShareTensor"),

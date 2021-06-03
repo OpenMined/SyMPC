@@ -18,6 +18,7 @@ from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.tensor import MPCTensor
+from sympc.tensor import ShareTensor
 
 PRIMITIVE_NR_ELEMS = 4
 
@@ -41,7 +42,10 @@ def provider_test(nr_parties: int, nr_instances: int) -> List[Tuple[int]]:
     ...]
     """
     primitives = [
-        tuple(tuple(i for _ in range(PRIMITIVE_NR_ELEMS)) for _ in range(nr_instances))
+        tuple(
+            tuple(ShareTensor(data=i) for _ in range(PRIMITIVE_NR_ELEMS))
+            for _ in range(nr_instances)
+        )
         for i in range(nr_parties)
     ]
     return primitives
@@ -69,7 +73,7 @@ def test_exception_init() -> None:
 
 def test_generate_primitive_exception() -> None:
     with pytest.raises(ValueError):
-        CryptoPrimitiveProvider.generate_primitives(op_str="SyMPC", sessions=[])
+        CryptoPrimitiveProvider.generate_primitives(op_str="SyMPC", session=Session())
 
 
 def test_transfer_primitives_type_exception() -> None:
@@ -108,7 +112,7 @@ def test_generate_primitive(
     g_kwargs = {"nr_parties": nr_parties, "nr_instances": nr_instances}
     res = CryptoPrimitiveProvider.generate_primitives(
         "test",
-        sessions=session.session_ptrs,
+        session=session,
         g_kwargs=g_kwargs,
         p_kwargs=None,
     )
@@ -118,7 +122,7 @@ def test_generate_primitive(
 
     for i, primitives in enumerate(res):
         for primitive in primitives:
-            assert primitive == tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
+            assert primitive == tuple(ShareTensor(i) for _ in range(PRIMITIVE_NR_ELEMS))
 
 
 @pytest.mark.parametrize(
@@ -139,7 +143,7 @@ def test_generate_and_transfer_primitive(
     g_kwargs = {"nr_parties": nr_parties, "nr_instances": nr_instances}
     CryptoPrimitiveProvider.generate_primitives(
         "test",
-        sessions=session.session_ptrs,
+        session=session,
         g_kwargs=g_kwargs,
         p_kwargs={},
     )
@@ -150,7 +154,7 @@ def test_generate_and_transfer_primitive(
             op_str="test", nr_instances=nr_instances_retrieve
         ).get()
         assert primitives == [
-            tuple(i for _ in range(PRIMITIVE_NR_ELEMS))
+            tuple(ShareTensor(i) for _ in range(PRIMITIVE_NR_ELEMS))
             for _ in range(nr_instances_retrieve)
         ]
 
@@ -203,7 +207,7 @@ def test_primitive_logging_beaver_mul(get_clients) -> None:
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
-        sessions=session.session_ptrs,
+        session=session,
         op_str="beaver_mul",
         p_kwargs=p_kwargs,
         g_kwargs=g_kwargs,
@@ -224,7 +228,7 @@ def test_primitive_logging_beaver_matmul(get_clients) -> None:
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
-        sessions=session.session_ptrs,
+        session=session,
         op_str="beaver_matmul",
         p_kwargs=p_kwargs,
         g_kwargs=g_kwargs,
@@ -245,7 +249,7 @@ def test_primitive_logging_beaver_conv2d(get_clients) -> None:
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
-        sessions=session.session_ptrs,
+        session=session,
         op_str="beaver_conv2d",
         p_kwargs=p_kwargs,
         g_kwargs=g_kwargs,

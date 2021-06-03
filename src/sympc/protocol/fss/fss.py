@@ -108,7 +108,9 @@ def evaluate(session: Session, b, x_masked, op, dtype="long") -> ShareTensor:
     dtype_options = {None: th.long, "int": th.int32, "long": th.long}
     result = th.tensor(result_share, dtype=dtype_options[dtype])
 
-    share_result = ShareTensor(data=result, session=session)
+    share_result = ShareTensor(
+        data=result, session_uuid=session.uuid, config=session.config
+    )
 
     return share_result
 
@@ -148,7 +150,7 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 
     CryptoPrimitiveProvider.generate_primitives(
         f"fss_{op}",
-        sessions=session.session_ptrs,
+        session=session,
         g_kwargs={"n_values": n_values},
         p_kwargs={},
     )
