@@ -8,12 +8,14 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+from uuid import UUID
 
 # third party
 import torch
 
+from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
-from sympc.session import Session
+from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
 
@@ -27,7 +29,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     Arguments:
        shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
            from which RSTensor is created.
-       session (Optional[Session]): The session.
+
 
     Attributes:
        shares: The shares held by the party
@@ -42,27 +44,34 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def __init__(
         self,
         shares: Optional[List[Union[float, int, torch.Tensor]]] = None,
-        session: Optional[Session] = None,
+        config: Config = Config(encoder_base=2, encoder_precision=16),
+        session_uuid: Optional[UUID] = None,
+        ring_size: int = 2 ** 64,
     ):
-        """Initialize ShareTensor.
+        """Initialize ReplicatedSharedTensor.
 
         Args:
             shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
                 from which RSTensor is created.
-            session (Optional[Session]): The session. Defaults to None.
+            config (Config): The configuration where we keep the encoder precision and base.
+            session_uuid (Optional[UUID]): Used to keep track of a share that is associated with a
+                remote session
+            ring_size (int): field used for the operations applied on the shares
+                Defaults to 2**64
+
         """
-        self.session = session
+        self.session_uuid = session_uuid
+        self.ring_size = ring_size
 
-        encoder_base = self.session.config.encoder_base
-        encoder_precision = self.session.config.encoder_precision
-
+        self.config = config
         self.fp_encoder = FixedPointEncoder(
-            base=encoder_base, precision=encoder_precision
+            base=config.encoder_base, precision=config.encoder_precision
         )
-        tensor_type = self.session.tensor_type
+
+        tensor_type = get_type_from_ring(ring_size)
         self.shares = []
         for i in range(len(shares)):
-            self.shares.append(self._encode(shares[i]).type(tensor_type))
+            self.shares.append(self._encode(shares[i]).to(tensor_type))
 
     def _encode(self, data):
         return self.fp_encoder.encode(data)
