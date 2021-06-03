@@ -70,8 +70,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         tensor_type = get_type_from_ring(ring_size)
         self.shares = []
-        for i in range(len(shares)):
-            self.shares.append(self._encode(shares[i]).to(tensor_type))
+        if shares is not None:
+            for i in range(len(shares)):
+                self.shares.append(self._encode(shares[i]).to(tensor_type))
 
     def _encode(self, data):
         return self.fp_encoder.encode(data)
