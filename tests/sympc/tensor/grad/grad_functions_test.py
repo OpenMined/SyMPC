@@ -13,7 +13,9 @@ from sympc.tensor.grads.grad_functions import GradAdd
 from sympc.tensor.grads.grad_functions import GradConv2d
 from sympc.tensor.grads.grad_functions import GradFlatten
 from sympc.tensor.grads.grad_functions import GradFunc
+from sympc.tensor.grads.grad_functions import GradMatMul
 from sympc.tensor.grads.grad_functions import GradMul
+from sympc.tensor.grads.grad_functions import GradPow
 from sympc.tensor.grads.grad_functions import GradReshape
 from sympc.tensor.grads.grad_functions import GradSigmoid
 from sympc.tensor.grads.grad_functions import GradSub
@@ -459,3 +461,89 @@ def test_grad_flatten_backward(get_clients) -> None:
     res_mpc_grad = GradFlatten.backward(ctx, grad_mpc)
 
     assert np.allclose(res_mpc_grad.reconstruct(), x, rtol=1e-3)
+
+
+@pytest.mark.parametrize("power", [2, 4, 5])
+def test_grad_pow_forward(get_clients, power) -> None:
+    parties = get_clients(4)
+    x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradPow.forward(ctx, x_mpc, power)
+
+    assert "x" in ctx
+    assert "y" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = x ** power
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+@pytest.mark.parametrize("power", [2, 4, 5])
+def test_grad_pow_backward(get_clients, power) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([1, 2, 3, 4])
+    grad_mpc = grad.share(parties=parties)
+
+    x = torch.Tensor([1, 4, 9, 16])
+    x_mpc = x.share(parties=parties)
+
+    ctx = {"x": x_mpc, "y": power}
+    res_mpc = GradPow.backward(ctx, grad_mpc)
+    res = res_mpc.reconstruct()
+
+    expected = power * x ** (power - 1) * grad
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+def test_grad_matmul_forward(get_clients) -> None:
+    parties = get_clients(4)
+    x = torch.Tensor([[1, 2], [3, -4]])
+    y = torch.Tensor([[1, -4], [8, 9]])
+
+    x_mpc = x.share(parties=parties)
+    y_mpc = y.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradMatMul.forward(ctx, x_mpc, y_mpc)
+
+    assert "x" in ctx
+    assert "y" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = x @ y
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+def test_grad_matmul_backward(get_clients) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([[1, 2], [3, 4]])
+    x = torch.Tensor([[1, 2], [3, -4]])
+    y = torch.Tensor([[1, -4], [8, 9]])
+
+    x_mpc = x.share(parties=parties)
+    y_mpc = y.share(parties=parties)
+    grad_mpc = grad.share(parties=parties)
+
+    ctx = {"x": x_mpc, "y": y_mpc}
+
+    res_mpc_x, res_mpc_y = GradMatMul.backward(ctx, grad_mpc)
+
+    assert np.allclose(res_mpc_x.reconstruct(), grad @ y.T, rtol=1e-3)
+    assert np.allclose(res_mpc_y.reconstruct(), x.T @ grad, rtol=1e-3)
+
+    # Test Value Error
+    y = torch.Tensor([[1, -4], [8, 9], [10, 11]])
+    y_mpc = y.share(parties=parties)
+
+    ctx = {"x": x_mpc, "y": y_mpc}
+
+    with pytest.raises(ValueError):
+        GradMatMul.backward(ctx, grad_mpc)
