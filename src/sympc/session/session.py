@@ -12,6 +12,7 @@ Example:
 
 
 # stdlib
+from copy import deepcopy
 import operator
 from typing import Any
 from typing import Dict
@@ -19,7 +20,6 @@ from typing import List
 from typing import Optional
 from typing import Union
 from uuid import UUID
-from uuid import uuid4
 
 # third party
 # TODO: This should not be here
@@ -28,6 +28,7 @@ import torch
 from sympc.config import Config
 from sympc.protocol.protocol import Protocol
 from sympc.utils import generate_random_element
+from sympc.utils import get_new_generator
 from sympc.utils import get_type_from_ring
 
 
@@ -38,7 +39,10 @@ class Session:
         id (UID): The id to store the session
         tags (Optional[List[str]): an optional list of strings that are tags used at search
         description (Optional[str]): an optional string used to describe the session
+
         uuid (Optional[UUID]): used to identify a session
+        rank_to_uuid (Dict[int, UUID]): used by the orchestrator to keep track of the session
+            uuid for each party
         parties (Optional[List[Any]): used to send/receive messages
         nr_parties (int): number of parties
         trusted_third_party (Optional[Any]): the trusted third party
@@ -48,7 +52,7 @@ class Session:
         przs_generator (Optional[torch.Generator]): Pseudo-Random-Zero-Share Generators
             pointers to the parties generators
         rank (int): Rank for a party in this session
-        sessio_ptrs (List[Session]): pointers to the session that should be identical to the
+        session_ptrs (List[Session]): pointers to the session that should be identical to the
             one we have
         ring_size (int): field used for the operations applied on the shares
         min_value (int): the minimum value allowed for tensors' values
@@ -74,6 +78,7 @@ class Session:
         "tags",
         "description",
         "uuid",
+        "rank_to_uuid",
         "parties",
         "nr_parties",
         "trusted_third_party",
@@ -81,8 +86,8 @@ class Session:
         "protocol",
         "config",
         "przs_generators",
-        "rank",
         "session_ptrs",
+        "rank",
         "ring_size",
         "min_value",
         "max_value",
@@ -97,7 +102,6 @@ class Session:
         config: Optional[Config] = None,
         protocol: Optional[str] = "FSS",
         ttp: Optional[Any] = None,
-        uuid: Optional[UUID] = None,
     ) -> None:
         """Initializer for the Session.
 
@@ -108,13 +112,10 @@ class Session:
                 by the Fixed Point Encoder. Defaults None
             protocol (Optional[str]): Protocol. Defaults None
             ttp (Optional[Any]): Trusted third party. Defaults None.
-            uuid (Optional[UUID]): Universal Identifier for the session. Defaults None
 
         Raises:
             ValueError: If protocol is not registered.
         """
-        self.uuid = uuid4() if uuid is None else uuid
-
         # Each worker will have the rank as the index in the list
         # Only the party that is the CC (Control Center) will have access
         # to this
@@ -145,11 +146,14 @@ class Session:
 
         self.config = config if config else Config()
 
-        self.przs_generators: List[List[torch.Generator]] = []
+        self.przs_generators: List[Optional[torch.Generator]] = []
 
         # Those will be populated in the setup_mpc
-        self.rank = -1
-        self.session_ptrs: List[Session] = []
+        self.rank: int = -1
+        self.uuid: Optional[UUID] = None
+        self.session_ptrs = []
+
+        self.rank_to_uuid: Dict[int, UUID] = {}
 
         # Ring size
         self.tensor_type: Union[torch.dtype] = get_type_from_ring(ring_size)
@@ -170,13 +174,11 @@ class Session:
     def przs_generate_random_share(
         self,
         shape: Union[tuple, torch.Size],
-        generators: List[torch.Generator],
     ) -> Any:
         """Generate a random share using the two generators hold by a party.
 
         Args:
-            shape (Union[tuple, torch.Size]): Shape.
-            generators (List[torch.Generator]): Torch generator.
+            shape (Union[tuple, torch.Size]): Shape for the share.
 
         Returns:
             Any: ShareTensor
@@ -184,7 +186,7 @@ class Session:
         """
         from sympc.tensor import ShareTensor
 
-        gen0, gen1 = generators
+        gen0, gen1 = self.przs_generators
 
         current_share = generate_random_element(
             tensor_type=self.tensor_type,
@@ -198,10 +200,24 @@ class Session:
             shape=shape,
         )
 
-        share = ShareTensor(session=self)
-        share.tensor = current_share - next_share
-
+        # It has encoder_precision = 0 such that the value would not be encoded
+        share = ShareTensor(
+            data=current_share - next_share,
+            session_uuid=self.uuid,
+            config=Config(encoder_precision=0),
+        )
         return share
+
+    def init_generators(self, seed_current: int, seed_next: int) -> None:
+        """Initialize the generators - that are used for Pseudo Random Zero Shares.
+
+        Args:
+            seed_current (int): the seed for our party
+            seed_next (int): thee seed for the next party
+        """
+        generator_current = get_new_generator(seed_current)
+        generator_next = get_new_generator(seed_next)
+        self.przs_generators = [generator_current, generator_next]
 
     def __eq__(self, other: Any) -> bool:
         """Check if "self" is equal with another object given a set of attributes to compare.
@@ -219,3 +235,16 @@ class Session:
             operator.attrgetter(attr) for attr in self.__slots__ - Session.NOT_COMPARE
         ]
         return all(getter(self) == getter(other) for getter in attr_getters)
+
+    def copy(self) -> "Session":
+        """Copy specific fields from the session.
+
+        Returns:
+            A copy of the current Session.
+        """
+        session = Session()
+        session.nr_parties = self.nr_parties
+        session.config = deepcopy(self.config)
+        session.protocol = self.protocol
+
+        return session

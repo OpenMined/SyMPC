@@ -13,11 +13,13 @@ from typing import Dict
 from typing import List
 from typing import Tuple
 from typing import Union
+from uuid import UUID
 
 # third party
 import torch
 
-from sympc.session import Session
+from sympc.config import Config
+from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
@@ -52,21 +54,17 @@ def mul_master(
         raise ValueError(f"{op_str} should be in {EXPECTED_OPS}")
 
     session = x.session
-
     shape_x = tuple(x.shape)
     shape_y = tuple(y.shape)
 
-    args = [
-        list(el) + [op_str]
-        for el in zip(session.session_ptrs, x.share_ptrs, y.share_ptrs)
-    ]
+    args = [list(el) + [op_str] for el in zip(x.share_ptrs, y.share_ptrs)]
 
     try:
         mask = parallel_execution(spdz_mask, session.parties)(args)
     except EmptyPrimitiveStore:
         CryptoPrimitiveProvider.generate_primitives(
             f"beaver_{op_str}",
-            sessions=session.session_ptrs,
+            session=session,
             g_kwargs={
                 "a_shape": shape_x,
                 "b_shape": shape_y,
@@ -85,11 +83,11 @@ def mul_master(
     eps_plaintext = eps.reconstruct(decode=False)
     delta_plaintext = delta.reconstruct(decode=False)
 
-    # Arguments that must be sent to all parties
-    common_args = [eps_plaintext, delta_plaintext, op_str]
-
     # Specific arguments to each party
-    args = [[el] + common_args for el in session.session_ptrs]
+    args = [
+        [str(remote_session_uuid), eps_plaintext, delta_plaintext, op_str]
+        for remote_session_uuid in session.rank_to_uuid.values()
+    ]
 
     shares = parallel_execution(mul_parties, session.parties)(args, kwargs_)
 
@@ -117,7 +115,7 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
 
     primitives = CryptoPrimitiveProvider.generate_primitives(
         "beaver_wraps",
-        sessions=session.session_ptrs,
+        session=session,
         g_kwargs={"nr_parties": session.nr_parties, "shape": res_shape},
         p_kwargs=None,
     )
@@ -130,7 +128,11 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
     z_shares_local = z.get_shares()
 
     common_args = [z_shares_local, y]
-    args = zip(session.session_ptrs, r_mpc.share_ptrs, theta_r_sh, x.share_ptrs)
+    args = zip(
+        r_mpc.share_ptrs,
+        theta_r_sh,
+        x.share_ptrs,
+    )
     args = [list(el) + common_args for el in args]
 
     theta_x = parallel_execution(div_wraps, session.parties)(args)
@@ -145,7 +147,6 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
 
 
 def div_wraps(
-    session: Session,
     r_share: ShareTensor,
     theta_r: ShareTensor,
     x_share: ShareTensor,
@@ -166,18 +167,19 @@ def div_wraps(
     can make the assumption that [eta_xr] = 0 with high probability.
 
     Args:
-        session (Session): MPC Session.
-        r_share (ShareTensor): Share.
-        theta_r (ShareTensor): Share
-        x_share (ShareTensor): Share
-        z_shares (ShareTensor): Share
-        y (Union[Torch.Tensor,y]): Public denominator.
+        r_share (ShareTensor): share for a random variable "r"
+        theta_r (ShareTensor): share for the number of wraparounds for "r"
+        x_share (ShareTensor): shares for which we want to compute the number of wraparounds
+        z_shares (List[torch.Tensor]): list of shares for a random value
+        y (Union[torch.Tensor, int]): the number/tensor by which we divide
 
     Returns:
-        ShareTensor: Shared result of the division.
+        ShareTensor representing the number of wraparounds
     """
+    session = get_session(str(r_share.session_uuid))
+
     beta_xr = count_wraps([x_share.tensor, r_share.tensor])
-    theta_x = ShareTensor(encoder_precision=0)
+    theta_x = ShareTensor(config=Config(encoder_precision=0))
     theta_x.tensor = beta_xr - theta_r.tensor
 
     if session.rank == 0:
@@ -190,12 +192,11 @@ def div_wraps(
 
 
 def spdz_mask(
-    session: Session, x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
+    x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
 ) -> Tuple[ShareTensor, ShareTensor]:
     """Spdz mask.
 
     Args:
-        session (Session): The session.
         x_sh (ShareTensor): X share.
         y_sh (ShareTensor): Y share.
         op_str (str): Operator.
@@ -203,6 +204,8 @@ def spdz_mask(
     Returns:
         Tuple[ShareTensor, ShareTensor]
     """
+    session = get_session(str(x_sh.session_uuid))
+
     crypto_store = session.crypto_store
 
     primitives = crypto_store.get_primitives_from_store(
@@ -215,12 +218,12 @@ def spdz_mask(
 
 
 def mul_parties(
-    session: Session, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
+    session_uuid_str: str, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
 ) -> ShareTensor:
     """SPDZ Multiplication.
 
     Args:
-        session (Session): MPC Session.
+        session_uuid_str (str): UUID to identify the session on each party side.
         eps (torch:tensor): Epsilon value of the protocol.
         delta (torch.Tensor): Delta value of the protocol.
         op_str (str): Operator string.
@@ -229,6 +232,8 @@ def mul_parties(
     Returns:
         ShareTensor: Shared result of the division.
     """
+    session = get_session(session_uuid_str)
+
     crypto_store = session.crypto_store
     eps_shape = tuple(eps.shape)
     delta_shape = tuple(delta.shape)
@@ -255,7 +260,7 @@ def mul_parties(
     # Convert to our tensor type
     share_tensor = share_tensor.type(session.tensor_type)
 
-    share = ShareTensor(session=session)
+    share = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
     share.tensor = share_tensor
 
     # Ideally this should stay in the MPCTensor

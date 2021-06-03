@@ -4,10 +4,8 @@ This class holds the static methods used for the Session.
 """
 
 # stdlib
-import operator
 import secrets
-from typing import Any
-from typing import Optional
+from typing import Dict
 from uuid import UUID
 from uuid import uuid4
 
@@ -27,18 +25,13 @@ class SessionManager:
 
     def __init__(
         self,
-        uuid: Optional[UUID] = None,
     ) -> None:
         """Initializer for the Session Manager.
 
-        Args:
-            uuid (Optional[UUID]): Universal identifier of a session manager instance.
+        Raises:
+            NotImplementedError: This class it is not supposed to be instanciated.
         """
-        self.uuid = uuid4() if uuid is None else uuid
-
-        # Each worker will have the rank as the index in the list
-        # Only the party that is the CC (Control Center) will have access
-        # to this
+        raise NotImplementedError("This is not suposed to be instanciated!")
 
     @staticmethod
     def setup_mpc(session: Session) -> None:
@@ -50,11 +43,19 @@ class SessionManager:
         Args:
             session (Session): Session to send.
         """
+        uuids: Dict[int, UUID] = {}
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party
-            session.rank = rank
-            session.session_ptrs.append(session.send(party))  # type: ignore
+            session_party = session.copy()
+            session_party.rank = rank
 
+            # And a new uuid
+            session_party.uuid = uuid4()
+            uuids[rank] = session_party.uuid
+            session.session_ptrs.append(session_party.send(party))  # type: ignore
+
+        session.uuid = uuid4()
+        session.rank_to_uuid = uuids
         SessionManager._setup_przs(session)
 
     @staticmethod
@@ -84,36 +85,8 @@ class SessionManager:
         Args:
             session (Session): Session involved in the communication.
         """
-        nr_parties = len(session.parties)
+        seeds = [secrets.randbits(32) for _ in range(session.nr_parties)]
 
-        # Create the remote lists where we add the generators
-        session.przs_generators = [
-            party.python.List([None, None]) for party in session.parties
-        ]
-
-        parties = session.parties
-
-        for rank in range(nr_parties):
-            seed = secrets.randbits(32)
-            next_rank = (rank + 1) % nr_parties
-
-            gen_current = session.parties[rank].sympc.utils.get_new_generator(seed)
-            gen_next = parties[next_rank].sympc.utils.get_new_generator(seed)
-
-            session.przs_generators[rank][1] = gen_current
-            session.przs_generators[next_rank][0] = gen_next
-
-    def __eq__(self, other: Any) -> bool:
-        """Check if "self" is equal with another object given a set of attributes to compare.
-
-        Args:
-            other (Any): Session to compare.
-
-        Returns:
-            Bool. True if equal False if not.
-        """
-        if not isinstance(other, self.__class__):
-            return False
-
-        attr_getters = [operator.attrgetter(attr) for attr in self.__slots__]
-        return all(getter(self) == getter(other) for getter in attr_getters)
+        for rank, remote_session in enumerate(session.session_ptrs):
+            next_rank = (rank + 1) % session.nr_parties
+            remote_session.init_generators(seeds[rank], seeds[next_rank])
