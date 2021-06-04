@@ -78,15 +78,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return self.fp_encoder.encode(data)
 
     def decode(self):
-        """Decode via FixedPrecisionEncoder.
+        """Decode via FixedPointEncoder.
 
         Returns:
-            torch.Tensor: Decoded value
+            List[torch.Tensor]: Decoded values
         """
         return self._decode()
 
     def _decode(self):
+        """Decodes shares list of RSTensor via FixedPointEncoder.
 
+        Returns:
+            List[torch.Tensor]: Decoded values
+        """
         shares = []
         for i in range(len(self.shares)):
             tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
