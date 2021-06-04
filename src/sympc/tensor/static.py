@@ -149,9 +149,16 @@ def helper_argmax(
     # for each share in MPCTensor
     #   do the algorithm portrayed in paper (helper_argmax_pairwise)
     #   results in creating two matrices and subtraction them
+    session = x.session
+
     prep_x = x.flatten() if dim is None else x
-    args = [[share_ptr_tensor, dim] for share_ptr_tensor in prep_x.share_ptrs]
-    shares = parallel_execution(helper_argmax_pairwise, prep_x.session.parties)(args)
+    args = [
+        [str(uuid), share_ptr_tensor, dim]
+        for uuid, share_ptr_tensor in zip(
+            session.rank_to_uuid.values(), prep_x.share_ptrs
+        )
+    ]
+    shares = parallel_execution(helper_argmax_pairwise, session.parties)(args)
 
     # then create an MPCTensor tensor based on this results per share
     # (we can do that bc subtraction can be done in mpc fashion out of the box)
@@ -241,17 +248,20 @@ def max_mpc(
 
 # from syft < 0.3.0
 def helper_argmax_pairwise(
-    share: ShareTensor, dim: Optional[Union[int, Tuple[int]]] = None
+    session_uuid_str, share: ShareTensor, dim: Optional[Union[int, Tuple[int]]] = None
 ) -> ShareTensor:
     """Helper function that would compute the difference between all the elements in a tensor.
 
     Args:
+        session_uuid_str (str): UUID to identify the session on each party side.
         share (ShareTensor): Share tensor
         dim (Optional[Union[int, Tuple[int]]]): dimension to compute over
 
     Returns:
         A ShareTensor that represents the difference between each "row" in the ShareTensor.
     """
+    session = get_session(session_uuid_str)
+
     dim = -1 if dim is None else dim
     row_length = share.shape[dim] if share.shape[dim] > 1 else 2
 
@@ -262,7 +272,7 @@ def helper_argmax_pairwise(
     shares = torch.stack(
         [share.tensor.roll(i + 1, dims=dim) for i in range(row_length - 1)]
     )
-    b = ShareTensor(session=share.session)
+    b = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
     b.tensor = shares
 
     return a - b
