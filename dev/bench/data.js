@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622787664691,
+  "lastUpdate": 1622821698016,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -992,6 +992,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.0666355959153346",
             "extra": "mean: 8.115303096999998 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "05f8f8063826a27e07f0b7b906c23cd8711320c2",
+          "message": "Refactored hook method and property -RSTensor (#213)",
+          "timestamp": "2021-06-04T20:35:36+05:30",
+          "tree_id": "e566b55f1a30a012c4b9067346dd3c81d8a5b049",
+          "url": "https://github.com/OpenMined/SyMPC/commit/05f8f8063826a27e07f0b7b906c23cd8711320c2"
+        },
+        "date": 1622821697423,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.10500642858386341,
+            "unit": "iter/sec",
+            "range": "stddev: 0.044129819726946164",
+            "extra": "mean: 9.523226468 sec\nrounds: 5"
           }
         ]
       }
