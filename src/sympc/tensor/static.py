@@ -164,9 +164,8 @@ def helper_argmax(
     # (we can do that bc subtraction can be done in mpc fashion out of the box)
     from sympc.tensor import MPCTensor
 
-    x_pairwise = MPCTensor(
-        shares=shares, session=x.session, shape=shares[0].shape.get()
-    )
+    expected_shape = (prep_x.shape[0] - 1, prep_x.shape[0])
+    x_pairwise = MPCTensor(shares=shares, session=x.session, shape=expected_shape)
 
     # with the MPCTensor tensor we check what entries are positive
     # then we check what columns of M matrix have m-1 non-zero entries after comparison
