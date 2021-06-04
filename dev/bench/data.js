@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622723394689,
+  "lastUpdate": 1622787664691,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -961,6 +961,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.05124760358301393",
             "extra": "mean: 8.013939030599994 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "7a988fd64e8e026602c5cae5bd122bad958ac415",
+          "message": "Fixed Point Encoding - RSTensor (#202)\n\n* Intialize FALCON Protocol\r\n\r\n* Added test for session\r\n\r\n* Modified Protocol name convention\r\n\r\n* Modified worklows Parallel Execution\r\n\r\n* Fixed Point Encoding- RSTensor\r\n\r\n* Modified RSTensor to use Session UUID\r\n\r\n* Modified Tests\r\n\r\n* Added test for fixed point\r\n\r\n* Modified Docstring",
+          "timestamp": "2021-06-04T11:48:08+05:30",
+          "tree_id": "c581f78b6a6c7d04f3f3510ce9a3a0206258ff08",
+          "url": "https://github.com/OpenMined/SyMPC/commit/7a988fd64e8e026602c5cae5bd122bad958ac415"
+        },
+        "date": 1622787663542,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.12322398659018322,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0666355959153346",
+            "extra": "mean: 8.115303096999998 sec\nrounds: 5"
           }
         ]
       }
