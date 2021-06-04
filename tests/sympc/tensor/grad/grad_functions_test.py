@@ -463,7 +463,7 @@ def test_grad_flatten_backward(get_clients) -> None:
     assert np.allclose(res_mpc_grad.reconstruct(), x, rtol=1e-3)
 
 
-@pytest.mark.parametrize("power", [2, 4, 5, 1.0])
+@pytest.mark.parametrize("power", [2, 4, 5])
 def test_grad_pow_forward(get_clients, power) -> None:
     parties = get_clients(4)
     x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
@@ -472,19 +472,29 @@ def test_grad_pow_forward(get_clients, power) -> None:
 
     ctx = {}
 
-    if isinstance(power, float):
+    res_mpc = GradPow.forward(ctx, x_mpc, power)
+
+    assert "x" in ctx
+    assert "y" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = x ** power
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+@pytest.mark.parametrize("power", [1.0, torch.tensor([1, 3])])
+def test_grad_pow_forward_exception(get_clients, power) -> None:
+    parties = get_clients(4)
+    x = torch.Tensor([[1, 2, 3], [4, 5, 6]])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+
+    if not isinstance(power, int):
         with pytest.raises(TypeError):
             GradPow.forward(ctx, x_mpc, power)
-    else:
-        res_mpc = GradPow.forward(ctx, x_mpc, power)
-
-        assert "x" in ctx
-        assert "y" in ctx
-
-        res = res_mpc.reconstruct()
-        expected = x ** power
-
-        assert np.allclose(res, expected, rtol=1e-3)
 
 
 @pytest.mark.parametrize("power", [2, 4, 5])
