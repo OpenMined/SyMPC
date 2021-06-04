@@ -1,5 +1,4 @@
 # stdlib
-# stdlib
 from uuid import uuid4
 
 # third party
