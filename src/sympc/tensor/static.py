@@ -2,9 +2,13 @@
 
 We use this to support torch.method(Tensor)
 """
+# future
+from __future__ import annotations
+
 # stdlib
 from typing import List
 from typing import TYPE_CHECKING
+from typing import Tuple
 from uuid import UUID
 
 # third party
@@ -49,12 +53,14 @@ def stack(tensors: List, dim: int = 0) -> MPCTensor:
     return result
 
 
-def stack_share_tensor(session_uuid_str: str, *shares: ShareTensor) -> ShareTensor:
+def stack_share_tensor(
+    session_uuid_str: str, *shares: Tuple[ShareTensor]
+) -> ShareTensor:
     """Helper method that performs torch.stack on the shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        shares (ShareTensor) : Shares of the tensors to be stacked
+        shares (Tuple[ShareTensor]) : Shares of the tensors to be stacked
 
     Returns:
         ShareTensor: Respective shares after stacking
@@ -96,12 +102,12 @@ def cat(tensors: List, dim: int = 0) -> MPCTensor:
     return result
 
 
-def cat_share_tensor(session_uuid_str: str, *shares: ShareTensor) -> ShareTensor:
+def cat_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> ShareTensor:
     """Helper method that performs torch.cat on the shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        shares (ShareTensor): Shares of the tensors to be concatenated
+        shares (Tuple[ShareTensor]): Shares of the tensors to be concatenated
 
     Returns:
         ShareTensor: Respective shares after concatenation
