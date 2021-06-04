@@ -8,11 +8,14 @@ from typing import List
 from typing import Optional
 from typing import Set
 from typing import Union
+from uuid import UUID
 
 # third party
 import torch
 
-from sympc.session import Session
+from sympc.config import Config
+from sympc.encoder import FixedPointEncoder
+from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
 
@@ -26,7 +29,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     Arguments:
        shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
            from which RSTensor is created.
-       session (Optional[Session]): The session.
+
 
     Attributes:
        shares: The shares held by the party
@@ -41,17 +44,59 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def __init__(
         self,
         shares: Optional[List[Union[float, int, torch.Tensor]]] = None,
-        session: Optional[Session] = None,
+        config: Config = Config(encoder_base=2, encoder_precision=16),
+        session_uuid: Optional[UUID] = None,
+        ring_size: int = 2 ** 64,
     ):
-        """Initialize ShareTensor.
+        """Initialize ReplicatedSharedTensor.
 
         Args:
             shares (Optional[List[Union[float, int, torch.Tensor]]]): Shares list
                 from which RSTensor is created.
-            session (Optional[Session]): The session. Defaults to None.
+            config (Config): The configuration where we keep the encoder precision and base.
+            session_uuid (Optional[UUID]): Used to keep track of a share that is associated with a
+                remote session
+            ring_size (int): field used for the operations applied on the shares
+                Defaults to 2**64
+
         """
-        self.session = session
-        self.shares = shares
+        self.session_uuid = session_uuid
+        self.ring_size = ring_size
+
+        self.config = config
+        self.fp_encoder = FixedPointEncoder(
+            base=config.encoder_base, precision=config.encoder_precision
+        )
+
+        tensor_type = get_type_from_ring(ring_size)
+        self.shares = []
+        if shares is not None:
+            for i in range(len(shares)):
+                self.shares.append(self._encode(shares[i]).to(tensor_type))
+
+    def _encode(self, data):
+        return self.fp_encoder.encode(data)
+
+    def decode(self):
+        """Decode via FixedPointEncoder.
+
+        Returns:
+            List[torch.Tensor]: Decoded values
+        """
+        return self._decode()
+
+    def _decode(self):
+        """Decodes shares list of RSTensor via FixedPointEncoder.
+
+        Returns:
+            List[torch.Tensor]: Decoded values
+        """
+        shares = []
+        for i in range(len(self.shares)):
+            tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
+            shares.append(tensor)
+
+        return shares
 
     def add(self, y):
         """Apply the "add" operation between "self" and "y".
