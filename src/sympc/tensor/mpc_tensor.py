@@ -825,7 +825,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         Returns:
             The attribute specific for this instance
         """
-
         # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
         from sympc.tensor.static import STATIC_FUNCS

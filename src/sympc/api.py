@@ -60,31 +60,6 @@ allowed_external_classes = [
     ),
 ]
 
-allowed_external_attrs = [
-    ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
-    ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
-    ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),
-    ("sympc.session.Session.init_generators", "syft.lib.python._SyNone"),
-    ("sympc.session.Session.przs_generators", "syft.lib.python.List"),
-    ("sympc.protocol.fss.fss.mask_builder", "sympc.tensor.ShareTensor"),
-    ("sympc.protocol.fss.fss.evaluate", "sympc.tensor.ShareTensor"),
-    ("sympc.protocol.spdz.spdz.mul_parties", "sympc.tensor.ShareTensor"),
-    ("sympc.protocol.spdz.spdz.spdz_mask", "syft.lib.python.Tuple"),
-    ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.ShareTensor"),
-    (
-        "sympc.session.Session.przs_generate_random_share",
-        "sympc.tensor.ShareTensor",
-    ),
-    (
-        "sympc.store.CryptoStore.populate_store",
-        "syft.lib.python._SyNone",
-    ),
-    (
-        "sympc.utils.get_new_generator",
-        "torch.Generator",
-    ),
-]
-
 share_tensor_attrs = [
     (
         "sympc.tensor.ShareTensor.__add__",
@@ -141,6 +116,7 @@ share_tensor_attrs = [
     ("sympc.tensor.ShareTensor.expand", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.static.helper_argmax_pairwise", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.repeat", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
@@ -216,3 +192,31 @@ replicated_shared_tensor_attrs = [
     ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.flatten", "sympc.tensor.ShareTensor"),
 ]
+
+allowed_external_attrs = [
+    ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
+    ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
+    ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),
+    ("sympc.session.Session.init_generators", "syft.lib.python._SyNone"),
+    ("sympc.session.Session.przs_generators", "syft.lib.python.List"),
+    ("sympc.protocol.fss.fss.mask_builder", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.fss.fss.evaluate", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.spdz.spdz.mul_parties", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.spdz.spdz.spdz_mask", "syft.lib.python.Tuple"),
+    ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.session.Session.przs_generate_random_share",
+        "sympc.tensor.ShareTensor",
+    ),
+    (
+        "sympc.store.CryptoStore.populate_store",
+        "syft.lib.python._SyNone",
+    ),
+    (
+        "sympc.utils.get_new_generator",
+        "torch.Generator",
+    ),
+]
+
+allowed_external_attrs.extend(replicated_shared_tensor_attrs)
+allowed_external_attrs.extend(share_tensor_attrs)

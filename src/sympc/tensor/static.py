@@ -6,11 +6,11 @@ Examples: torch.stack, torch.argmax
 from __future__ import annotations
 
 # stdlib
+import math
 from typing import Callable
 from typing import Dict
 from typing import List
 from typing import Optional
-from typing import TYPE_CHECKING
 from typing import Tuple
 from typing import Union
 from uuid import UUID
@@ -19,11 +19,9 @@ from uuid import UUID
 import torch
 
 from sympc.session import get_session
+from sympc.tensor.mpc_tensor import MPCTensor
 from sympc.tensor.share_tensor import ShareTensor
 from sympc.utils import parallel_execution
-
-if TYPE_CHECKING:
-    from sympc.tensor import MPCTensor
 
 
 def stack(tensors: List, dim: int = 0) -> MPCTensor:
@@ -160,18 +158,8 @@ def helper_argmax(
     ]
     shares = parallel_execution(helper_argmax_pairwise, session.parties)(args)
 
-    # then create an MPCTensor tensor based on this results per share
-    # (we can do that bc subtraction can be done in mpc fashion out of the box)
-    from sympc.tensor import MPCTensor
-
-    # prep_x.shape[-1 if dim is None else dim]
-    pairwise_dim = -1 if dim is None else dim
-    pairwise_row_len = (
-        prep_x.shape[pairwise_dim] if prep_x.shape[pairwise_dim] > 1 else 2
-    )
-    expected_shape = (pairwise_row_len - 1, *prep_x.shape)
-
-    x_pairwise = MPCTensor(shares=shares, session=x.session, shape=expected_shape)
+    res_shape = shares[0].shape.get()
+    x_pairwise = MPCTensor(shares=shares, session=x.session, shape=res_shape)
 
     # with the MPCTensor tensor we check what entries are positive
     # then we check what columns of M matrix have m-1 non-zero entries after comparison
@@ -179,21 +167,23 @@ def helper_argmax(
     pairwise_comparisons = x_pairwise >= 0
 
     # re-compute row_length
-    input_shape = prep_x.shape
     _dim = -1 if dim is None else dim
-    row_length = input_shape[_dim] if input_shape[_dim] > 1 else 2
+    row_length = x.shape[_dim] if x.shape[_dim] > 1 else 2
 
     result = pairwise_comparisons.sum(0)
     result = result >= (row_length - 1)
+    res_shape = res_shape[1:]  # Remove the leading dimension because of sum(0)
 
     if not one_hot:
-        if dim is not None:
-            size = [1 for _ in range(len(input_shape))]
-            size[dim] = input_shape[dim]
+        if dim is None:
+            check = result * torch.Tensor([i for i in range(math.prod(res_shape))])
         else:
-            size = prep_x.shape
+            size = [1 for _ in range(len(res_shape))]
+            size[dim] = res_shape[dim]
+            check = result * torch.Tensor([i for i in range(res_shape[_dim])]).view(
+                size
+            )
 
-        check = result * torch.Tensor([i for i in range(input_shape[_dim])]).view(size)
         if dim is not None:
             argmax = check.sum(dim=dim, keepdim=keepdim)
         else:
@@ -204,10 +194,6 @@ def helper_argmax(
                 raise ValueError("There are multiple argmax values")
 
         result = argmax
-
-    result = (
-        result.reshape(input_shape) if dim is None and len(input_shape) > 1 else result
-    )
 
     return result
 
@@ -236,7 +222,7 @@ def max_mpc(
     x: MPCTensor,
     dim: Optional[Union[int, Tuple[int]]] = None,
     keepdim=False,
-) -> MPCTensor:
+) -> Union[MPCTensor, Tuple[MPCTensor, MPCTensor]]:
     """Compute the maximum value for an MPCTensor.
 
     Args:
@@ -245,10 +231,23 @@ def max_mpc(
         keepdim (bool): when one_hot is true and dim is set, keep all the dimensions of the tensor
 
     Returns:
-        A new MPCTensor representing the max result.
+        A tuple representing (max MPCTensor, indices_max MPCTensor)
     """
     argmax_mpc = helper_argmax(x, dim=dim, keepdim=keepdim, one_hot=True)
-    return argmax_mpc * x
+    max_mpc = argmax_mpc * x
+    if dim is None:
+        res = max_mpc.sum()
+    else:
+        shape = argmax_mpc.shape
+        size = [1 for _ in range(len(shape))]
+        size[dim] = shape[dim]
+        argmax_mpc = argmax_mpc * torch.Tensor([i for i in range(shape[dim])]).view(
+            size
+        )
+
+        max_mpc = max_mpc.sum(dim=dim, keepdim=keepdim)
+        res = max_mpc, argmax_mpc.sum(dim=dim, keepdim=keepdim)
+    return res
 
 
 # from syft < 0.3.0

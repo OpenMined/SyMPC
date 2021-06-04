@@ -36,7 +36,7 @@ def test_argmax(get_clients) -> None:
 
     expected = secret.argmax().float()
     res = argmax_val.reconstruct()
-    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
+    assert res == expected, f"Expected argmax to be {expected}"
 
 
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
@@ -53,7 +53,7 @@ def test_argmax_dim(dim, keepdim, get_clients) -> None:
 
     res = argmax_val.reconstruct()
     expected = secret.argmax(dim=dim, keepdim=keepdim).float()
-    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
+    assert (res == expected).all(), f"Expected argmax to be {expected}"
 
 
 def test_max_multiple_max(get_clients) -> None:
@@ -78,9 +78,9 @@ def test_max(get_clients) -> None:
     max_val = x.max()
     assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
 
-    expected = secret.max().float()
+    expected = secret.max()
     res = max_val.reconstruct()
-    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
+    assert res == expected, f"Expected argmax to be {expected}"
 
 
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
@@ -92,12 +92,16 @@ def test_max_dim(dim, keepdim, get_clients) -> None:
     secret = torch.Tensor([[[1, 2], [3, -1], [4, 5]], [[2, 5], [5, 1], [6, 42]]])
     x = MPCTensor(secret=secret, session=session)
 
-    max_val = x.max(dim=dim, keepdim=keepdim)
+    max_val, max_idx_val = x.max(dim=dim, keepdim=keepdim)
     assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
 
-    res = max_val.reconstruct()
-    expected = secret.max(dim=dim, keepdim=keepdim).values
-    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
+    res_idx = max_idx_val.reconstruct()
+    res_max = max_val.reconstruct()
+    expected_max, expected_indices = secret.max(dim=dim, keepdim=keepdim)
+    assert (
+        res_idx == expected_indices
+    ).all(), f"Expected indices for maximum to be {expected_indices}"
+    assert (res_max == expected_max).all(), f"Expected argmax to be {expected_max}"
 
 
 def test_stack(get_clients):
@@ -113,7 +117,7 @@ def test_stack(get_clients):
     y = MPCTensor(secret=y_secret, session=session)
     stacked = stack([x, y])
 
-    assert torch.equal(secret_stacked, stacked.reconstruct())
+    assert (secret_stacked == stacked.reconstruct()).all()
 
 
 def test_cat(get_clients):
@@ -129,4 +133,4 @@ def test_cat(get_clients):
     y = MPCTensor(secret=y_secret, session=session)
     concatenated = cat([x, y])
 
-    assert torch.equal(secret_concatenated, concatenated.reconstruct())
+    assert (secret_concatenated == concatenated.reconstruct()).all()
