@@ -1,6 +1,6 @@
 """Module level "static" functions.
 
-We use this to support torch.method(Tensor)
+We use this to support torch.function(Tensor)
 """
 # future
 from __future__ import annotations
