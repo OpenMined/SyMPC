@@ -2,13 +2,16 @@
 
 # stdlib
 import functools
+from typing import Callable
 
 # third party
 import numpy as np
 import torch
+from torch import Tensor
 
 from sympc.approximations.sigmoid import sigmoid
 from sympc.module.nn import relu
+from sympc.tensor import MPCTensor
 from sympc.tensor.static import stack
 
 
@@ -24,12 +27,12 @@ def _tanh_sigmoid(tensor):
     return 2 * sigmoid(2 * tensor) - 1
 
 
-def tanh(tensor, method="sigmoid"):
+def tanh(tensor: MPCTensor, method: str = "sigmoid") -> MPCTensor:
     """Calculates tanh of given tensor.
 
     Args:
-        tensor: whose sigmoid has to be calculated
-        method: method to use while calculating sigmoid
+        tensor (MPCTensor): whose sigmoid has to be calculated
+        method (str): method to use while calculating sigmoid
 
     Returns:
         MPCTensor: calculated MPCTensor
@@ -54,7 +57,9 @@ def tanh(tensor, method="sigmoid"):
         raise ValueError(f"Invalid method {method} given for tanh function")
 
 
-def hardtanh(tensor, min_value=-1, max_value=1):
+def hardtanh(
+    tensor: MPCTensor, min_value: float = -1, max_value: float = 1
+) -> MPCTensor:
     """Calculates hardtanh of given tensor.
 
     Defined as
@@ -63,9 +68,9 @@ def hardtanh(tensor, min_value=-1, max_value=1):
         x otherwise
 
     Args:
-        tensor: whose hardtanh has to be calculated
-        min_value: minimum value of the linear region range. Default: -1
-        max_value: maximum value of the linear region range. Default: 1
+        tensor (MPCTensor): whose hardtanh has to be calculated
+        min_value (float): minimum value of the linear region range. Default: -1
+        max_value (float): maximum value of the linear region range. Default: 1
 
     Returns:
         MPCTensor: calculated MPCTensor
@@ -76,7 +81,7 @@ def hardtanh(tensor, min_value=-1, max_value=1):
 
 
 @functools.lru_cache(maxsize=10)
-def chebyshev_series(func, width, terms):
+def chebyshev_series(func: Callable, width: int, terms: int) -> Tensor:
     r"""Computes Chebyshev coefficients.
 
     For n = terms, the ith Chebyshev series coefficient is
@@ -84,12 +89,12 @@ def chebyshev_series(func, width, terms):
         c_i = 2/n \sum_{k=1}^n \cos(j(2k-1)\pi / 4n) f(w\cos((2k-1)\pi / 4n))
 
     Args:
-        func (function): function to be approximated
+        func (Callable): function to be approximated
         width (int): approximation will support inputs in range [-width, width]
         terms (int): number of Chebyshev terms used in approximation
 
     Returns:
-        Chebyshev coefficients with shape equal to num of terms.
+        Tensor: Chebyshev coefficients with shape equal to num of terms.
 
     """
     n_range = torch.arange(start=0, end=terms).float()
@@ -100,7 +105,7 @@ def chebyshev_series(func, width, terms):
     return coeffs
 
 
-def _chebyshev_polynomials(tensor, terms):
+def _chebyshev_polynomials(tensor: MPCTensor, terms: int) -> MPCTensor:
     r"""Evaluates odd degree Chebyshev polynomials at x.
 
     Chebyshev Polynomials of the first kind are defined as

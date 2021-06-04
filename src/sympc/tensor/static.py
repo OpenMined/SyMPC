@@ -3,6 +3,8 @@
 We use this to support torch.method(Tensor)
 """
 # stdlib
+from typing import List
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 # third party
@@ -12,13 +14,16 @@ from sympc.session import get_session
 from sympc.tensor.share_tensor import ShareTensor
 from sympc.utils import parallel_execution
 
+if TYPE_CHECKING:
+    from sympc.tensor import MPCTensor
 
-def stack(tensors, dim=0):
+
+def stack(tensors: List, dim: int = 0) -> MPCTensor:
     """Concatenates a sequence of tensors along a new dimension.
 
     Args:
-        tensors: sequence of tensors to stacks
-        dim: dimension to insert. Has to be between 0 and the number of
+        tensors (List): sequence of tensors to stacks
+        dim (int): dimension to insert. Has to be between 0 and the number of
             dimensions of concatenated tensors (inclusive)
 
     Returns:
@@ -44,15 +49,15 @@ def stack(tensors, dim=0):
     return result
 
 
-def stack_share_tensor(session_uuid_str, *shares):
+def stack_share_tensor(session_uuid_str: str, *shares: ShareTensor) -> ShareTensor:
     """Helper method that performs torch.stack on the shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        shares: Shares of the tensors to be stacked
+        shares (ShareTensor) : Shares of the tensors to be stacked
 
     Returns:
-        ShareTensorPointer: Respective shares after stacking
+        ShareTensor: Respective shares after stacking
     """
     session = get_session(session_uuid_str)
     result = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
@@ -61,12 +66,12 @@ def stack_share_tensor(session_uuid_str, *shares):
     return result
 
 
-def cat(tensors, dim=0):
+def cat(tensors: List, dim: int = 0) -> MPCTensor:
     """Concatenates the given sequence of seq tensors in the given dimension.
 
     Args:
-        tensors: sequence of tensors to concatenate
-        dim: the dimension over which the tensors are concatenated
+        tensors (List): sequence of tensors to concatenate
+        dim (int): the dimension over which the tensors are concatenated
 
     Returns:
         MPCTensor: calculated MPCTensor
@@ -91,15 +96,15 @@ def cat(tensors, dim=0):
     return result
 
 
-def cat_share_tensor(session_uuid_str, *shares):
+def cat_share_tensor(session_uuid_str: str, *shares: ShareTensor) -> ShareTensor:
     """Helper method that performs torch.cat on the shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        shares: Shares of the tensors to be concatenated
+        shares (ShareTensor): Shares of the tensors to be concatenated
 
     Returns:
-        ShareTensorPointer: Respective shares after concatenation
+        ShareTensor: Respective shares after concatenation
     """
     session = get_session(session_uuid_str)
     result = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)

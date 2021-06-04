@@ -9,7 +9,9 @@ from sympc.tensor.mpc_tensor import MPCTensor
 
 
 @pytest.mark.parametrize(
-    "method", ["maclaurin", "exp", "chebyshev", "chebyshev-aliter"]
+    # "method", ["maclaurin", "exp", "chebyshev", "chebyshev-aliter"]
+    "method",
+    ["chebyshev"],
 )
 def test_sigmoid(get_clients, method) -> None:
     clients = get_clients(2)
