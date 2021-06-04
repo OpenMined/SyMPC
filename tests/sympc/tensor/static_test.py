@@ -34,9 +34,9 @@ def test_argmax(get_clients) -> None:
     argmax_val = x.argmax()
     assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
 
-    expected = secret.argmax()
+    expected = secret.argmax().float()
     res = argmax_val.reconstruct()
-    assert res == expected, f"Expected argmax to be {expected}"
+    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
 
 
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
@@ -52,8 +52,8 @@ def test_argmax_dim(dim, keepdim, get_clients) -> None:
     assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
 
     res = argmax_val.reconstruct()
-    expected = secret.argmax(dim=dim, keepdim=keepdim)
-    assert (res == expected).all(), f"Expected argmax to be {expected}"
+    expected = secret.argmax(dim=dim, keepdim=keepdim).float()
+    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
 
 
 def test_max_multiple_max(get_clients) -> None:
@@ -78,9 +78,9 @@ def test_max(get_clients) -> None:
     max_val = x.max()
     assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
 
-    expected = secret.max()
+    expected = secret.max().float()
     res = max_val.reconstruct()
-    assert res == expected, f"Expected argmax to be {expected}"
+    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
 
 
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
@@ -96,8 +96,8 @@ def test_max_dim(dim, keepdim, get_clients) -> None:
     assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
 
     res = max_val.reconstruct()
-    expected = secret.max(dim=dim, keepdim=keepdim)
-    assert (res == expected).all(), f"Expected argmax to be {expected}"
+    expected = secret.max(dim=dim, keepdim=keepdim).values
+    assert torch.equal(res, expected), f"Expected argmax to be {expected}"
 
 
 def test_stack(get_clients):

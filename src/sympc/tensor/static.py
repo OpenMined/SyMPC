@@ -164,7 +164,13 @@ def helper_argmax(
     # (we can do that bc subtraction can be done in mpc fashion out of the box)
     from sympc.tensor import MPCTensor
 
-    expected_shape = (prep_x.shape[0] - 1, prep_x.shape[0])
+    # prep_x.shape[-1 if dim is None else dim]
+    pairwise_dim = -1 if dim is None else dim
+    pairwise_row_len = (
+        prep_x.shape[pairwise_dim] if prep_x.shape[pairwise_dim] > 1 else 2
+    )
+    expected_shape = (pairwise_row_len - 1, *prep_x.shape)
+
     x_pairwise = MPCTensor(shares=shares, session=x.session, shape=expected_shape)
 
     # with the MPCTensor tensor we check what entries are positive
