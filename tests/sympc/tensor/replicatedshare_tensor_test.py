@@ -67,7 +67,10 @@ def test_send_get(get_clients, precision=12, base=4) -> None:
     share1 = torch.Tensor([1.4, 2.34, 3.43])
     share2 = torch.Tensor([1, 2, 3])
     share3 = torch.Tensor([1.4, 2.34, 3.43])
-    x_share = ReplicatedSharedTensor(shares=[share1, share2, share3], session=session)
+    session_uuid = session.rank_to_uuid[0]
+    x_share = ReplicatedSharedTensor(
+        shares=[share1, share2, share3], session_uuid=session_uuid
+    )
     x_ptr = x_share.send(client)
     result = x_ptr.get()
 
