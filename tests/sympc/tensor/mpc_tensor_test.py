@@ -6,6 +6,7 @@ import numpy as np
 import pytest
 import torch
 
+from sympc.config import Config
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -36,10 +37,12 @@ def test_reconstruct(get_clients) -> None:
     SessionManager.setup_mpc(session)
 
     a_rand = 3
-    a = ShareTensor(data=a_rand, encoder_precision=0)
+    a = ShareTensor(data=a_rand, config=Config(encoder_precision=0))
     MPCTensor.generate_shares(secret=a, nr_parties=2, tensor_type=torch.long)
 
-    MPCTensor.generate_shares(secret=a_rand, nr_parties=2, tensor_type=torch.long)
+    MPCTensor.generate_shares(
+        secret=a_rand, nr_parties=2, config=Config(), tensor_type=torch.long
+    )
 
     x_secret = torch.Tensor([1, -2, 3.0907, -4.870])
     x = MPCTensor(secret=x_secret, session=session)
@@ -202,7 +205,8 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
 
     op = getattr(operator, op_str)
     expected_result = op(x_secret, y_secret)
-    result = op(x, y_secret).reconstruct()
+    result = op(x, y_secret)
+    result = result.reconstruct()
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
@@ -285,7 +289,6 @@ def test_mpc_print(get_clients) -> None:
 
 
 def test_generate_shares() -> None:
-
     precision = 12
     base = 4
 
@@ -294,31 +297,33 @@ def test_generate_shares() -> None:
     # test with default values
     x_share = ShareTensor(data=x_secret)
 
-    shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
-    shares_from_secret = MPCTensor.generate_shares(x_secret, 2)
+    shares_from_share_tensor = MPCTensor.generate_shares(x_share, nr_parties=2)
+    shares_from_secret = MPCTensor.generate_shares(
+        x_secret, nr_parties=2, config=Config()
+    )
 
     assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
 
-    x_share = ShareTensor(data=x_secret, encoder_precision=precision, encoder_base=base)
+    x_share = ShareTensor(
+        data=x_secret, config=Config(encoder_precision=precision, encoder_base=base)
+    )
 
     shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
     shares_from_secret = MPCTensor.generate_shares(
-        x_secret, 2, encoder_precision=precision, encoder_base=base
+        x_secret, 2, config=Config(encoder_precision=precision, encoder_base=base)
     )
 
     assert sum(shares_from_share_tensor).tensor == sum(shares_from_secret).tensor
 
 
-def test_generate_shares_session(get_clients) -> None:
-    clients = get_clients(2)
-    session = Session(parties=clients)
-    SessionManager.setup_mpc(session)
-
+def test_generate_shares_config(get_clients) -> None:
     x_secret = torch.Tensor([5.0])
-    x_share = ShareTensor(data=x_secret, session=session)
+    x_share = ShareTensor(data=x_secret)
 
     shares_from_share_tensor = MPCTensor.generate_shares(x_share, 2)
-    shares_from_secret = MPCTensor.generate_shares(x_secret, 2, session=session)
+    shares_from_secret = MPCTensor.generate_shares(
+        x_secret, 2, config=Config(encoder_base=2, encoder_precision=16)
+    )
 
     assert sum(shares_from_share_tensor) == sum(shares_from_secret)
 
