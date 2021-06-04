@@ -2,9 +2,13 @@
 
 We use this to support torch.method(Tensor)
 """
+# stdlib
+from uuid import UUID
+
 # third party
 import torch
 
+from sympc.session import get_session
 from sympc.tensor.share_tensor import ShareTensor
 from sympc.utils import parallel_execution
 
@@ -22,12 +26,12 @@ def stack(tensors, dim=0):
     """
     session = tensors[0].session
 
-    # Each MPCTensor has
-    # share_1, share_2 owned by
-    # Party1    Party2
-
-    share_ptrs = list(zip(*[tensor.share_ptrs for tensor in tensors]))
-    args = share_ptrs
+    args = list(
+        zip(
+            [str(uuid) for uuid in session.rank_to_uuid.values()],
+            *[tensor.share_ptrs for tensor in tensors]
+        )
+    )
 
     stack_shares = parallel_execution(stack_share_tensor, session.parties)(args)
     from sympc.tensor import MPCTensor
@@ -40,16 +44,19 @@ def stack(tensors, dim=0):
     return result
 
 
-def stack_share_tensor(*shares):
+def stack_share_tensor(session_uuid_str, *shares):
     """Helper method that performs torch.stack on the shares of the Tensors.
 
     Args:
+        session_uuid_str (str): UUID to identify the session on each party side.
         shares: Shares of the tensors to be stacked
 
     Returns:
         ShareTensorPointer: Respective shares after stacking
     """
-    result = ShareTensor(session=shares[0].session)
+    session = get_session(session_uuid_str)
+    result = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
+
     result.tensor = torch.stack([share.tensor for share in shares])
     return result
 
@@ -66,12 +73,12 @@ def cat(tensors, dim=0):
     """
     session = tensors[0].session
 
-    # Each MPCTensor has
-    # share_1, share_2 owned by
-    # Party1    Party2
-
-    share_ptrs = list(zip(*[tensor.share_ptrs for tensor in tensors]))
-    args = share_ptrs
+    args = list(
+        zip(
+            [str(uuid) for uuid in session.rank_to_uuid.values()],
+            *[tensor.share_ptrs for tensor in tensors]
+        )
+    )
 
     stack_shares = parallel_execution(cat_share_tensor, session.parties)(args)
     from sympc.tensor import MPCTensor
@@ -93,7 +100,7 @@ def cat_share_tensor(*shares):
     Returns:
         ShareTensorPointer: Respective shares after concatenation
     """
-    result = ShareTensor(session=shares[0].session)
+    result = ShareTensor(config=shares[0].session.config)
     result.tensor = torch.cat([share.tensor for share in shares])
     return result
 

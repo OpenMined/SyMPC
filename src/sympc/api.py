@@ -136,7 +136,7 @@ allowed_external_attrs = [
     ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.static.stack_cat_tensor", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     (
         "sympc.tensor.ReplicatedSharedTensor.__add__",

@@ -41,7 +41,7 @@ def tanh(tensor, method="sigmoid"):
     if method == "sigmoid":
         return _tanh_sigmoid(tensor)
 
-    elif method == "chebyshev-crypten":
+    elif method == "chebyshev":
         terms = 10  # Higher terms gives slower but more accurate results
         coeffs = chebyshev_series(torch.tanh, 1, terms)[1::2]
         tanh_polys = _chebyshev_polynomials(tensor, terms)
