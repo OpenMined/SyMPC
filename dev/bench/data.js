@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622821698016,
+  "lastUpdate": 1622828003059,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1023,6 +1023,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.044129819726946164",
             "extra": "mean: 9.523226468 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "spsharan2000@gmail.com",
+            "name": "S P Sharan",
+            "username": "Syzygianinfern0"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "6b17043088aac9939957ce038eb49d40b6fd302f",
+          "message": "Add Sigmoid (cheby), Static Methods (stack, cat) (#136)\n\n* Add chebyshev algo\r\n\r\n* Add chebyshev test\r\n\r\n* Fix for negative elements\r\nFor some reason, they are lower than expected result.\r\nHence, we make them positive, compute and later return 1-Ans.\r\n\r\n* Add Reference Paper of Implementation\r\n\r\n* Remove a double sign inversion for negatives\r\n\r\n* tensor_8 -> positive_tensor_rescaled\r\n\r\n* Make operation less accurate but more reliable\r\nThe method is flaky due to computation of powers of 12. Reducing them for reliability.\r\n\r\n* Crypten's version of `sigmoid` chebyshev approx\r\n\r\n* Add `squeeze`, `cat`, and `stack` methods\r\n\r\n* WIP Code\r\n\r\n* Fix\r\n\r\n* Crypten implementation complete\r\n\r\n* Sweet spot for implementations\r\n\r\n* Implement `cat` method\r\n\r\n* Docstrings for static\r\n\r\n* Empty commit\r\nFor some reason, git is not pushing xD\r\n\r\n* cheby->cheby-aliter, cheby-crypten->cheby\r\nSome more docstrings\r\n\r\n* Fix test method name\r\n\r\n* Fix `parallel_execution` args\r\nThis is due to a new PR being merged\r\nFix method name in tanh\r\n\r\n* Tests for `static.py`\r\n\r\n* Type hints for all functions\r\n\r\n* Fix type of `*shares`\r\n\r\n* Update setup.cfg\r\n\r\n* Update tests/sympc/approximations/sigmoid_test.py\r\n\r\n* Update tanh.py\r\n\r\n* Update static.py\r\n\r\nCo-authored-by: George Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2021-06-04T18:30:04+01:00",
+          "tree_id": "d0d0efaaa1a1fa74e7587a031241844e4812c359",
+          "url": "https://github.com/OpenMined/SyMPC/commit/6b17043088aac9939957ce038eb49d40b6fd302f"
+        },
+        "date": 1622828002504,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.10770120059303334,
+            "unit": "iter/sec",
+            "range": "stddev: 0.052045552826054",
+            "extra": "mean: 9.284947563200006 sec\nrounds: 5"
           }
         ]
       }
