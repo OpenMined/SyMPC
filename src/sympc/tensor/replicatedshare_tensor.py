@@ -17,9 +17,6 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.utils import get_type_from_ring
 
-# third party
-import torch
-
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
@@ -182,18 +179,24 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         """
 
-    def eq(self, y):
+    def eq(self, y: Any):
         """Equal operator.
 
+        Check if "self" is equal with another object given a set of attributes to compare.
+
         Args:
-            y: self==y
+            y (Any): Object to compare
 
+        Returns:
+            bool: True if equal False if not.
         """
-
         if not (torch.cat(self.shares) == torch.cat(y.shares)).all():
             return False
 
-        if not (self.session == y.session):
+        if not self.config == y.config:
+            return False
+
+        if self.session_uuid and y.session_uuid and self.session_uuid != y.session_uuid:
             return False
 
         return True
