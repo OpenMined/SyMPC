@@ -91,16 +91,19 @@ def cat(tensors, dim=0):
     return result
 
 
-def cat_share_tensor(*shares):
+def cat_share_tensor(session_uuid_str, *shares):
     """Helper method that performs torch.cat on the shares of the Tensors.
 
     Args:
+        session_uuid_str (str): UUID to identify the session on each party side.
         shares: Shares of the tensors to be concatenated
 
     Returns:
         ShareTensorPointer: Respective shares after concatenation
     """
-    result = ShareTensor(config=shares[0].session.config)
+    session = get_session(session_uuid_str)
+    result = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
+
     result.tensor = torch.cat([share.tensor for share in shares])
     return result
 
