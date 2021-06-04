@@ -2,7 +2,6 @@
 
 Examples: torch.stack, torch.argmax
 """
-
 # stdlib
 from typing import Callable
 from typing import Dict
@@ -146,19 +145,19 @@ def helper_argmax(
     """
     # for each share in MPCTensor
     #   do the algorithm portrayed in paper (helper_argmax_pairwise)
-    #   results in creating two matrices and substracting them
+    #   results in creating two matrices and subtraction them
     prep_x = x.flatten() if dim is None else x
     args = [[share_ptr_tensor, dim] for share_ptr_tensor in prep_x.share_ptrs]
     shares = parallel_execution(helper_argmax_pairwise, prep_x.session.parties)(args)
 
     # then create an MPCTensor tensor based on this results per share
-    # (we can do that bc substraction can be done in mpc fashion out of the box)
+    # (we can do that bc subtraction can be done in mpc fashion out of the box)
 
     x_pairwise = MPCTensor(
         shares=shares, session=x.session, shape=shares[0].shape.get()
     )
 
-    # with the MPCTensor tensor we check what entries are postive
+    # with the MPCTensor tensor we check what entries are positive
     # then we check what columns of M matrix have m-1 non-zero entries after comparison
     # (by summing over cols)
     pairwise_comparisons = x_pairwise >= 0

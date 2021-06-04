@@ -9,7 +9,7 @@ from typing import DefaultDict
 from typing import Dict
 from typing import List
 
-from sympc.session.session import Session
+from sympc.session import Session
 
 
 class CryptoPrimitiveProvider:

@@ -25,7 +25,6 @@ from sympc.utils import islocal
 from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
-# external member functions of MPCTensor
 from .tensor import SyMPCTensor
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
@@ -826,13 +825,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
 
         # TODO: Fix this
-        from .static import STATIC_FUNCS
-
-        # Add all member functions that are defined outside of this class
-        if attr_name in STATIC_FUNCS:
-            return functools.partial(STATIC_FUNCS[attr_name], self)
-
-        # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
         from sympc.tensor.static import STATIC_FUNCS
 
@@ -858,7 +850,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return object.__getattribute__(self, attr_name)
 
     def backward(self, gradient: Optional["MPCTensor"] = None) -> None:
-        """Perform the backward step on the computationl graph.
+        """Perform the backward step on the computational graph.
 
         Args:
             gradient (MPCTensor): The gradient (received) from the computational graph

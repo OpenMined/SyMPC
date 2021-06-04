@@ -7,13 +7,12 @@ import torch
 
 from sympc.session import Session
 from sympc.session import SessionManager
-from sympc.tensor import MPCTensor
 from sympc.tensor.mpc_tensor import MPCTensor
 from sympc.tensor.static import cat
 from sympc.tensor.static import stack
 
 
-def test_argmax_mutiple_max(get_clients) -> None:
+def test_argmax_multiple_max(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
@@ -57,7 +56,7 @@ def test_argmax_dim(dim, keepdim, get_clients) -> None:
     assert (res == expected).all(), f"Expected argmax to be {expected}"
 
 
-def test_max_mutiple_max(get_clients) -> None:
+def test_max_multiple_max(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
