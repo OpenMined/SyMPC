@@ -138,6 +138,7 @@ share_tensor_attrs = [
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.ShareTensor.expand", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
