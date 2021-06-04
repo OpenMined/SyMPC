@@ -2,6 +2,9 @@
 
 Examples: torch.stack, torch.argmax
 """
+# future
+from __future__ import annotations
+
 # stdlib
 from typing import Callable
 from typing import Dict
@@ -152,6 +155,7 @@ def helper_argmax(
 
     # then create an MPCTensor tensor based on this results per share
     # (we can do that bc subtraction can be done in mpc fashion out of the box)
+    from sympc.tensor import MPCTensor
 
     x_pairwise = MPCTensor(
         shares=shares, session=x.session, shape=shares[0].shape.get()
