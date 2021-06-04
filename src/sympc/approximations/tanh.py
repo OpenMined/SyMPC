@@ -75,8 +75,7 @@ def hardtanh(
     Returns:
         MPCTensor: calculated MPCTensor
     """
-    intermediate = [relu(tensor - min_value), relu(tensor - max_value)]
-    intermediate = intermediate[0] - intermediate[1]
+    intermediate = relu(tensor - min_value) - relu(tensor - max_value)
     return intermediate + min_value
 
 
