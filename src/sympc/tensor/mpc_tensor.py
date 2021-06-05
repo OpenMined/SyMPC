@@ -33,7 +33,6 @@ METHODS_FORWARD_ALL_SHARES = {
     "squeeze",
     "unsqueeze",
     "view",
-    "expand",
     "sum",
     "clone",
     "flatten",
@@ -119,7 +118,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         "squeeze",
         "unsqueeze",
         "view",
-        "expand",
         "sum",
         "clone",
         "flatten",
@@ -828,9 +826,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
         from sympc.tensor.static import STATIC_FUNCS
-
-        if attr_name in STATIC_FUNCS.keys():
-            return functools.partial(STATIC_FUNCS[attr_name], self)
 
         if attr_name in STATIC_FUNCS.keys():
             return functools.partial(STATIC_FUNCS[attr_name], self)
