@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622883228087,
+  "lastUpdate": 1622891384281,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1116,6 +1116,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.06880293646855977",
             "extra": "mean: 8.407110641199996 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "NiWaRe@users.noreply.github.com",
+            "name": "Nicolas Remerscheid",
+            "username": "NiWaRe"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3c38813f38d309df8827dd28f2c1354696034956",
+          "message": "Add smpc argmax (#173)\n\n* started implementing smpc argmax\r\n\r\n* add lost code\r\n\r\n* Fix remote call\r\n\r\n* Add max argmax\r\n\r\n* Remove Final from typing\r\n\r\n* Remove changes to precommit config\r\n\r\n* Crypten's version of `sigmoid` chebyshev approx\r\n\r\n* WIP Code\r\n\r\n* Fix\r\n\r\n* Docstrings for static\r\n\r\n* cheby->cheby-aliter, cheby-crypten->cheby\r\nSome more docstrings\r\n\r\n* Fix `parallel_execution` args\r\nThis is due to a new PR being merged\r\nFix method name in tanh\r\n\r\n* Move tests to single file\r\n\r\n* Re-add removed APIs, remove redundant changes\r\nTypos\r\n\r\n* Fix cyclic import for typing hinting\r\nhttps://stackoverflow.com/a/39757388/8878627\r\n\r\n* Support equi of torch.Tensor.expand\r\n\r\n* The right way to manage sessions\r\n\r\n* Add expected shape for shares of pairwise\r\n\r\n* Oops, how did you get commited?\r\n\r\n* Fix expected shape\r\n\r\n* Fix tests\r\n\r\n* Change math.prod to np.prod\r\n\r\n* Remove methods that are not called on a remote tensor from api\r\n\r\n* Remove duplicate check\r\n\r\nCo-authored-by: George Muraru <murarugeorgec@gmail.com>\r\nCo-authored-by: Syzygianinfern0 <spsharan2000@gmail.com>",
+          "timestamp": "2021-06-05T12:06:04+01:00",
+          "tree_id": "2b4c6436239b892ecf1ad9c3cf412d925ebfbdff",
+          "url": "https://github.com/OpenMined/SyMPC/commit/3c38813f38d309df8827dd28f2c1354696034956"
+        },
+        "date": 1622891383250,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.10042138237223654,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07554276939030835",
+            "extra": "mean: 9.958038580799997 sec\nrounds: 5"
           }
         ]
       }
