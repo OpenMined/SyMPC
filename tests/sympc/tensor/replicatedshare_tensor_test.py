@@ -1,3 +1,6 @@
+# stdlib
+from uuid import uuid4
+
 # third party
 import pytest
 import torch
@@ -13,7 +16,49 @@ from sympc.utils import get_type_from_ring
 def test_import_RSTensor() -> None:
 
     ReplicatedSharedTensor()
-    
+
+
+def test_different_session_ids() -> None:
+    x = torch.randn(1)
+    shares = [x, x]
+    x_share = ReplicatedSharedTensor(shares=shares, session_uuid=uuid4())
+    y_share = ReplicatedSharedTensor(shares=shares, session_uuid=uuid4())
+
+    # Different session ids
+    assert x_share != y_share
+
+
+def test_same_session_id_and_data() -> None:
+    x = torch.randn(1)
+    shares1 = [x, x]
+    y = torch.randn(1)
+    shares2 = [y, y]
+    session_id = uuid4()
+    x_share = ReplicatedSharedTensor(shares=shares1, session_uuid=session_id)
+    y_share = ReplicatedSharedTensor(shares=shares2, session_uuid=session_id)
+
+    # Different shares list
+    assert x_share != y_share
+
+
+def test_different_config() -> None:
+    x = torch.randn(1)
+    shares = [x, x]
+    session_id = uuid4()
+    config1 = Config(encoder_precision=10, encoder_base=2)
+    config2 = Config(encoder_precision=12, encoder_base=10)
+    x_share = ReplicatedSharedTensor(
+        shares=shares, session_uuid=session_id, config=config1
+    )
+    y_share = ReplicatedSharedTensor(
+        shares=shares, session_uuid=session_id, config=config2
+    )
+
+    # Different fixed point config
+    assert x_share != y_share
+
+
+@pytest.mark.skip(reason="Will be added after RSTensor Proto")
 def test_send_get(get_clients, precision=12, base=4) -> None:
 
     client = get_clients(1)[0]
@@ -22,7 +67,10 @@ def test_send_get(get_clients, precision=12, base=4) -> None:
     share1 = torch.Tensor([1.4, 2.34, 3.43])
     share2 = torch.Tensor([1, 2, 3])
     share3 = torch.Tensor([1.4, 2.34, 3.43])
-    x_share = ReplicatedSharedTensor(shares=[share1, share2, share3], session=session)
+    session_uuid = session.rank_to_uuid[0]
+    x_share = ReplicatedSharedTensor(
+        shares=[share1, share2, share3], session_uuid=session_uuid
+    )
     x_ptr = x_share.send(client)
     result = x_ptr.get()
 
