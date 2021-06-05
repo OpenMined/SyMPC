@@ -6,7 +6,6 @@ Examples: torch.stack, torch.argmax
 from __future__ import annotations
 
 # stdlib
-import math
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -16,6 +15,7 @@ from typing import Union
 from uuid import UUID
 
 # third party
+import numpy as np
 import torch
 
 from sympc.session import get_session
@@ -176,7 +176,7 @@ def helper_argmax(
 
     if not one_hot:
         if dim is None:
-            check = result * torch.Tensor([i for i in range(math.prod(res_shape))])
+            check = result * torch.Tensor([i for i in range(np.prod(res_shape))])
         else:
             size = [1 for _ in range(len(res_shape))]
             size[dim] = res_shape[dim]
