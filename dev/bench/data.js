@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622891384281,
+  "lastUpdate": 1622896922460,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1147,6 +1147,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.07554276939030835",
             "extra": "mean: 9.958038580799997 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George Muraru",
+            "username": "gmuraru"
+          },
+          "distinct": true,
+          "id": "79b51c5f677e4f0537f1cf5c4cfd72c35d0fad51",
+          "message": "Add SNYK Token",
+          "timestamp": "2021-06-05T13:38:02+01:00",
+          "tree_id": "b31f4934442d9b455365b8fd75781de178e474da",
+          "url": "https://github.com/OpenMined/SyMPC/commit/79b51c5f677e4f0537f1cf5c4cfd72c35d0fad51"
+        },
+        "date": 1622896920764,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.10023625473341226,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07637812269532646",
+            "extra": "mean: 9.976430211399997 sec\nrounds: 5"
           }
         ]
       }
