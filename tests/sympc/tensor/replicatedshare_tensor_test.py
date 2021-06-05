@@ -58,7 +58,7 @@ def test_different_config() -> None:
     assert x_share != y_share
 
 
-@pytest.mark.skip(reason="Will be added after RSTensor Proto")
+# @pytest.mark.skip(reason="Will be added after RSTensor Proto")
 def test_send_get(get_clients, precision=12, base=4) -> None:
 
     client = get_clients(1)[0]
