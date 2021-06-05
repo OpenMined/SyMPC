@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1622828003059,
+  "lastUpdate": 1622880115382,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1054,6 +1054,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.052045552826054",
             "extra": "mean: 9.284947563200006 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "3aa4703451665f63fca888fe9e53d106828c624c",
+          "message": "added tests and fixed GradPow, GradMatMul (#211)\n\n* added tests and fixed GradPow, GradMatMul\r\n\r\n* added exception case for pow\r\n\r\n* added seprate tests\r\n\r\n* foxed tests",
+          "timestamp": "2021-06-05T08:53:00+01:00",
+          "tree_id": "944968ac1ad7a58929bf7dec0372dd9a93c54860",
+          "url": "https://github.com/OpenMined/SyMPC/commit/3aa4703451665f63fca888fe9e53d106828c624c"
+        },
+        "date": 1622880113736,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.11814659910165741,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0466382874547533",
+            "extra": "mean: 8.464060816000005 sec\nrounds: 5"
           }
         ]
       }
