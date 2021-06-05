@@ -250,11 +250,12 @@ def max_mpc(
     return res
 
 
-# from syft < 0.3.0
 def helper_argmax_pairwise(
     session_uuid_str, share: ShareTensor, dim: Optional[Union[int, Tuple[int]]] = None
 ) -> ShareTensor:
     """Helper function that would compute the difference between all the elements in a tensor.
+
+    Credits goes to the CrypTen team.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.

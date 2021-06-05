@@ -113,18 +113,9 @@ share_tensor_attrs = [
     ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.expand", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.helper_argmax_pairwise", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.repeat", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.dim", "syft.lib.python.Int"),
-    ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.flatten", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.expand", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.roll", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.shape", "syft.lib.python.Tuple"),
 ]
 
