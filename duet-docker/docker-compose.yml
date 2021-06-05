@@ -1,0 +1,12 @@
+version: '3'
+services:
+  duet-base:
+    build: .
+  data-owner:
+    build: ./owner
+    ports:
+      - 8888:8888
+  data-scientist:
+    build: ./scientist
+    ports:
+      - 8889:8889
