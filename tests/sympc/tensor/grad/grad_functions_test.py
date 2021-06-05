@@ -492,9 +492,8 @@ def test_grad_pow_forward_exception(get_clients, power) -> None:
 
     ctx = {}
 
-    if not isinstance(power, int):
-        with pytest.raises(TypeError):
-            GradPow.forward(ctx, x_mpc, power)
+    with pytest.raises(TypeError):
+        GradPow.forward(ctx, x_mpc, power)
 
 
 @pytest.mark.parametrize("power", [2, 4, 5])
