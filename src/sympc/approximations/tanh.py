@@ -94,7 +94,6 @@ def chebyshev_series(func: Callable, width: int, terms: int) -> Tensor:
 
     Returns:
         Tensor: Chebyshev coefficients with shape equal to num of terms.
-
     """
     n_range = torch.arange(start=0, end=terms).float()
     x = width * torch.cos((n_range + 0.5) * np.pi / terms)
