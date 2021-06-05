@@ -489,7 +489,16 @@ class ShareTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def reconstruct(share_ptrs: List["ShareTensor"], get_shares=False):
-        """Reconstruct original value from shares."""
+        """Reconstruct original value from shares.
+
+        Args:
+            share_ptrs (List[ShareTensor]): List of sharetensors.
+            get_shares (boolean): retrieve shares or reconstructed value.
+
+        Returns:
+            plaintext/shares (torch.Tensor/List[torch.Tensors]): Plaintext or list of shares.
+
+        """
 
         def _request_and_get(share_ptr: ShareTensor) -> ShareTensor:
             """Function used to request and get a share - Duet Setup.

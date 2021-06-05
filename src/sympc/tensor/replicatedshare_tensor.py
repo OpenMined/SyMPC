@@ -117,7 +117,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return shares
 
     def get_shares(self):
-        """Get shares."""
+        """Get shares.
+
+        Returns:
+            List[torch.Tensor]: List of shares.
+        """
         return self.shares
 
     def add(self, y):
@@ -233,9 +237,20 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def reconstruct(share_ptrs: List["ShareTensor"], get_shares=False):
-        """Reconstruct value from shares."""
+        """Reconstruct value from shares or return shares.
+
+        Args:
+            share_ptrs (List[RSTensorPointers]): List of RSTensor pointers.
+            get_shares (boolean): Return reconstructed values or just shares.
+
+        Returns:
+            reconstructed_value
+        """
         shares1 = share_ptrs[0].get_shares()[0].get()
         shares2 = share_ptrs[1].get_shares().get()
+
+        if get_shares:
+            return [shares1] + shares2
 
         return shares1 + sum(shares2)
 
@@ -245,7 +260,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Args:
             shares (List[ShareTensor): list of shares to distribute.
-            parties (List[Client]): list to parties to distribute.
+            session (Session): Session.
 
         Returns:
             List of ShareTensorPointers.
@@ -262,8 +277,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             for j in range(i, i + nshares):
                 if j < len(parties):
                     tensor = shares[j].tensor
-                    # print(tensor)
-                    # sptr = tensor.send(parties[i])
                     party_ptrs.append(tensor)
 
             for j in range(0, nshares - len(party_ptrs)):

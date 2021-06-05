@@ -287,6 +287,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Given a secret, split it into a number of shares such that each
         party would get one.
+
         Args:
             secret (Union[ShareTensor, torch.Tensor, float, int]): Secret to split.
             nr_parties (int): Number of parties to split the scret.
