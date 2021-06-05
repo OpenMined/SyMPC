@@ -822,7 +822,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return object.__getattribute__(self, attr_name)
 
     def backward(self, gradient: Optional["MPCTensor"] = None) -> None:
-        """Perform the backward step on the computationl graph.
+        """Perform the backward step on the computational graph.
 
         Args:
             gradient (MPCTensor): The gradient (received) from the computational graph
@@ -963,7 +963,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":
-        """Lower or than operator.
+        """Lower or equal operator.
 
         Args:
             other (MPCTensor): MPCTensor to compare.

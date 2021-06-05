@@ -56,3 +56,10 @@ jobs:
         run: |
           bandit -r src
           safety check
+
+      - name: Snyk security check
+        uses: snyk/actions/python-3.8@master
+        env:
+          SNYK_TOKEN: ${{secrets.SNYK_TOKEN}}
+        with:
+          args: --skip-unresolved
