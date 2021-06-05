@@ -21,9 +21,7 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
-from sympc.utils import islocal
 from sympc.utils import ispointer
-from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
 
@@ -289,7 +287,6 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Given a secret, split it into a number of shares such that each
         party would get one.
-
         Args:
             secret (Union[ShareTensor, torch.Tensor, float, int]): Secret to split.
             nr_parties (int): Number of parties to split the scret.
@@ -373,42 +370,21 @@ class MPCTensor(metaclass=SyMPCTensor):
         Returns:
             torch.Tensor. The secret reconstructed.
         """
+        plaintext = self.session.protocol.share_class.reconstruct(
+            self.share_ptrs, get_shares
+        )
 
-        def _request_and_get(share_ptr: ShareTensor) -> ShareTensor:
-            """Function used to request and get a share - Duet Setup.
-
-            Args:
-                share_ptr (ShareTensor): a ShareTensor
-
-            Returns:
-                ShareTensor. The ShareTensor in local.
-
-            """
-            if not islocal(share_ptr):
-                share_ptr.request(block=True)
-            res = share_ptr.get_copy()
-            return res
-
-        request = _request_and_get
-        request_wrap = parallel_execution(request)
-
-        args = [[share] for share in self.share_ptrs]
-        local_shares = request_wrap(args)
-
-        shares = [share.tensor for share in local_shares]
-
-        if get_shares:
-            return shares
-
-        plaintext = sum(shares)
-
-        if decode:
+        if decode and not get_shares:
             fp_encoder = FixedPointEncoder(
                 base=self.session.config.encoder_base,
                 precision=self.session.config.encoder_precision,
             )
 
             plaintext = fp_encoder.decode(plaintext)
+
+        else:
+
+            return plaintext
 
         return plaintext
 

@@ -178,6 +178,7 @@ allowed_external_attrs = [
         "sympc.tensor.ReplicatedSharedTensor.clone",
         "sympc.tensor.ReplicatedSharedTensor",
     ),
+    ("sympc.tensor.ReplicatedSharedTensor.get_shares", "syft.lib.python.List"),
     (
         "sympc.tensor.ReplicatedSharedTensor.numel",
         "syft.lib.python.Int",  # FIXME: Can't we just return an int??

@@ -15,6 +15,8 @@ import torch
 
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
+from sympc.session import Session
+from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
@@ -64,9 +66,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.ring_size = ring_size
 
         self.config = config
-        self.fp_encoder = FixedPointEncoder(
-            base=config.encoder_base, precision=config.encoder_precision
-        )
+        self.fp_encoder = None
+
+        if (self.config.encoder_precision is not None) and (
+            self.config.encoder_base is not None
+        ):
+
+            self.fp_encoder = FixedPointEncoder(
+                base=config.encoder_base, precision=config.encoder_precision
+            )
 
         tensor_type = get_type_from_ring(ring_size)
         self.shares = []
@@ -75,7 +83,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 self.shares.append(self._encode(shares[i]).to(tensor_type))
 
     def _encode(self, data):
-        return self.fp_encoder.encode(data)
+
+        if self.fp_encoder:
+            return self.fp_encoder.encode(data)
+
+        return data
 
     def decode(self):
         """Decode via FixedPointEncoder.
@@ -92,11 +104,21 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             List[torch.Tensor]: Decoded values
         """
         shares = []
-        for i in range(len(self.shares)):
-            tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
-            shares.append(tensor)
+
+        if self.fp_encoder:
+            for i in range(len(self.shares)):
+                tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
+                shares.append(tensor)
+
+        else:
+
+            return self.shares
 
         return shares
+
+    def get_shares(self):
+        """Get shares."""
+        return self.shares
 
     def add(self, y):
         """Apply the "add" operation between "self" and "y".
@@ -208,6 +230,53 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             y: self!=y
 
         """
+
+    @staticmethod
+    def reconstruct(share_ptrs: List["ShareTensor"], get_shares=False):
+        """Reconstruct value from shares."""
+        shares1 = share_ptrs[0].get_shares()[0].get()
+        shares2 = share_ptrs[1].get_shares().get()
+
+        return shares1 + sum(shares2)
+
+    @staticmethod
+    def distribute_shares(shares: List[ShareTensor], session: Session):
+        """Distribute a list of shares.
+
+        Args:
+            shares (List[ShareTensor): list of shares to distribute.
+            parties (List[Client]): list to parties to distribute.
+
+        Returns:
+            List of ShareTensorPointers.
+
+        """
+        parties = session.parties
+
+        nshares = len(parties) - 1
+
+        ptr_list = []
+        for i in range(0, len(parties)):
+            party_ptrs = []
+
+            for j in range(i, i + nshares):
+                if j < len(parties):
+                    tensor = shares[j].tensor
+                    # print(tensor)
+                    # sptr = tensor.send(parties[i])
+                    party_ptrs.append(tensor)
+
+            for j in range(0, nshares - len(party_ptrs)):
+
+                ptr = shares[j].tensor
+                party_ptrs.append(ptr)
+
+            tensor = ReplicatedSharedTensor(
+                party_ptrs, config=Config(encoder_base=None, encoder_precision=None)
+            ).send(parties[i])
+            ptr_list.append(tensor)
+
+        return ptr_list
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
