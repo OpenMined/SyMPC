@@ -230,8 +230,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 tensor = getattr(_self.shares[i], property_name)
                 shares.append(tensor)
 
-            res = ReplicatedSharedTensor(session=_self.session, shares=shares)
-
+            res = ReplicatedSharedTensor(
+                session_uuid=_self.session_uuid, config=_self.config
+            )
+            res.shares = shares
             return res
 
         def property_getter(_self: "ReplicatedSharedTensor") -> Any:
@@ -271,8 +273,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 tensor = getattr(_self.shares[i], method_name)(*args, **kwargs)
                 shares.append(tensor)
 
-            res = ReplicatedSharedTensor(session=_self.session, shares=shares)
-
+            res = ReplicatedSharedTensor(
+                session_uuid=_self.session_uuid, config=_self.config
+            )
+            res.shares = shares
             return res
 
         def method(

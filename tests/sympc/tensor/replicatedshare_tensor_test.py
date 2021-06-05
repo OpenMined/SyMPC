@@ -50,7 +50,6 @@ def test_fixed_point(precision, base) -> None:
     assert (torch.cat(shares) == torch.cat(rst.decode())).all()
 
 
-@pytest.mark.skip(reason="Will be refactored to use session_uuid")
 def test_hook_method(get_clients) -> None:
     clients = get_clients(3)
     session = Session(parties=clients)
@@ -60,7 +59,8 @@ def test_hook_method(get_clients) -> None:
     y = torch.randn(1, 3)
     shares = [x, y]
 
-    rst = ReplicatedSharedTensor(shares=shares, session=session)
+    rst = ReplicatedSharedTensor()
+    rst.shares = shares
 
     assert rst.numel() == x.numel()
     assert (rst.t().shares[0] == x.t()).all()
@@ -75,7 +75,6 @@ def test_hook_method(get_clients) -> None:
     assert (rst.sum().shares[1] == y.sum()).all()
 
 
-@pytest.mark.skip(reason="Will be refactored to use session_uuid")
 def test_hook_property(get_clients) -> None:
     clients = get_clients(3)
     session = Session(parties=clients)
@@ -85,7 +84,8 @@ def test_hook_property(get_clients) -> None:
     y = torch.randn(1, 3)
     shares = [x, y]
 
-    rst = ReplicatedSharedTensor(shares=shares, session=session)
+    rst = ReplicatedSharedTensor()
+    rst.shares = shares
 
     assert (rst.T.shares[0] == x.T).all()
     assert (rst.T.shares[1] == y.T).all()
