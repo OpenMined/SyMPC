@@ -2,6 +2,7 @@
 from uuid import uuid4
 
 # third party
+import numpy as np
 import pytest
 import torch
 
@@ -9,6 +10,7 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.session import SessionManager
+from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.utils import get_type_from_ring
 
@@ -137,3 +139,17 @@ def test_hook_property(get_clients) -> None:
 
     assert (rst.T.shares[0] == x.T).all()
     assert (rst.T.shares[1] == y.T).all()
+
+
+def test_rst_distribute_reconstruct(get_clients) -> None:
+    alice_client, bob_client, charles_client = get_clients(3)
+    session = Session(
+        protocol="Falcon", parties=[alice_client, bob_client, charles_client]
+    )
+    SessionManager.setup_mpc(session)
+
+    secret = 42.32
+
+    a = MPCTensor(secret=secret, session=session)
+
+    assert np.allclose(secret, a.reconstruct(), atol=1e-5)

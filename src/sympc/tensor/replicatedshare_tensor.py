@@ -69,12 +69,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.config = config
         self.fp_encoder = None
 
-        print("PRECISION: ", self.config.encoder_precision)
-        print("BASE: ", self.config.encoder_base)
-
-        print(type(self.config.encoder_precision))
-        print(type(self.config.encoder_base))
-
         if (
             self.config.encoder_precision is not None
             and (not isinstance(self.config.encoder_precision, _SyNone))
