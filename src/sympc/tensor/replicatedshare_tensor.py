@@ -11,7 +11,6 @@ from typing import Union
 from uuid import UUID
 
 # third party
-from syft.lib.python import _SyNone
 import torch
 
 from sympc.config import Config
@@ -69,18 +68,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.config = config
         self.fp_encoder = None
 
-        if (
-            self.config.encoder_precision is not None
-            and (not isinstance(self.config.encoder_precision, _SyNone))
-            and (
-                self.config.encoder_base is not None
-                and (not isinstance(self.config.encoder_precision, _SyNone))
-            )
-        ):
-
-            self.fp_encoder = FixedPointEncoder(
-                base=config.encoder_base, precision=config.encoder_precision
-            )
+        self.fp_encoder = FixedPointEncoder(
+            base=config.encoder_base, precision=config.encoder_precision
+        )
 
         tensor_type = get_type_from_ring(ring_size)
         self.shares = []
@@ -89,11 +79,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 self.shares.append(self._encode(shares[i]).to(tensor_type))
 
     def _encode(self, data):
+        """Encode via FixedPointEncoder.
 
-        if self.fp_encoder:
-            return self.fp_encoder.encode(data)
+        Args:
+            data (torch.Tensor): Tensor to be encoded
 
-        return data
+        Returns:
+            encoded_data List(torch.Tensor): Decoded values
+
+        """
+        return self.fp_encoder.encode(data)
 
     def decode(self):
         """Decode via FixedPointEncoder.
@@ -111,14 +106,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         shares = []
 
-        if self.fp_encoder:
-            for i in range(len(self.shares)):
-                tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
-                shares.append(tensor)
-
-        else:
-
-            return self.shares
+        for i in range(len(self.shares)):
+            tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
+            shares.append(tensor)
 
         return shares
 
@@ -291,7 +281,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 party_ptrs.append(ptr)
 
             tensor = ReplicatedSharedTensor(
-                party_ptrs, config=Config(encoder_base=None, encoder_precision=None)
+                party_ptrs, config=Config(encoder_base=1, encoder_precision=0)
             ).send(parties[i])
             ptr_list.append(tensor)
 
