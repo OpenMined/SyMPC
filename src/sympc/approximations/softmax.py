@@ -6,7 +6,7 @@ from sympc.approximations.reciprocal import reciprocal
 from sympc.tensor import MPCTensor
 
 
-def softmax(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
+def softmax(tensor: MPCTensor, dim: int = None) -> MPCTensor:
     """Calculates tanh of given tensor's elements along the given dimension.
 
     Args:
@@ -16,21 +16,22 @@ def softmax(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
     Returns:
         MPCTensor: calculated MPCTensor
     """
+    if dim is None:
+        dim = len(tensor.shape) - 1
+
     # Single Element along dim
     if tensor.shape[dim] == 1:
         return 0 * tensor + 1  # Equivalent to torch.ones_like(tensor)
 
-    # Waiting for https://github.com/OpenMined/SyMPC/pull/173/
     maximum_value = tensor.max(dim, keepdim=True)[0]
     logits = tensor - maximum_value
-    numerator = logits.exp()
+    numerator = exp(logits)
 
-    # Sum not implemented yet
     denominator = numerator.sum(dim, keepdim=True)
     return numerator * reciprocal(denominator)
 
 
-def log_softmax(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
+def log_softmax(tensor: MPCTensor, dim: int = None) -> MPCTensor:
     """Applies a softmax followed by a logarithm.
 
     While mathematically equivalent to log(softmax(x)), doing these two
@@ -44,14 +45,16 @@ def log_softmax(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
     Returns:
         MPCTensor: calculated MPCTensor
     """
-    if tensor.size(dim) == 1:
-        return 0 * tensor + 1  # Equivalent to torch.ones_like(tensor)
+    if dim is None:
+        dim = len(tensor.shape) - 1
 
-    # Waiting for https://github.com/OpenMined/SyMPC/pull/173/
+    # Single Element along dim
+    if tensor.shape[dim] == 1:
+        return 0 * tensor  # Equivalent to torch.zeros_like(tensor)
+
     maximum_value = tensor.max(dim, keepdim=True)[0]
     logits = tensor - maximum_value
 
-    # Sum not implemented yet
     normalize_term = exp(logits).sum(dim, keepdim=True)
     result = logits - log(normalize_term)
     return result
