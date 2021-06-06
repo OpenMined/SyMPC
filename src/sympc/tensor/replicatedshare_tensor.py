@@ -11,6 +11,7 @@ from typing import Union
 from uuid import UUID
 
 # third party
+from syft.lib.python import _SyNone
 import torch
 
 from sympc.config import Config
@@ -18,8 +19,6 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
-
-from syft.lib.python import _SyNone 
 
 from .tensor import SyMPCTensor
 
@@ -69,15 +68,20 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         self.config = config
         self.fp_encoder = None
-    
-        print("PRECISION: ",self.config.encoder_precision)
-        print("BASE: ",self.config.encoder_base)
-        
+
+        print("PRECISION: ", self.config.encoder_precision)
+        print("BASE: ", self.config.encoder_base)
+
         print(type(self.config.encoder_precision))
         print(type(self.config.encoder_base))
 
-        if (self.config.encoder_precision is not None and (not isinstance(self.config.encoder_precision,_SyNone)) and (
-            self.config.encoder_base is not None and (not isinstance(self.config.encoder_precision,_SyNone)))
+        if (
+            self.config.encoder_precision is not None
+            and (not isinstance(self.config.encoder_precision, _SyNone))
+            and (
+                self.config.encoder_base is not None
+                and (not isinstance(self.config.encoder_precision, _SyNone))
+            )
         ):
 
             self.fp_encoder = FixedPointEncoder(
