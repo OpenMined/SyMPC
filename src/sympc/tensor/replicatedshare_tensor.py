@@ -179,13 +179,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         """
 
-    def eq(self, y):
+    def eq(self, y: Any):
         """Equal operator.
 
-        Args:
-            y: self==y
+        Check if "self" is equal with another object given a set of attributes to compare.
 
+        Args:
+            y (Any): Object to compare
+
+        Returns:
+            bool: True if equal False if not.
         """
+        if not (torch.cat(self.shares) == torch.cat(y.shares)).all():
+            return False
+
+        if not self.config == y.config:
+            return False
+
+        if self.session_uuid and y.session_uuid and self.session_uuid != y.session_uuid:
+            return False
+
+        return True
 
     def ne(self, y):
         """Not Equal operator.
@@ -292,3 +306,4 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     __rmatmul__ = rmatmul
     __truediv__ = truediv
     __xor__ = xor
+    __eq__ = eq

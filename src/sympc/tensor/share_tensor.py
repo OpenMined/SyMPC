@@ -24,8 +24,10 @@ from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_SHARE_TENSOR: Set[str] = {"T"}
 METHODS_NEW_SHARE_TENSOR: Set[str] = {
+    "squeeze",
     "unsqueeze",
     "view",
+    "expand",
     "t",
     "sum",
     "clone",
@@ -35,6 +37,7 @@ METHODS_NEW_SHARE_TENSOR: Set[str] = {
     "narrow",
     "dim",
     "transpose",
+    "roll",
 }
 
 
@@ -76,9 +79,11 @@ class ShareTensor(metaclass=SyMPCTensor):
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD: Set[str] = {
         "numel",
+        "squeeze",
         "unsqueeze",
         "t",
         "view",
+        "expand",
         "sum",
         "clone",
         "flatten",
@@ -87,6 +92,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         "narrow",
         "dim",
         "transpose",
+        "roll",
     }
     PROPERTIES_FORWARD: Set[str] = {"T", "shape"}
 

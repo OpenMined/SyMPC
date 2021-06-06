@@ -321,13 +321,21 @@ class GradPow(GradFunc):
 
         Returns:
             x * y (MPCTensor): The result of the multiplication
+
+        Raises:
+            TypeError: If y is not an Integer.
         """
+        if not isinstance(y, int):
+            raise TypeError(
+                f"Expected data type for power is Integer but received {type(y)}"
+            )
+
         ctx["x"] = x
         ctx["y"] = y
         return x ** y
 
     @staticmethod
-    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
         """Perform the backward pass for the multiplication operation.
 
         Args:

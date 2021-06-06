@@ -30,6 +30,7 @@ from .tensor import SyMPCTensor
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
 METHODS_FORWARD_ALL_SHARES = {
     "t",
+    "squeeze",
     "unsqueeze",
     "view",
     "sum",
@@ -114,6 +115,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     METHODS_FORWARD = {
         "numel",
         "t",
+        "squeeze",
         "unsqueeze",
         "view",
         "sum",
@@ -823,6 +825,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         # TODO: Fix this
         from sympc.tensor.grads import GRAD_FUNCS
+        from sympc.tensor.static import STATIC_FUNCS
+
+        if attr_name in STATIC_FUNCS.keys():
+            return functools.partial(STATIC_FUNCS[attr_name], self)
 
         # Take the attribute and check if we need to assign a gradient function
         # Implementation similar to CrypTen
@@ -840,7 +846,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return object.__getattribute__(self, attr_name)
 
     def backward(self, gradient: Optional["MPCTensor"] = None) -> None:
-        """Perform the backward step on the computationl graph.
+        """Perform the backward step on the computational graph.
 
         Args:
             gradient (MPCTensor): The gradient (received) from the computational graph
@@ -981,7 +987,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return res
 
     def le(self, other: "MPCTensor") -> "MPCTensor":
-        """Lower or than operator.
+        """Lower or equal operator.
 
         Args:
             other (MPCTensor): MPCTensor to compare.
