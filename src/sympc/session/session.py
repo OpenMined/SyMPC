@@ -100,7 +100,7 @@ class Session:
         parties: Optional[List[Any]] = None,
         ring_size: int = 2 ** 64,
         config: Optional[Config] = None,
-        protocol: Optional[str] = "FSS",
+        protocol: Optional[Protocol] = None,
         ttp: Optional[Any] = None,
     ) -> None:
         """Initializer for the Session.
@@ -139,10 +139,14 @@ class Session:
             Dict[Any, Any]
         ] = None  # TODO: this should be CryptoStore
 
-        if protocol not in Protocol.registered_protocols:
-            raise ValueError(f"{protocol} not registered!")
+        self.protocol: Protocol = None
+        if protocol is None:
+            self.protocol = Protocol.registered_protocols["FSS"]()
+        else:
+            if type(protocol).__name__ not in Protocol.registered_protocols:
+                raise ValueError(f"{type(protocol).__name__} not registered!")
 
-        self.protocol: Protocol = Protocol.registered_protocols[protocol]
+            self.protocol = protocol
 
         self.config = config if config else Config()
 

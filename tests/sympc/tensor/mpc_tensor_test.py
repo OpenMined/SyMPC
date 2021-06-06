@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -328,7 +329,10 @@ def test_generate_shares_config(get_clients) -> None:
     assert sum(shares_from_share_tensor) == sum(shares_from_secret)
 
 
-@pytest.mark.parametrize("protocol", ["FSS"])
+fss_obj = Protocol.registered_protocols["FSS"]()
+
+
+@pytest.mark.parametrize("protocol", [fss_obj])
 @pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt"])
 def test_comparison_mpc_mpc(get_clients, protocol, op_str) -> None:
     clients = get_clients(2)
@@ -347,7 +351,7 @@ def test_comparison_mpc_mpc(get_clients, protocol, op_str) -> None:
     assert (result == expected_result).all()
 
 
-@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("protocol", [fss_obj])
 @pytest.mark.parametrize("op_str", ["eq", "ne"])
 def test_equality_mpc_mpc(get_clients, protocol, op_str) -> None:
     clients = get_clients(2)
@@ -366,7 +370,7 @@ def test_equality_mpc_mpc(get_clients, protocol, op_str) -> None:
     assert (result == expected_result).all()
 
 
-@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("protocol", [fss_obj])
 @pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt", "eq", "ne"])
 def test_comp_mpc_public(get_clients, protocol, op_str) -> None:
     clients = get_clients(2)
@@ -384,7 +388,7 @@ def test_comp_mpc_public(get_clients, protocol, op_str) -> None:
     assert (result == expected_result).all()
 
 
-@pytest.mark.parametrize("protocol", ["FSS"])
+@pytest.mark.parametrize("protocol", [fss_obj])
 @pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt", "eq", "ne"])
 def test_comp_public_mpc(get_clients, protocol, op_str) -> None:
     clients = get_clients(2)

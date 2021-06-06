@@ -13,6 +13,7 @@ from sympc.tensor import ShareTensor
 
 class TestProtocol(metaclass=Protocol):
     share_class = ShareTensor
+    security_levels = ["semi-honest", "malicious", "covert"]
 
 
 def test_register_protocol() -> None:
@@ -23,8 +24,27 @@ def test_register_protocol() -> None:
 def test_exception_no_share_class() -> None:
     with pytest.raises(ValueError):
 
-        class TestProtocolException(metaclass=Protocol):
-            ...
+        class TestProtocolShareException(metaclass=Protocol):
+            security_levels = ["semi-honest"]
+
+
+def test_exception_no_security_levels() -> None:
+    with pytest.raises(ValueError):
+
+        class TestProtocolSecurityException(metaclass=Protocol):
+            share_class = ShareTensor
+
+
+def test_protocol_class_same_name() -> None:
+    class TestName(metaclass=Protocol):
+        share_class = ShareTensor
+        security_levels = ["semi-honest"]
+
+    with pytest.raises(ValueError):
+
+        class TestName(metaclass=Protocol):
+            share_class = ShareTensor
+            security_levels = ["semi-honest"]
 
 
 def test_exception_unsupported_fss_operation():
