@@ -19,6 +19,8 @@ from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
 
+from syft.lib.python import _SyNone 
+
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
@@ -67,9 +69,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         self.config = config
         self.fp_encoder = None
+    
+        print("PRECISION: ",self.config.encoder_precision)
+        print("BASE: ",self.config.encoder_base)
+        
+        print(type(self.config.encoder_precision))
+        print(type(self.config.encoder_base))
 
-        if (self.config.encoder_precision is not None) and (
-            self.config.encoder_base is not None
+        if (self.config.encoder_precision is not None and (not isinstance(self.config.encoder_precision,_SyNone)) and (
+            self.config.encoder_base is not None and (not isinstance(self.config.encoder_precision,_SyNone)))
         ):
 
             self.fp_encoder = FixedPointEncoder(
@@ -244,7 +252,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             get_shares (boolean): Return reconstructed values or just shares.
 
         Returns:
-            reconstructed_value
+            reconstructed_value (torch.Tensor): Reconstructed value.
         """
         shares1 = share_ptrs[0].get_shares()[0].get()
         shares2 = share_ptrs[1].get_shares().get()
