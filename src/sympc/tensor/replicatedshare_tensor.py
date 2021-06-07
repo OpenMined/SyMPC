@@ -244,11 +244,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         shares1 = share_ptrs[0].get_shares()[0].get()
         shares2 = share_ptrs[1].get_shares().get()
+        shares = shares2.append(shares1)
 
         if get_shares:
-            return [shares1] + shares2
+            return shares
 
-        return shares1 + sum(shares2)
+        return sum(shares)
 
     @staticmethod
     def distribute_shares(shares: List[ShareTensor], session: Session):
@@ -281,7 +282,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 party_ptrs.append(ptr)
 
             tensor = ReplicatedSharedTensor(
-                party_ptrs, config=Config(encoder_base=1, encoder_precision=0)
+                party_ptrs,
+                config=Config(encoder_base=1, encoder_precision=0),
             ).send(parties[i])
             ptr_list.append(tensor)
 

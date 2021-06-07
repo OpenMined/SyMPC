@@ -141,11 +141,24 @@ def test_hook_property(get_clients) -> None:
     assert (rst.T.shares[1] == y.T).all()
 
 
-def test_rst_distribute_reconstruct(get_clients) -> None:
-    alice_client, bob_client, charles_client = get_clients(3)
-    session = Session(
-        protocol="Falcon", parties=[alice_client, bob_client, charles_client]
-    )
+@pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
+def test_distribute_sharecount(get_clients, parties) -> None:
+    parties = get_clients(3)
+    session = Session(protocol="Falcon", parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = 42.32
+
+    a = MPCTensor(secret=secret, session=session)
+
+    for share in a.share_ptrs:
+        assert len(share.get_shares().get()) == (len(parties) - 1)
+
+
+@pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
+def test_rst_distribute_reconstruct(get_clients, parties) -> None:
+    parties = get_clients(3)
+    session = Session(protocol="Falcon", parties=parties)
     SessionManager.setup_mpc(session)
 
     secret = 42.32
