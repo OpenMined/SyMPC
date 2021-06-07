@@ -1,4 +1,5 @@
 # third party
+import pytest
 import torch
 
 from sympc.protocol import FSS
@@ -21,3 +22,8 @@ def test_share_tensor(get_clients) -> None:
     distributed_shares = FSS.distribute_shares(shares, session=session)
 
     assert all(ispointer(share_ptr) for share_ptr in distributed_shares)
+
+
+def test_invalid_security_type():
+    with pytest.raises(ValueError):
+        FSS(security_type="malicious")
