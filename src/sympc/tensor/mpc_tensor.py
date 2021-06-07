@@ -356,7 +356,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return shares
 
     def reconstruct(
-        self, decode: bool = True, get_shares: bool = False
+        self, decode: bool = True
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
         """Reconstruct the secret.
 
@@ -366,16 +366,13 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Args:
             decode (bool): True if decode using FixedPointEncoder. Defaults to True
-            get_shares (bool): True if get shares. Defaults to False.
 
         Returns:
             torch.Tensor. The secret reconstructed.
         """
-        plaintext = self.session.protocol.share_class.reconstruct(
-            self.share_ptrs, get_shares
-        )
+        plaintext = self.session.protocol.share_class.reconstruct(self.share_ptrs)
 
-        if decode and not get_shares:
+        if decode:
             fp_encoder = FixedPointEncoder(
                 base=self.session.config.encoder_base,
                 precision=self.session.config.encoder_precision,

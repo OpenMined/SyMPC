@@ -232,12 +232,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
 
     @staticmethod
-    def reconstruct(share_ptrs: List["ShareTensor"], get_shares=False):
-        """Reconstruct value from shares or return shares.
+    def reconstruct(share_ptrs: List["ReplicatedSharedTensor"]) -> torch.Tensor:
+        """Reconstruct value from shares.
 
         Args:
             share_ptrs (List[RSTensorPointers]): List of RSTensor pointers.
-            get_shares (boolean): Return reconstructed values or just shares.
 
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
@@ -249,13 +248,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         shares = []
         shares = [shares1] + shares2
 
-        if get_shares:
-            return shares
-
         return sum(shares)
 
     @staticmethod
-    def distribute_shares(shares: List[ShareTensor], session: Session):
+    def distribute_shares(shares: List[ShareTensor], session: Session) -> List:
         """Distribute a list of shares.
 
         Args:
