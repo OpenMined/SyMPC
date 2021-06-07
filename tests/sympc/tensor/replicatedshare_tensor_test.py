@@ -143,7 +143,7 @@ def test_hook_property(get_clients) -> None:
 
 @pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
 def test_distribute_sharecount(get_clients, parties) -> None:
-    parties = get_clients(3)
+    parties = get_clients(parties)
     session = Session(protocol="Falcon", parties=parties)
     SessionManager.setup_mpc(session)
 
@@ -157,7 +157,7 @@ def test_distribute_sharecount(get_clients, parties) -> None:
 
 @pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
 def test_rst_distribute_reconstruct(get_clients, parties) -> None:
-    parties = get_clients(3)
+    parties = get_clients(parties)
     session = Session(protocol="Falcon", parties=parties)
     SessionManager.setup_mpc(session)
 

@@ -241,10 +241,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
+
         """
         shares1 = share_ptrs[0].get_shares()[0].get()
         shares2 = share_ptrs[1].get_shares().get()
-        shares = shares2.append(shares1)
+
+        shares = []
+        shares = [shares1] + shares2
 
         if get_shares:
             return shares
@@ -284,6 +287,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             tensor = ReplicatedSharedTensor(
                 party_ptrs,
                 config=Config(encoder_base=1, encoder_precision=0),
+                session_uuid=session.rank_to_uuid[i],
             ).send(parties[i])
             ptr_list.append(tensor)
 
