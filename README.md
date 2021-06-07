@@ -14,7 +14,6 @@
 <a href=""><img src="https://github.com/OpenMined/SyMPC/actions/workflows/tests.yml/badge.svg" /></a>
 <a href="https://openmined.slack.com/messages/support"><img src="https://img.shields.io/badge/chat-on%20slack-7A5979.svg" /></a>
 <a href="https://codecov.io/gh/OpenMined/SyMPC"><img src="https://codecov.io/gh/OpenMined/SyMPC/branch/main/graph/badge.svg?token=TS2rZyJRlo" /></a>
-    
 
 
 SyMPC **/ˈsɪmpəθi/** is a library which extends [PySyft](https://github.com/OpenMined/PySyft) ≥0.3 with SMPC support. It allows to compute over encrypted data, to evaluate and to train neural networks.
@@ -22,8 +21,25 @@ SyMPC **/ˈsɪmpəθi/** is a library which extends [PySyft](https://github.com/
 Installation
 ------------
 
+SyMPC is a companion library for PySyft. Therefore, we will need to install pysyft among other dependencies. We recommend using a virtual environment like conda.
+
+```
+$ conda create -n sympc python=3.9
+$ conda activate sympc
+$ pip install -r requirements.txt
+$ pip install .
+```
+
 Getting Started
 ---------------
+
+If we want to start learning how to use SyMPC we can go to the `examples` folder and execute the `introduction.ipynb`.
+
+```
+$ conda activate sympc
+$ pip install jupyter
+$ jupyter notebook examples/introduction.ipynb
+```
 
 Contributing
 ------------
