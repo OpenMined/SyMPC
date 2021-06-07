@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623051786813,
+  "lastUpdate": 1623080975294,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -589,6 +589,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.042441768227393456",
             "extra": "mean: 7.992140894200008 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a96797d62ecfd4f7e70a476a37dd45113f710ee4",
+          "message": "Added security_type attribute to protocol (#222)\n\n* Added security_type attribute to protocol\r\n\r\n* fix typos and rename fss tests",
+          "timestamp": "2021-06-07T20:27:24+05:30",
+          "tree_id": "39e8e62b85af7fff791755fe5a725bfffcab8ff5",
+          "url": "https://github.com/OpenMined/SyMPC/commit/a96797d62ecfd4f7e70a476a37dd45113f710ee4"
+        },
+        "date": 1623080974692,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.1056705220910013,
+            "unit": "iter/sec",
+            "range": "stddev: 0.12177699204897714",
+            "extra": "mean: 9.463377110400007 sec\nrounds: 5"
           }
         ]
       }
