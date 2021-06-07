@@ -43,7 +43,7 @@ $ jupyter notebook examples/introduction.ipynb
 
 Contributing
 ------------
-We are open to colaboration! If you want to start contributing you only need to:
+We are open to collaboration! If you want to start contributing you only need to:
 
 1. Check the [contributing guidelines](https://github.com/OpenMined/SyMPC/blob/main/CONTRIBUTING.md).
 2. Search for an issue in which you would like to work. Issues for newcomers are labeled with `good first issue`.
