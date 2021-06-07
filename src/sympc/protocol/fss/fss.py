@@ -183,12 +183,12 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 class FSS(metaclass=Protocol):
     """Function Secret Sharing."""
 
-    """ Used for Share Level static operations like distrubuting the shares."""
+    """ Used for Share Level static operations like distributing the shares."""
     share_class: SyMPCTensor = ShareTensor
     security_levels: List[str] = ["semi-honest"]
 
     def __init__(self, security_type: str = "semi-honest"):
-        """Intializer for the Protocol.
+        """Initialization of the Protocol.
 
         Args:
             security_type : specifies the security level of the Protocol.
@@ -197,7 +197,7 @@ class FSS(metaclass=Protocol):
             ValueError : If invalid security_type is provided.
         """
         if security_type not in self.security_levels:
-            raise ValueError(f"{security_type} is not a valid securtiy type")
+            raise ValueError(f"{security_type} is not a valid security type")
 
         self.security_type = security_type
 

@@ -16,12 +16,12 @@ from sympc.tensor.tensor import SyMPCTensor
 class Falcon(metaclass=Protocol):
     """Falcon Protocol Implementation."""
 
-    """Used for Share Level static operations like distrubuting the shares."""
+    """Used for Share Level static operations like distributing the shares."""
     share_class: SyMPCTensor = ReplicatedSharedTensor
     security_levels: List[str] = ["semi-honest", "malicious"]
 
     def __init__(self, security_type: str = "semi-honest"):
-        """Intializer for the Protocol.
+        """Initialization of the Protocol.
 
         Args:
             security_type : specifies the security level of the Protocol.
@@ -30,7 +30,7 @@ class Falcon(metaclass=Protocol):
             ValueError : If invalid security_type is provided.
         """
         if security_type not in self.security_levels:
-            raise ValueError(f"{security_type} is not a valid securtiy type")
+            raise ValueError(f"{security_type} is not a valid security type")
 
         self.security_type = security_type
 
