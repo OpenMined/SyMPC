@@ -789,6 +789,14 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         return result
 
+    def __len__(self) -> int:
+        """Return the length of MPCTensor.
+
+        Returns:
+            int: Length
+        """
+        return self.shape[0]
+
     def __str__(self) -> str:
         """Return the string representation of MPCTensor.
 
