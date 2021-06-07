@@ -270,6 +270,17 @@ def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-3)
 
 
+def test_mpc_len(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    for dim in range(1, 5):
+        x_secret = torch.arange(-6, 6).view(dim, -1)
+        x = MPCTensor(secret=x_secret, session=session)
+        assert len(x_secret) == len(x)
+
+
 def test_mpc_print(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
