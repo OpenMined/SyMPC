@@ -24,7 +24,9 @@ def softmax(tensor: MPCTensor, dim: Optional[int] = None) -> MPCTensor:
 
     # Single Element along dim
     if tensor.shape[dim] == 1:
-        return 0 * tensor + 1  # Equivalent to torch.ones_like(tensor)
+        przs = MPCTensor.generate_przs(shape=tensor.shape, session=tensor.session)
+        zeros = MPCTensor(tensor.session, shape=tensor.shape, shares=przs)
+        return zeros + 1  # Equivalent to torch.ones_like(tensor)
 
     maximum_value = tensor.max(dim, keepdim=True)[0]
     logits = tensor - maximum_value
@@ -53,7 +55,9 @@ def log_softmax(tensor: MPCTensor, dim: Optional[int] = None) -> MPCTensor:
 
     # Single Element along dim
     if tensor.shape[dim] == 1:
-        return 0 * tensor  # Equivalent to torch.zeros_like(tensor)
+        przs = MPCTensor.generate_przs(shape=tensor.shape, session=tensor.session)
+        zeros = MPCTensor(tensor.session, shape=tensor.shape, shares=przs)
+        return zeros  # Equivalent to torch.zeros_like(tensor)
 
     maximum_value = tensor.max(dim, keepdim=True)[0]
     logits = tensor - maximum_value
