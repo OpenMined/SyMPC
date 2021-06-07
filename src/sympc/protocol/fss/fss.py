@@ -183,8 +183,23 @@ def fss_op(x1: MPCTensor, x2: MPCTensor, op="eq") -> MPCTensor:
 class FSS(metaclass=Protocol):
     """Function Secret Sharing."""
 
-    """ Used for Share Level static operations like distrubuting the shares."""
+    """ Used for Share Level static operations like distributing the shares."""
     share_class: SyMPCTensor = ShareTensor
+    security_levels: List[str] = ["semi-honest"]
+
+    def __init__(self, security_type: str = "semi-honest"):
+        """Initialization of the Protocol.
+
+        Args:
+            security_type : specifies the security level of the Protocol.
+
+        Raises:
+            ValueError : If invalid security_type is provided.
+        """
+        if security_type not in self.security_levels:
+            raise ValueError(f"{security_type} is not a valid security type")
+
+        self.security_type = security_type
 
     @staticmethod
     def eq(x1: MPCTensor, x2: MPCTensor) -> MPCTensor:
@@ -224,6 +239,23 @@ class FSS(metaclass=Protocol):
             The result returned by the tensor specific distribute_shares method
         """
         return FSS.share_class.distribute_shares(*args, **kwargs)
+
+    def __eq__(self, other: Any) -> bool:
+        """Check if "self" is equal with another object given a set of attributes to compare.
+
+        Args:
+            other (Any): Object to compare
+
+        Returns:
+            bool: True if equal False if not.
+        """
+        if not self.security_type == other.security_type:
+            return False
+
+        if not type(self).__name__ == type(other).__name__:
+            return False
+
+        return True
 
 
 """ Register Crypto Store capabilities for FSS """

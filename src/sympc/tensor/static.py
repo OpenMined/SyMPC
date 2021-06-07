@@ -2,9 +2,6 @@
 
 Examples: torch.stack, torch.argmax
 """
-# future
-from __future__ import annotations
-
 # stdlib
 from typing import Callable
 from typing import Dict
