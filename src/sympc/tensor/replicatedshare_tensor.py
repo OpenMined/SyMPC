@@ -277,7 +277,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             party_ptrs = []
 
             for j in range(i, i + nshares):
-                tensor = shares[j%(nshares+1)].tensor
+                tensor = shares[j % (nshares + 1)].tensor
                 party_ptrs.append(tensor)
 
             tensor = ReplicatedSharedTensor(
