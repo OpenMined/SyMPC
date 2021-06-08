@@ -78,19 +78,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             for i in range(len(shares)):
                 self.shares.append(self._encode(shares[i]).to(tensor_type))
 
-    def _encode(self, data):
+    def _encode(self, data: torch.Tensor) -> torch.Tensor:
         """Encode via FixedPointEncoder.
 
         Args:
             data (torch.Tensor): Tensor to be encoded
 
         Returns:
-            encoded_data List(torch.Tensor): Decoded values
+            encoded_data (torch.Tensor): Decoded values
 
         """
         return self.fp_encoder.encode(data)
 
-    def decode(self):
+    def decode(self) -> List[torch.Tensor]:
         """Decode via FixedPointEncoder.
 
         Returns:
@@ -98,7 +98,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self._decode()
 
-    def _decode(self):
+    def _decode(self) -> List[torch.Tensor]:
         """Decodes shares list of RSTensor via FixedPointEncoder.
 
         Returns:
@@ -112,7 +112,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return shares
 
-    def get_shares(self):
+    def get_shares(self) -> List[torch.Tensor]:
         """Get shares.
 
         Returns:
@@ -278,6 +278,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
                 shares = []
                 shares = [shares1] + shares2
+
+                if get_shares:
+                    return shares
+
                 all_shares.append(shares)
 
             value = None
@@ -289,7 +293,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                     if sum(shares) != value:
 
                         raise ValueError(
-                            "reconstruction values from all parties are not equal"
+                            "Reconstruction values from all parties are not equal."
                         )
 
                 else:

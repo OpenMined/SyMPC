@@ -492,7 +492,7 @@ class ShareTensor(metaclass=SyMPCTensor):
         share_ptrs: List["ShareTensor"],
         get_shares=False,
         security_type: str = "semi-honest",
-    ):
+    ) -> torch.Tensor:
         """Reconstruct original value from shares.
 
         Args:
