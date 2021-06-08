@@ -330,13 +330,13 @@ To install the dependencies properly on Windows, you must first install PyTorch 
 You can do this by telling `pip` to use the official PyTorch Wheel Repository instead of the default PyPI repository.
 
 ```
-$ pip install torch torchvision -f https://download.pytorch.org/whl/torch_stable.html
+$ pip install torch torchcsprng -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 _Note_ If you need a specific version you can supply it with the `==` syntax. Also be aware there are different versions depending on if you require CUDA for GPU usage or CPU only such as what we use in GitHub CI.
 
 ```
-$ pip install torch==1.7.1 torchvision==0.8.2 -f https://download.pytorch.org/whl/torch_stable.html
+$ pip install torch==1.8.1 torchcsprng==0.2.1 -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 Then continue below with requirements.dev.txt like normal.
