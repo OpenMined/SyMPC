@@ -51,16 +51,16 @@ jobs:
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+      - name: Install Windows Torch
+        if: runner.os == 'Windows'
+        run: |
+          pip install torch==1.8.1+cpu torchvision==0.9.1 torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
       - name: Install dependencies
         run: |
           hash -r
           pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
           pip install -e .
         shell: bash
-      - name: Install Windows Torch
-        if: runner.os == 'Windows'
-        run: |
-          pip install torch==1.8.1+cpu torchvision==0.9.1 torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
       - id: file_changes # get changed files.
         uses: jitterbit/get-changed-files@v1
