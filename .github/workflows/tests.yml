@@ -52,9 +52,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-py${{ matrix.python-version }}-
       - name: Install Windows Torch
-        if: runner.os == 'Windows'
+        if: runner.os != 'macos'
         run: |
-          pip install torch==1.8.1+cpu torchvision==0.9.1 torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+          pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
       - name: Install dependencies
         run: |
