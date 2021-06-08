@@ -171,19 +171,6 @@ def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
     assert np.allclose(secret, a.reconstruct(), atol=1e-5)
 
 
-def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
-    parties = get_clients(parties)
-    protocol = Falcon(security)
-    session = Session(protocol=protocol, parties=parties)
-    SessionManager.setup_mpc(session)
-
-    secret = 42.32
-
-    a = MPCTensor(secret=secret, session=session)
-
-    assert np.allclose(secret, a.reconstruct(), atol=1e-5)
-
-
 @pytest.mark.parametrize("parties", [2, 5, 11])
 def test_share_distribution(get_clients, parties):
 
@@ -197,3 +184,19 @@ def test_share_distribution(get_clients, parties):
 
     for RSTensor in share_ptrs:
         assert len(RSTensor.get_shares().get()) == (len(parties) - 1)
+
+
+"""@pytest.mark.parametrize("parties", [2, 5])
+def test_invalid_malicious_reconstruction(get_clients, parties):
+    parties = get_clients(parties)
+    protocol = Falcon("malicious")
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = 42.32
+
+    a = MPCTensor(secret=secret, session=session)
+    a.share_ptrs[0].get_shares[0] = a.share_ptrs[0].get_shares()[0] + 4
+    a.reconstruct()
+
+    assert 1 == 2"""

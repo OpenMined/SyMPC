@@ -234,8 +234,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     @staticmethod
     def reconstruct(
         share_ptrs: List["ReplicatedSharedTensor"],
-        security_type: str,
         get_shares: bool = False,
+        security_type: str = "semi-honest",
     ) -> torch.Tensor:
         """Reconstruct value from shares.
 

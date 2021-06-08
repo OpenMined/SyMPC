@@ -488,12 +488,17 @@ class ShareTensor(metaclass=SyMPCTensor):
         return res
 
     @staticmethod
-    def reconstruct(share_ptrs: List["ShareTensor"], get_shares=False):
+    def reconstruct(
+        share_ptrs: List["ShareTensor"],
+        get_shares=False,
+        security_type: str = "semi-honest",
+    ):
         """Reconstruct original value from shares.
 
         Args:
             share_ptrs (List[ShareTensor]): List of sharetensors.
             get_shares (boolean): retrieve shares or reconstructed value.
+            security_type (str): Type of security by protocol.
 
         Returns:
             plaintext/shares (torch.Tensor/List[torch.Tensors]): Plaintext or list of shares.
