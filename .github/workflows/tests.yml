@@ -82,7 +82,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ --deselect=tests/notebooks -n auto
+          pytest tests/ --deselect=tests/notebooks -n 8
 
       - name: Run codecov
         if: ${{ matrix.os == 'ubuntu-latest' }}
