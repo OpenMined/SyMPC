@@ -141,7 +141,7 @@ def test_hook_property(get_clients) -> None:
     assert (rst.T.shares[1] == y.T).all()
 
 
-@pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
+@pytest.mark.parametrize("parties", [2, 5, 11])
 def test_distribute_sharecount(get_clients, parties) -> None:
     parties = get_clients(parties)
     protocol = Falcon("semi-honest")
@@ -156,10 +156,11 @@ def test_distribute_sharecount(get_clients, parties) -> None:
         assert len(share.get_shares().get()) == (len(parties) - 1)
 
 
-@pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
-def test_rst_distribute_reconstruct(get_clients, parties) -> None:
+@pytest.mark.parametrize("parties", [2, 5, 11])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
     parties = get_clients(parties)
-    protocol = Falcon("semi-honest")
+    protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
@@ -168,3 +169,31 @@ def test_rst_distribute_reconstruct(get_clients, parties) -> None:
     a = MPCTensor(secret=secret, session=session)
 
     assert np.allclose(secret, a.reconstruct(), atol=1e-5)
+
+
+def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
+    parties = get_clients(parties)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = 42.32
+
+    a = MPCTensor(secret=secret, session=session)
+
+    assert np.allclose(secret, a.reconstruct(), atol=1e-5)
+
+
+@pytest.mark.parametrize("parties", [2, 5, 11])
+def test_share_distribution(get_clients, parties):
+
+    parties = get_clients(parties)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    shares = MPCTensor.generate_shares(100.42, len(parties))
+    share_ptrs = ReplicatedSharedTensor.distribute_shares(shares, session)
+
+    for RSTensor in share_ptrs:
+        assert len(RSTensor.get_shares().get()) == (len(parties) - 1)

@@ -233,28 +233,74 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def reconstruct(
-        share_ptrs: List["ReplicatedSharedTensor"], get_shares: bool = False
+        share_ptrs: List["ReplicatedSharedTensor"],
+        security_type: str,
+        get_shares: bool = False,
     ) -> torch.Tensor:
         """Reconstruct value from shares.
 
         Args:
             share_ptrs (List[RSTensorPointers]): List of RSTensor pointers.
+            security_type (str): Type of security followed by protocol.
             get_shares (bool): Retrieve only shares.
 
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
 
+        Raises:
+            ValueError: When parties share values are not equal.
+
         """
-        shares1 = share_ptrs[0].get_shares()[0].get()
-        shares2 = share_ptrs[1].get_shares().get()
+        plaintext = None
 
-        shares = []
-        shares = [shares1] + shares2
+        if security_type == "semi-honest":
 
-        if get_shares:
-            return shares
+            shares1 = share_ptrs[0].get_shares()[0].get()
+            shares2 = share_ptrs[1].get_shares().get()
 
-        return sum(shares)
+            shares = []
+            shares = [shares1] + shares2
+
+            if get_shares:
+                return shares
+
+            plaintext = sum(shares)
+
+        elif security_type == "malicious":
+
+            all_shares = []
+
+            nparties = len(share_ptrs)
+            for i in range(nparties):
+
+                shares1 = share_ptrs[(i)].get_shares()[0].get()
+                shares2 = share_ptrs[(i + 1) % (nparties)].get_shares().get()
+
+                shares = []
+                shares = [shares1] + shares2
+                all_shares.append(shares)
+
+            value = None
+
+            for shares in all_shares:
+
+                if value:
+
+                    if sum(shares) != value:
+
+                        raise ValueError(
+                            "reconstruction values from all parties are not equal"
+                        )
+
+                else:
+                    value = sum(shares)
+
+            plaintext = value
+
+            if get_shares:
+                return shares
+
+        return plaintext
 
     @staticmethod
     def distribute_shares(shares: List[ShareTensor], session: Session) -> List:
@@ -273,7 +319,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         nshares = len(parties) - 1
 
         ptr_list = []
-        for i in range(0, len(parties)):
+        for i in range(len(parties)):
             party_ptrs = []
 
             for j in range(i, i + nshares):

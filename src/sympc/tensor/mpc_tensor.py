@@ -372,7 +372,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             torch.Tensor. The secret reconstructed.
         """
         plaintext = self.session.protocol.share_class.reconstruct(
-            self.share_ptrs, get_shares=get_shares
+            self.share_ptrs, self.session.protocol.security_type, get_shares=get_shares
         )
 
         if get_shares:
