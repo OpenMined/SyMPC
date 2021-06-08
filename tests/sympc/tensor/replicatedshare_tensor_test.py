@@ -8,6 +8,7 @@ import torch
 
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
+from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -143,7 +144,8 @@ def test_hook_property(get_clients) -> None:
 @pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
 def test_distribute_sharecount(get_clients, parties) -> None:
     parties = get_clients(parties)
-    session = Session(protocol="Falcon", parties=parties)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
     secret = 42.32
@@ -157,7 +159,8 @@ def test_distribute_sharecount(get_clients, parties) -> None:
 @pytest.mark.parametrize("parties", [2, 3, 5, 7, 11])
 def test_rst_distribute_reconstruct(get_clients, parties) -> None:
     parties = get_clients(parties)
-    session = Session(protocol="Falcon", parties=parties)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
     secret = 42.32
