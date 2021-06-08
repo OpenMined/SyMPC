@@ -51,7 +51,7 @@ jobs:
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-py${{ matrix.python-version }}-
-      - name: Install Windows Torch
+      - name: Install CPU Torch
         if: runner.os != 'macos'
         run: |
           pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
