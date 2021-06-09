@@ -472,3 +472,25 @@ def test_pow(get_clients, power) -> None:
 
     with pytest.raises(RuntimeError):
         power = x ** -2
+
+
+def test_backward(get_clients):
+    clients = get_clients(4)
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]], requires_grad=True)
+    y_secret = torch.tensor([[4.5, -2.5], [5, 2.25], [-3, 3]], requires_grad=True)
+    x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
+    y = MPCTensor(secret=y_secret, session=session, requires_grad=True)
+
+    res_mpc = x * y
+    res = x_secret * y_secret
+    s_mpc = res_mpc.sum()
+    s = torch.sum(res)
+    s_mpc.backward()
+    s.backward()
+
+    assert np.allclose(x.grad.get(), x_secret.grad, rtol=1e-3)
+    assert np.allclose(y.grad.get(), y_secret.grad, rtol=1e-3)
