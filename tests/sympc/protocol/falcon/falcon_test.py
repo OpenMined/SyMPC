@@ -16,7 +16,8 @@ def test_session() -> None:
     assert type(session.protocol) == Falcon
 
 
-def test_exception_malicious_lessparties(parties=2) -> None:
+def test_exception_malicious_lessparties(get_clients, parties=2) -> None:
+    parties = get_clients(parties)
     protocol = Falcon("malicious")
     with pytest.raises(ValueError):
         Session(protocol=protocol, parties=parties)
