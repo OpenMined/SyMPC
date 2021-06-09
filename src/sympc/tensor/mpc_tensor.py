@@ -371,17 +371,15 @@ class MPCTensor(metaclass=SyMPCTensor):
         Returns:
             torch.Tensor. The secret reconstructed.
         """
-        plaintext = self.session.protocol.share_class.reconstruct(
+        result = self.session.protocol.share_class.reconstruct(
             self.share_ptrs,
             get_shares=get_shares,
             security_type=self.session.protocol.security_type,
         )
 
-        print("MPC plaintext: ", plaintext)
-
         if get_shares:
 
-            return plaintext
+            return result
 
         if decode:
             fp_encoder = FixedPointEncoder(
@@ -389,9 +387,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 precision=self.session.config.encoder_precision,
             )
 
-            plaintext = fp_encoder.decode(plaintext)
+            result = fp_encoder.decode(result)
 
-        return plaintext
+        return result
 
     get = reconstruct
 

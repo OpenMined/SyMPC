@@ -37,8 +37,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
        shares: The shares held by the party
     """
 
-    AUTOGRAD_IS_ON: bool = True
-
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
     PROPERTIES_FORWARD = {"T"}
@@ -66,7 +64,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.ring_size = ring_size
 
         self.config = config
-        self.fp_encoder = None
 
         self.fp_encoder = FixedPointEncoder(
             base=config.encoder_base, precision=config.encoder_precision
@@ -253,7 +250,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
 
     @staticmethod
-    def reconstruct_semi_honest(
+    def __reconstruct_semi_honest(
         share_ptrs: List["ReplicatedSharedTensor"],
         get_shares: bool = False,
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
@@ -271,13 +268,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         shares = []
 
-        if isinstance(shares2, torch.Tensor):
-
-            shares = [shares1] + shares2
-
-        else:
-
-            shares = [shares1] + shares2
+        shares = [shares1] + shares2
 
         if get_shares:
             return shares
@@ -285,7 +276,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return sum(shares)
 
     @staticmethod
-    def reconstruct_malicious(
+    def __reconstruct_malicious(
         share_ptrs: List["ReplicatedSharedTensor"],
         get_shares: bool = False,
     ) -> Union[torch.Tensor, List[torch.Tensor]]:
@@ -304,41 +295,28 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         nparties = len(share_ptrs)
 
         # Get shares from all parties
-
         all_shares = []
         for party_rank in range(nparties):
-
-            shares1 = share_ptrs[(party_rank)].get_shares()[0].get()
-            shares2 = share_ptrs[(party_rank + 1) % (nparties)].get_shares().get()
-
-            shares = []
-
-            if isinstance(shares2, torch.Tensor):
-                shares = [shares1] + [shares2]
-
-            else:
-                shares = [shares1] + shares2
-
-            if get_shares:
-                return shares
-
-            all_shares.append(shares)
+            all_shares.append(share_ptrs[party_rank].get_shares().get())
 
         # reconstruct shares from all parties and verify
         value = None
-        for shares in all_shares:
+        for party_rank in range(nparties):
+            share_sum = all_shares[party_rank][0] + sum(
+                all_shares[(party_rank + 1) % (nparties)]
+            )
 
             if not value:
-                value = sum(shares)
 
-            elif sum(shares) != value:
+                value = share_sum
+            elif share_sum != value:
 
                 raise ValueError(
                     "Reconstruction values from all parties are not equal."
                 )
 
         if get_shares:
-            return shares
+            return all_shares
 
         return value
 
@@ -362,10 +340,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: Invalid security type
         """
         if security_type == "malicious":
-            return ReplicatedSharedTensor.reconstruct_malicious(share_ptrs, get_shares)
+            return ReplicatedSharedTensor.__reconstruct_malicious(
+                share_ptrs, get_shares
+            )
 
         elif security_type == "semi-honest":
-            return ReplicatedSharedTensor.reconstruct_semi_honest(
+            return ReplicatedSharedTensor.__reconstruct_semi_honest(
                 share_ptrs, get_shares
             )
 

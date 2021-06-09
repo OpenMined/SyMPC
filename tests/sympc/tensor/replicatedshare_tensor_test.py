@@ -61,7 +61,6 @@ def test_different_config() -> None:
 
 
 def test_send_get(get_clients, precision=12, base=4) -> None:
-
     client = get_clients(1)[0]
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol, parties=[client])
@@ -143,21 +142,6 @@ def test_hook_property(get_clients) -> None:
     assert (rst.T.shares[1] == y.T).all()
 
 
-@pytest.mark.parametrize("parties", [2, 5, 11])
-def test_distribute_sharecount(get_clients, parties) -> None:
-    parties = get_clients(parties)
-    protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties)
-    SessionManager.setup_mpc(session)
-
-    secret = 42.32
-
-    a = MPCTensor(secret=secret, session=session)
-
-    for share in a.share_ptrs:
-        assert len(share.get_shares().get()) == (len(parties) - 1)
-
-
 @pytest.mark.parametrize("parties", [3, 5, 11])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
@@ -175,7 +159,6 @@ def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
 
 @pytest.mark.parametrize("parties", [2, 5, 11])
 def test_share_distribution(get_clients, parties):
-
     parties = get_clients(parties)
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol, parties=parties)

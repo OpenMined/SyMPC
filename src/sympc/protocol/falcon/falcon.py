@@ -25,13 +25,7 @@ class Falcon(metaclass=Protocol):
 
         Args:
             security_type : specifies the security level of the Protocol.
-
-        Raises:
-            ValueError : If invalid security_type is provided.
         """
-        if security_type not in self.security_levels:
-            raise ValueError(f"{security_type} is not a valid security type")
-
         self.security_type = security_type
 
     @staticmethod
