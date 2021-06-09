@@ -307,10 +307,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             )
 
             if not value:
-
                 value = share_sum
-            elif share_sum != value:
 
+            elif share_sum != value:
                 raise ValueError(
                     "Reconstruction values from all parties are not equal."
                 )
