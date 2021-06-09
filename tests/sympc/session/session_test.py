@@ -7,8 +7,10 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
+from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import get_new_generator
 from sympc.utils import get_type_from_ring
@@ -53,9 +55,9 @@ def test_session_custom_init() -> None:
     assert session.max_value == (2 ** 32 - 1) // 2
 
 
-def test_przs_generate_random_share(get_clients) -> None:
-    """Test przs_generate_random_share method from Session."""
-    session = Session()
+def test_przs_share_tensor() -> None:
+    """Test przs_generate_random_share method from Session for ShareTensor."""
+    session = Session()  # default protocol: FSS
     SessionManager.setup_mpc(session)
     gen1 = get_new_generator(42)
     gen2 = get_new_generator(43)
@@ -64,6 +66,20 @@ def test_przs_generate_random_share(get_clients) -> None:
     assert isinstance(share, ShareTensor)
     target_tensor = torch.tensor(([-1540733531777602634], [2813554787685566880]))
     assert (share.tensor == target_tensor).all()
+
+
+def test_przs_rs_tensor() -> None:
+    """Test przs_generate_random_share method from Session for ReplicatedSharedTensor."""
+    falcon = Falcon(security_type="malicious")
+    session = Session(protocol=falcon)
+    SessionManager.setup_mpc(session)
+    gen1 = get_new_generator(42)
+    gen2 = get_new_generator(43)
+    session.przs_generators = [gen1, gen2]
+    share = session.przs_generate_random_share(shape=(2, 1))
+    assert isinstance(share, ReplicatedSharedTensor)
+    target_tensor = torch.tensor(([-1540733531777602634], [2813554787685566880]))
+    assert (share.shares[0] == target_tensor).all()
 
 
 def test_eq() -> None:

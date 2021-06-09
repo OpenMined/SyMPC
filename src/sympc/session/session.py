@@ -179,15 +179,16 @@ class Session:
         self,
         shape: Union[tuple, torch.Size],
     ) -> Any:
-        """Generate a random share using the two generators hold by a party.
+        """Generate a random zero share using the two generators hold by a party.
 
         Args:
             shape (Union[tuple, torch.Size]): Shape for the share.
 
         Returns:
-            Any: ShareTensor
+            Any: ShareTensor or ReplicatedSharedTensor
 
         """
+        from sympc.tensor import ReplicatedSharedTensor
         from sympc.tensor import ShareTensor
 
         gen0, gen1 = self.przs_generators
@@ -204,12 +205,64 @@ class Session:
             shape=shape,
         )
 
-        # It has encoder_precision = 0 such that the value would not be encoded
-        share = ShareTensor(
-            data=current_share - next_share,
-            session_uuid=self.uuid,
-            config=Config(encoder_precision=0),
+        if self.protocol.share_class == ShareTensor:
+            # It has encoder_precision = 0 such that the value would not be encoded
+            share = ShareTensor(
+                data=current_share - next_share,
+                session_uuid=self.uuid,
+                config=Config(encoder_precision=0),
+            )
+        else:
+            share = ReplicatedSharedTensor(
+                shares=[current_share - next_share],
+                session_uuid=self.uuid,
+                config=Config(encoder_precision=0),
+            )
+        return share
+
+    def prrs_generate_random_share(
+        self,
+        shape: Union[tuple, torch.Size],
+    ) -> Any:
+        """Generate a random share using the  generators hold by a party.
+
+        Args:
+            shape (Union[tuple, torch.Size]): Shape for the share.
+
+        Returns:
+            Any: ShareTensor or ReplicatedSharedTensor
+
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+        from sympc.tensor import ShareTensor
+
+        gen0, gen1 = self.przs_generators
+
+        share1 = generate_random_element(
+            tensor_type=self.tensor_type,
+            generator=gen0,
+            shape=shape,
         )
+
+        share2 = generate_random_element(
+            tensor_type=self.tensor_type,
+            generator=gen1,
+            shape=shape,
+        )  # We also invoke second generator as it operates in CTR mode.
+
+        if self.protocol.share_class == ShareTensor:
+            # It has encoder_precision = 0 such that the value would not be encoded
+            share = ShareTensor(
+                data=share1,
+                session_uuid=self.uuid,
+                config=Config(encoder_precision=0),
+            )
+        else:
+            share = ReplicatedSharedTensor(
+                shares=[share1, share2],
+                session_uuid=self.uuid,
+                config=Config(encoder_precision=0),
+            )
         return share
 
     def init_generators(self, seed_current: int, seed_next: int) -> None:
