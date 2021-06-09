@@ -149,6 +149,14 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
+        "sympc.tensor.ReplicatedSharedTensor.__setitem__",
+        "syft.lib.python._SyNone",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__getitem__",
+        "torch.Tensor",
+    ),
+    (
         "sympc.tensor.ReplicatedSharedTensor.t",
         "sympc.tensor.ReplicatedSharedTensor",
     ),

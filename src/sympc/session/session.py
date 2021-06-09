@@ -148,6 +148,12 @@ class Session:
 
             self.protocol = protocol
 
+        if self.nr_parties < 3 and self.protocol.security_type == "malicious":
+
+            raise ValueError(
+                "Malicious security cannot be provided to less than 3 parties"
+            )
+
         self.config = config if config else Config()
 
         self.przs_generators: List[Optional[torch.Generator]] = []

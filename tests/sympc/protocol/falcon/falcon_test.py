@@ -11,9 +11,15 @@ def test_share_class() -> None:
 
 
 def test_session() -> None:
-    protocol = Falcon("malicious")
+    protocol = Falcon("semi-honest")
     session = Session(protocol=protocol)
     assert type(session.protocol) == Falcon
+
+
+def test_exception_malicious_lessparties(parties=2) -> None:
+    protocol = Falcon("malicious")
+    with pytest.raises(ValueError):
+        Session(protocol=protocol, parties=parties)
 
 
 def test_invalid_security_type():

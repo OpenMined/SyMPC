@@ -156,7 +156,7 @@ def test_distribute_sharecount(get_clients, parties) -> None:
         assert len(share.get_shares().get()) == (len(parties) - 1)
 
 
-@pytest.mark.parametrize("parties", [2, 5, 11])
+@pytest.mark.parametrize("parties", [3, 5, 11])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
     parties = get_clients(parties)
@@ -186,7 +186,7 @@ def test_share_distribution(get_clients, parties):
         assert len(RSTensor.get_shares().get()) == (len(parties) - 1)
 
 
-"""@pytest.mark.parametrize("parties", [2, 5])
+@pytest.mark.parametrize("parties", [3, 5])
 def test_invalid_malicious_reconstruction(get_clients, parties):
     parties = get_clients(parties)
     protocol = Falcon("malicious")
@@ -195,8 +195,8 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
 
     secret = 42.32
 
-    a = MPCTensor(secret=secret, session=session)
-    a.share_ptrs[0].get_shares[0] = a.share_ptrs[0].get_shares()[0] + 4
-    a.reconstruct()
+    tensor = MPCTensor(secret=secret, session=session)
+    tensor.share_ptrs[0][0] = tensor.share_ptrs[0][0] + 4
 
-    assert 1 == 2"""
+    with pytest.raises(ValueError):
+        tensor.reconstruct()
