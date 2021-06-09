@@ -377,6 +377,8 @@ class MPCTensor(metaclass=SyMPCTensor):
             security_type=self.session.protocol.security_type,
         )
 
+        print("MPC plaintext: ", plaintext)
+
         if get_shares:
 
             return plaintext

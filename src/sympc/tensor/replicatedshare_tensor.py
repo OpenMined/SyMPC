@@ -314,11 +314,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             shares = []
 
             if isinstance(shares2, torch.Tensor):
-
                 shares = [shares1] + [shares2]
 
             else:
-
                 shares = [shares1] + shares2
 
             if get_shares:
@@ -330,16 +328,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         value = None
         for shares in all_shares:
 
-            if value:
+            if not value:
+                value = sum(shares)
 
-                if sum(shares) != value:
+            elif sum(shares) != value:
 
-                    raise ValueError(
-                        "Reconstruction values from all parties are not equal."
-                    )
-
-                else:
-                    value = sum(shares)
+                raise ValueError(
+                    "Reconstruction values from all parties are not equal."
+                )
 
         if get_shares:
             return shares
@@ -361,14 +357,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
+
+        Raises:
+            ValueError: Invalid security type
         """
         if security_type == "malicious":
-
             return ReplicatedSharedTensor.reconstruct_malicious(share_ptrs, get_shares)
 
         elif security_type == "semi-honest":
+            return ReplicatedSharedTensor.reconstruct_semi_honest(
+                share_ptrs, get_shares
+            )
 
-            return ReplicatedSharedTensor.reconstruct_malicious(share_ptrs, get_shares)
+        raise ValueError("Invalid security Type")
 
     @staticmethod
     def distribute_shares(shares: List[ShareTensor], session: Session) -> List:

@@ -17,7 +17,6 @@ from sympc.utils import get_type_from_ring
 
 
 def test_import_RSTensor() -> None:
-
     ReplicatedSharedTensor()
 
 
@@ -64,7 +63,8 @@ def test_different_config() -> None:
 def test_send_get(get_clients, precision=12, base=4) -> None:
 
     client = get_clients(1)[0]
-    session = Session(parties=[client])
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=[client])
     SessionManager.setup_mpc(session)
     share1 = torch.Tensor([1.4, 2.34, 3.43])
     share2 = torch.Tensor([1, 2, 3])
@@ -102,7 +102,8 @@ def test_fixed_point(precision, base) -> None:
 
 def test_hook_method(get_clients) -> None:
     clients = get_clients(3)
-    session = Session(parties=clients)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=clients)
     SessionManager.setup_mpc(session)
 
     x = torch.randn(1, 3)
@@ -127,7 +128,8 @@ def test_hook_method(get_clients) -> None:
 
 def test_hook_property(get_clients) -> None:
     clients = get_clients(3)
-    session = Session(parties=clients)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=clients)
     SessionManager.setup_mpc(session)
 
     x = torch.randn(1, 3)

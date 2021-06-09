@@ -148,7 +148,11 @@ class Session:
 
             self.protocol = protocol
 
-        if self.nr_parties < 3 and self.protocol.security_type == "malicious":
+        if (
+            self.parties
+            and len(self.parties) < 3
+            and self.protocol.security_type == "malicious"
+        ):
 
             raise ValueError(
                 "Malicious security cannot be provided to less than 3 parties"
