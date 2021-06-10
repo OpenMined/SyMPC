@@ -257,7 +257,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Reconstruct value from shares.
 
         Args:
-            share_ptrs (List[RSTensorPointers]): List of RSTensor pointers.
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
             get_shares (bool): Retrieve only shares.
 
         Returns:
@@ -281,7 +281,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Reconstruct value from shares.
 
         Args:
-            share_ptrs (List[RSTensorPointers]): List of RSTensor pointers.
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
             get_shares (bool): Retrieve only shares.
 
         Returns:
@@ -326,7 +326,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Reconstruct value from shares.
 
         Args:
-            share_ptrs (List[RSTensorPointers]): List of RSTensor pointers.
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
             security_type (str): Type of security followed by protocol.
             get_shares (bool): Retrieve only shares.
 
@@ -357,7 +357,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             session (Session): Session.
 
         Returns:
-            List of ShareTensorPointers.
+            List of ShareTensor.
 
         """
         parties = session.parties
