@@ -494,3 +494,23 @@ def test_backward(get_clients):
 
     assert np.allclose(x.grad.get(), x_secret.grad, rtol=1e-3)
     assert np.allclose(y.grad.get(), y_secret.grad, rtol=1e-3)
+
+
+def test_backward_without_requires_grad(get_clients):
+    clients = get_clients(4)
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]])
+    y_secret = torch.tensor([[4.5, -2.5], [5, 2.25], [-3, 3]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+
+    res_mpc = x - y
+    s_mpc = res_mpc.sum()
+    s_mpc.backward()
+
+    assert not res_mpc.requires_grad
+    assert x.grad is None
+    assert x.grad is None
