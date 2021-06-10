@@ -239,7 +239,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             newvalue (torch.Tensor): New value of share.
 
         """
-        self.shares = newvalue
+        self.shares[key] = newvalue
 
     def ne(self, y):
         """Not Equal operator.
