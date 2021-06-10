@@ -1,6 +1,7 @@
 """Tests for the Session class."""
 
 # stdlib
+import secrets
 
 # third party
 import pytest
@@ -12,6 +13,7 @@ from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor import ShareTensor
+from sympc.utils import generate_random_element
 from sympc.utils import get_new_generator
 from sympc.utils import get_type_from_ring
 
@@ -59,12 +61,24 @@ def test_przs_share_tensor() -> None:
     """Test przs_generate_random_share method from Session for ShareTensor."""
     session = Session()  # default protocol: FSS
     SessionManager.setup_mpc(session)
-    gen1 = get_new_generator(42)
-    gen2 = get_new_generator(43)
+    seed1 = secrets.randbits(32)
+    seed2 = secrets.randbits(32)
+    gen1 = get_new_generator(seed1)
+    gen2 = get_new_generator(seed2)
     session.przs_generators = [gen1, gen2]
-    share = session.przs_generate_random_share(shape=(2, 1))
+    shape = (2, 1)
+    share = session.przs_generate_random_share(shape=shape)
     assert isinstance(share, ShareTensor)
-    target_tensor = torch.tensor(([-1540733531777602634], [2813554787685566880]))
+
+    new_gen1 = get_new_generator(seed1)
+    new_gen2 = get_new_generator(seed2)
+    share1 = generate_random_element(
+        generator=new_gen1, shape=shape, tensor_type=session.tensor_type
+    )
+    share2 = generate_random_element(
+        generator=new_gen2, shape=shape, tensor_type=session.tensor_type
+    )
+    target_tensor = share1 - share2
     assert (share.tensor == target_tensor).all()
 
 
@@ -73,13 +87,126 @@ def test_przs_rs_tensor() -> None:
     falcon = Falcon(security_type="malicious")
     session = Session(protocol=falcon)
     SessionManager.setup_mpc(session)
-    gen1 = get_new_generator(42)
-    gen2 = get_new_generator(43)
+    seed1 = secrets.randbits(32)
+    seed2 = secrets.randbits(32)
+    gen1 = get_new_generator(seed1)
+    gen2 = get_new_generator(seed2)
     session.przs_generators = [gen1, gen2]
-    share = session.przs_generate_random_share(shape=(2, 1))
+    shape = (2, 1)
+    share = session.przs_generate_random_share(shape=shape)
     assert isinstance(share, ReplicatedSharedTensor)
-    target_tensor = torch.tensor(([-1540733531777602634], [2813554787685566880]))
+
+    new_gen1 = get_new_generator(seed1)
+    new_gen2 = get_new_generator(seed2)
+    share1 = generate_random_element(
+        generator=new_gen1, shape=shape, tensor_type=session.tensor_type
+    )
+    share2 = generate_random_element(
+        generator=new_gen2, shape=shape, tensor_type=session.tensor_type
+    )
+    target_tensor = share1 - share2
     assert (share.shares[0] == target_tensor).all()
+
+
+def test_przs_share_tensor_pointer(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)  # default protocol: FSS
+    SessionManager.setup_mpc(session)
+
+    party1 = session.session_ptrs[0]
+    share_ptr = party1.przs_generate_random_share(shape=(1, 2))
+
+    assert share_ptr.class_name.endswith("UnionPointer")
+    share = share_ptr.get()
+    assert isinstance(share, ShareTensor)
+
+
+def test_przs_rs_tensor_pointer(get_clients) -> None:
+    clients = get_clients(3)
+    falcon = Falcon(security_type="malicious")
+    session = Session(protocol=falcon, parties=clients)
+    SessionManager.setup_mpc(session)
+
+    party1 = session.session_ptrs[0]
+    share_ptr = party1.przs_generate_random_share(shape=(1, 2))
+
+    assert share_ptr.class_name.endswith("UnionPointer")
+    share = share_ptr.get()
+    assert isinstance(share, ReplicatedSharedTensor)
+
+
+def test_prrs_share_tensor() -> None:
+    """Test przs_generate_random_share method from Session for ShareTensor."""
+    session = Session()  # default protocol: FSS
+    SessionManager.setup_mpc(session)
+    seed1 = secrets.randbits(32)
+    seed2 = secrets.randbits(32)
+    gen1 = get_new_generator(seed1)
+    gen2 = get_new_generator(seed2)
+    session.przs_generators = [gen1, gen2]
+    shape = (2, 1)
+    share = session.prrs_generate_random_share(shape=shape)
+    assert isinstance(share, ShareTensor)
+
+    new_gen1 = get_new_generator(seed1)
+    share1 = generate_random_element(
+        generator=new_gen1, shape=shape, tensor_type=session.tensor_type
+    )
+    target_tensor = share1
+    assert (share.tensor == target_tensor).all()
+
+
+def test_prrs_rs_tensor() -> None:
+    """Test przs_generate_random_share method from Session for ReplicatedSharedTensor."""
+    falcon = Falcon(security_type="malicious")
+    session = Session(protocol=falcon)
+    SessionManager.setup_mpc(session)
+    seed1 = secrets.randbits(32)
+    seed2 = secrets.randbits(32)
+    gen1 = get_new_generator(seed1)
+    gen2 = get_new_generator(seed2)
+    session.przs_generators = [gen1, gen2]
+    shape = (2, 1)
+    share = session.prrs_generate_random_share(shape=shape)
+    assert isinstance(share, ReplicatedSharedTensor)
+
+    new_gen1 = get_new_generator(seed1)
+    new_gen2 = get_new_generator(seed2)
+    share1 = generate_random_element(
+        generator=new_gen1, shape=shape, tensor_type=session.tensor_type
+    )
+    share2 = generate_random_element(
+        generator=new_gen2, shape=shape, tensor_type=session.tensor_type
+    )
+    target_tensor = [share1, share2]
+    assert (torch.cat(share.shares) == torch.cat(target_tensor)).all()
+
+
+def test_prrs_share_tensor_pointer(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)  # default protocol: FSS
+    SessionManager.setup_mpc(session)
+
+    party1 = session.session_ptrs[0]
+    share_ptr = party1.prrs_generate_random_share(shape=(1, 2))
+
+    assert share_ptr.class_name.endswith("UnionPointer")
+    share = share_ptr.get()
+    assert isinstance(share, ShareTensor)
+
+
+def test_prrs_rs_tensor_pointer(get_clients) -> None:
+    clients = get_clients(3)
+    falcon = Falcon(security_type="malicious")
+    session = Session(protocol=falcon, parties=clients)
+    SessionManager.setup_mpc(session)
+
+    party1 = session.session_ptrs[0]
+    share_ptr = party1.prrs_generate_random_share(shape=(1, 2))
+
+    assert share_ptr.class_name.endswith("UnionPointer")
+    share = share_ptr.get()
+    assert isinstance(share, ReplicatedSharedTensor)
 
 
 def test_eq() -> None:
