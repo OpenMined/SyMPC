@@ -158,7 +158,7 @@ def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
 
 
 @pytest.mark.parametrize("parties", [2, 5, 11])
-def test_share_distribution(get_clients, parties):
+def test_share_distribution_number_shares(get_clients, parties):
     parties = get_clients(parties)
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol, parties=parties)

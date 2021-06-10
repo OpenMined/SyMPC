@@ -266,8 +266,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         shares1 = share_ptrs[0].get_shares()[0].get()
         shares2 = share_ptrs[1].get_shares().get()
 
-        shares = []
-
         shares = [shares1] + shares2
 
         if get_shares:
