@@ -366,14 +366,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         ptr_list = []
         for i in range(len(parties)):
-            party_ptrs = []
+            party_shares = []
 
             for j in range(i, i + nshares):
                 tensor = shares[j % (nshares + 1)].tensor
-                party_ptrs.append(tensor)
+                party_shares.append(tensor)
 
             tensor = ReplicatedSharedTensor(
-                party_ptrs,
+                party_shares,
                 config=Config(encoder_base=1, encoder_precision=0),
                 session_uuid=session.rank_to_uuid[i],
             ).send(parties[i])
