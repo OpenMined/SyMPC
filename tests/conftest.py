@@ -16,8 +16,6 @@ vms = [sy.VirtualMachine(name=f"P_{i}") for i in range(11)]
 def get_clients() -> Callable[[int], List[Any]]:
     def _helper_get_clients(nr_clients: int) -> List[Any]:
         shared_vms = [vm for vm in vms[0:nr_clients]]
-        for i in shared_vms:
-            i.store.clear()
         clients = [vm.get_root_client() for vm in shared_vms]
         return clients
 
