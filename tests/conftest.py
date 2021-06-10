@@ -9,14 +9,13 @@ from typing import List
 import pytest
 import syft as sy
 
-vms = [sy.VirtualMachine(name=f"P_{i}") for i in range(11)]
-
 
 @pytest.fixture
 def get_clients() -> Callable[[int], List[Any]]:
     def _helper_get_clients(nr_clients: int) -> List[Any]:
-        shared_vms = [vm for vm in vms[0:nr_clients]]
-        clients = [vm.get_root_client() for vm in shared_vms]
-        return clients
+        return [
+            sy.VirtualMachine(name=f"P_{i}").get_root_client()
+            for i in range(nr_clients)
+        ]
 
     return _helper_get_clients
