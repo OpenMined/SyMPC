@@ -20,7 +20,8 @@ def test_argmax_multiple_max(get_clients) -> None:
     x = MPCTensor(secret=torch.Tensor([1, 2, 3, -1, 3]), session=session)
 
     with pytest.raises(ValueError):
-        x.argmax()
+        res = x.argmax()
+        print(res.reconstruct())
 
 
 def test_argmax(get_clients) -> None:
