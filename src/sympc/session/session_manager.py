@@ -29,9 +29,9 @@ class SessionManager:
         """Initializer for the Session Manager.
 
         Raises:
-            NotImplementedError: This class it is not supposed to be instanciated.
+            NotImplementedError: This class it is not supposed to be instantiated.
         """
-        raise NotImplementedError("This is not suposed to be instanciated!")
+        raise NotImplementedError("This is not supposed to be instantiated!")
 
     @staticmethod
     def setup_mpc(session: Session) -> None:
@@ -42,7 +42,13 @@ class SessionManager:
 
         Args:
             session (Session): Session to send.
+
+        Raises:
+            ValueError : If the specified protocol is falcon and parties!=3
         """
+        if type(session.protocol).__name__ == "Falcon" and session.nr_parties != 3:
+            raise ValueError("Falcon is a 3 Party Computation Protocol")
+
         uuids: Dict[int, UUID] = {}
         for rank, party in enumerate(session.parties):
             # Assign a new rank before sending it to another party

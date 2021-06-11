@@ -7,6 +7,7 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import ShareTensor
@@ -36,13 +37,17 @@ def test_session_default_init() -> None:
 def test_session_custom_init() -> None:
     config = Config()
     session = Session(
-        parties=["alice", "bob"], ring_size=2 ** 32, config=config, ttp="TTP"
+        parties=["alice", "bob"],
+        ring_size=2 ** 32,
+        config=config,
+        ttp="TTP",
+        protocol=Falcon(),
     )
     assert session.uuid is None
     assert session.parties == ["alice", "bob"]
     assert session.trusted_third_party == "TTP"
     assert session.crypto_store is None
-    assert session.protocol is not None
+    assert type(session.protocol).__name__ == "Falcon"
     assert session.config == config
     assert session.przs_generators == []
     assert session.rank == -1
@@ -51,6 +56,7 @@ def test_session_custom_init() -> None:
     assert session.ring_size == 2 ** 32
     assert session.min_value == -(2 ** 32) // 2
     assert session.max_value == (2 ** 32 - 1) // 2
+    assert type(session.get_protocol()).__name__ == "Falcon"
 
 
 def test_przs_generate_random_share(get_clients) -> None:
@@ -97,8 +103,11 @@ def test_copy() -> None:
 
 
 def test_invalid_protocol_exception() -> None:
+    class TestProtocol:
+        pass
+
     with pytest.raises(ValueError):
-        Session(protocol="fs")
+        Session(protocol=TestProtocol())
 
 
 def test_invalid_ringsize_exception() -> None:

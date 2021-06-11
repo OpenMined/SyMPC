@@ -8,6 +8,7 @@ import torch
 
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
+from sympc.protocol import DefaultProtocol
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -61,9 +62,9 @@ def test_different_config() -> None:
 
 
 def test_send_get(get_clients, precision=12, base=4) -> None:
-    client = get_clients(1)[0]
-    protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=[client])
+    client = get_clients(1)
+    protocol = DefaultProtocol("semi-honest")
+    session = Session(protocol=protocol, parties=client)
     SessionManager.setup_mpc(session)
     share1 = torch.Tensor([1.4, 2.34, 3.43])
     share2 = torch.Tensor([1, 2, 3])
@@ -72,7 +73,7 @@ def test_send_get(get_clients, precision=12, base=4) -> None:
     x_share = ReplicatedSharedTensor(
         shares=[share1, share2, share3], session_uuid=session_uuid
     )
-    x_ptr = x_share.send(client)
+    x_ptr = x_share.send(client[0])
     result = x_ptr.get()
 
     assert result == x_share
@@ -127,7 +128,7 @@ def test_hook_method(get_clients) -> None:
 
 def test_hook_property(get_clients) -> None:
     clients = get_clients(3)
-    protocol = Falcon("semi-honest")
+    protocol = DefaultProtocol("malicious")
     session = Session(protocol=protocol, parties=clients)
     SessionManager.setup_mpc(session)
 
@@ -142,10 +143,9 @@ def test_hook_property(get_clients) -> None:
     assert (rst.T.shares[1] == y.T).all()
 
 
-@pytest.mark.parametrize("parties", [3, 5, 11])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
-    parties = get_clients(parties)
+def test_rst_distribute_reconstruct_falcon(get_clients, security) -> None:
+    parties = get_clients(3)
     protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
@@ -157,9 +157,23 @@ def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
     assert np.allclose(secret, a.reconstruct(), atol=1e-5)
 
 
-@pytest.mark.parametrize("parties", [2, 5, 11])
-def test_share_distribution_number_shares(get_clients, parties):
+@pytest.mark.parametrize("parties", [3, 5, 11])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_rst_distribute_reconstruct_default(get_clients, parties, security) -> None:
     parties = get_clients(parties)
+    protocol = DefaultProtocol(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = 42.32
+
+    a = MPCTensor(secret=secret, session=session)
+
+    assert np.allclose(secret, a.reconstruct(), atol=1e-5)
+
+
+def test_share_distribution_number_shares_falcon(get_clients):
+    parties = get_clients(3)
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
@@ -171,10 +185,39 @@ def test_share_distribution_number_shares(get_clients, parties):
         assert len(RSTensor.get_shares().get()) == (len(parties) - 1)
 
 
-@pytest.mark.parametrize("parties", [3, 5])
-def test_invalid_malicious_reconstruction(get_clients, parties):
+@pytest.mark.parametrize("parties", [2, 5, 11])
+def test_share_distribution_number_shares_default(get_clients, parties):
     parties = get_clients(parties)
+    protocol = DefaultProtocol("semi-honest")
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    shares = MPCTensor.generate_shares(100.42, len(parties))
+    share_ptrs = ReplicatedSharedTensor.distribute_shares(shares, session)
+
+    for RSTensor in share_ptrs:
+        assert len(RSTensor.get_shares().get()) == (len(parties) - 1)
+
+
+def test_invalid_malicious_reconstruction_falcon(get_clients):
+    parties = get_clients(3)
     protocol = Falcon("malicious")
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = 42.32
+
+    tensor = MPCTensor(secret=secret, session=session)
+    tensor.share_ptrs[0][0] = tensor.share_ptrs[0][0] + 4
+
+    with pytest.raises(ValueError):
+        tensor.reconstruct()
+
+
+@pytest.mark.parametrize("parties", [3, 5])
+def test_invalid_malicious_reconstruction_default(get_clients, parties):
+    parties = get_clients(parties)
+    protocol = DefaultProtocol("malicious")
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
