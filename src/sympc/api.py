@@ -152,6 +152,14 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.ReplicatedSharedTensor",
     ),
     (
+        "sympc.tensor.ReplicatedSharedTensor.__setitem__",
+        "syft.lib.python._SyNone",
+    ),
+    (
+        "sympc.tensor.ReplicatedSharedTensor.__getitem__",
+        "torch.Tensor",
+    ),
+    (
         "sympc.tensor.ReplicatedSharedTensor.t",
         "sympc.tensor.ReplicatedSharedTensor",
     ),
@@ -163,6 +171,7 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.ReplicatedSharedTensor.clone",
         "sympc.tensor.ReplicatedSharedTensor",
     ),
+    ("sympc.tensor.ReplicatedSharedTensor.get_shares", "syft.lib.python.List"),
     (
         "sympc.tensor.ReplicatedSharedTensor.numel",
         "syft.lib.python.Int",  # FIXME: Can't we just return an int??
