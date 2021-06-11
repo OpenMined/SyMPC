@@ -88,6 +88,7 @@ def test_exception_conv2d_kernel_mismatch(get_clients):
         model.share(session=session)
 
 
+@pytest.mark.order(1)
 def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
     model = ConvNet(torch)
 
