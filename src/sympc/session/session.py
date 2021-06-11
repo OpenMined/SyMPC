@@ -163,7 +163,7 @@ class Session:
         self.tensor_type: Union[torch.dtype] = get_type_from_ring(ring_size)
         self.ring_size = ring_size
         self.min_value = -(ring_size) // 2
-        self.max_value = (ring_size - 1) // 2
+        self.max_value = (ring_size) // 2 - 1
 
         self.autograd_active = False
 

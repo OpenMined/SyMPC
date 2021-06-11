@@ -31,7 +31,7 @@ def test_session_default_init() -> None:
     assert session.tensor_type == get_type_from_ring(2 ** 64)
     assert session.ring_size == 2 ** 64
     assert session.min_value == -(2 ** 64) // 2
-    assert session.max_value == (2 ** 64 - 1) // 2
+    assert session.max_value == (2 ** 64) // 2 - 1
 
 
 def test_session_custom_init() -> None:
@@ -55,7 +55,7 @@ def test_session_custom_init() -> None:
     assert session.tensor_type == get_type_from_ring(2 ** 32)
     assert session.ring_size == 2 ** 32
     assert session.min_value == -(2 ** 32) // 2
-    assert session.max_value == (2 ** 32 - 1) // 2
+    assert session.max_value == (2 ** 32) // 2 - 1
     assert type(session.get_protocol()).__name__ == "Falcon"
 
 
@@ -103,11 +103,11 @@ def test_copy() -> None:
 
 
 def test_invalid_protocol_exception() -> None:
-    class TestProtocol:
+    class TestProtocolInvalid:
         pass
 
     with pytest.raises(ValueError):
-        Session(protocol=TestProtocol())
+        Session(protocol=TestProtocolInvalid())
 
 
 def test_invalid_ringsize_exception() -> None:
