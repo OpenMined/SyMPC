@@ -1,5 +1,4 @@
 # third party
-# third party
 import pytest
 
 from sympc.protocol import Falcon
@@ -12,9 +11,16 @@ def test_share_class() -> None:
 
 
 def test_session() -> None:
-    protocol = Falcon("malicious")
+    protocol = Falcon("semi-honest")
     session = Session(protocol=protocol)
     assert type(session.protocol) == Falcon
+
+
+def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
+    parties = get_clients(parties)
+    protocol = Falcon("malicious")
+    with pytest.raises(ValueError):
+        Session(protocol=protocol, parties=parties)
 
 
 def test_invalid_security_type():

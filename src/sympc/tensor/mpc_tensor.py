@@ -21,9 +21,7 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
-from sympc.utils import islocal
 from sympc.utils import ispointer
-from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
 
@@ -368,39 +366,20 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Args:
             decode (bool): True if decode using FixedPointEncoder. Defaults to True
-            get_shares (bool): True if get shares. Defaults to False.
+            get_shares (bool): Retrieve only shares.
 
         Returns:
             torch.Tensor. The secret reconstructed.
         """
-
-        def _request_and_get(share_ptr: ShareTensor) -> ShareTensor:
-            """Function used to request and get a share - Duet Setup.
-
-            Args:
-                share_ptr (ShareTensor): a ShareTensor
-
-            Returns:
-                ShareTensor. The ShareTensor in local.
-
-            """
-            if not islocal(share_ptr):
-                share_ptr.request(block=True)
-            res = share_ptr.get_copy()
-            return res
-
-        request = _request_and_get
-        request_wrap = parallel_execution(request)
-
-        args = [[share] for share in self.share_ptrs]
-        local_shares = request_wrap(args)
-
-        shares = [share.tensor for share in local_shares]
+        result = self.session.protocol.share_class.reconstruct(
+            self.share_ptrs,
+            get_shares=get_shares,
+            security_type=self.session.protocol.security_type,
+        )
 
         if get_shares:
-            return shares
 
-        plaintext = sum(shares)
+            return result
 
         if decode:
             fp_encoder = FixedPointEncoder(
@@ -408,9 +387,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 precision=self.session.config.encoder_precision,
             )
 
-            plaintext = fp_encoder.decode(plaintext)
+            result = fp_encoder.decode(result)
 
-        return plaintext
+        return result
 
     get = reconstruct
 

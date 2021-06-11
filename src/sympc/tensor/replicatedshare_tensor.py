@@ -15,6 +15,8 @@ import torch
 
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
+from sympc.session import Session
+from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
@@ -34,8 +36,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     Attributes:
        shares: The shares held by the party
     """
-
-    AUTOGRAD_IS_ON: bool = True
 
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
@@ -64,6 +64,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.ring_size = ring_size
 
         self.config = config
+
         self.fp_encoder = FixedPointEncoder(
             base=config.encoder_base, precision=config.encoder_precision
         )
@@ -74,10 +75,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             for i in range(len(shares)):
                 self.shares.append(self._encode(shares[i]).to(tensor_type))
 
-    def _encode(self, data):
+    def _encode(self, data: torch.Tensor) -> torch.Tensor:
+        """Encode via FixedPointEncoder.
+
+        Args:
+            data (torch.Tensor): Tensor to be encoded
+
+        Returns:
+            encoded_data (torch.Tensor): Decoded values
+
+        """
         return self.fp_encoder.encode(data)
 
-    def decode(self):
+    def decode(self) -> List[torch.Tensor]:
         """Decode via FixedPointEncoder.
 
         Returns:
@@ -85,18 +95,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self._decode()
 
-    def _decode(self):
+    def _decode(self) -> List[torch.Tensor]:
         """Decodes shares list of RSTensor via FixedPointEncoder.
 
         Returns:
             List[torch.Tensor]: Decoded values
         """
         shares = []
+
         for i in range(len(self.shares)):
             tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
             shares.append(tensor)
 
         return shares
+
+    def get_shares(self) -> List[torch.Tensor]:
+        """Get shares.
+
+        Returns:
+            List[torch.Tensor]: List of shares.
+        """
+        return self.shares
 
     def add(self, y):
         """Apply the "add" operation between "self" and "y".
@@ -201,6 +220,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return True
 
+    def __getitem__(self, key: int) -> torch.Tensor:
+        """Allows to subset shares.
+
+        Args:
+            key (int): The share to be retrieved.
+
+        Returns:
+            share (torch.Tensor): Returned share.
+        """
+        return self.shares[key]
+
+    def __setitem__(self, key: int, newvalue: torch.Tensor) -> None:
+        """Allows to set share value to new value.
+
+        Args:
+            key (int): The share to be retrieved.
+            newvalue (torch.Tensor): New value of share.
+
+        """
+        self.shares[key] = newvalue
+
     def ne(self, y):
         """Not Equal operator.
 
@@ -208,6 +248,138 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             y: self!=y
 
         """
+
+    @staticmethod
+    def __reconstruct_semi_honest(
+        share_ptrs: List["ReplicatedSharedTensor"],
+        get_shares: bool = False,
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        """Reconstruct value from shares.
+
+        Args:
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
+            get_shares (bool): Retrieve only shares.
+
+        Returns:
+            reconstructed_value (torch.Tensor): Reconstructed value.
+        """
+        shares1 = share_ptrs[0].get_shares()[0].get()
+        shares2 = share_ptrs[1].get_shares().get()
+
+        shares = [shares1] + shares2
+
+        if get_shares:
+            return shares
+
+        return sum(shares)
+
+    @staticmethod
+    def __reconstruct_malicious(
+        share_ptrs: List["ReplicatedSharedTensor"],
+        get_shares: bool = False,
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        """Reconstruct value from shares.
+
+        Args:
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
+            get_shares (bool): Retrieve only shares.
+
+        Returns:
+            reconstructed_value (torch.Tensor): Reconstructed value.
+
+        Raises:
+            ValueError: When parties share values are not equal.
+        """
+        nparties = len(share_ptrs)
+
+        # Get shares from all parties
+        all_shares = []
+        for party_rank in range(nparties):
+            all_shares.append(share_ptrs[party_rank].get_shares().get())
+
+        # reconstruct shares from all parties and verify
+        value = None
+        for party_rank in range(nparties):
+            share_sum = all_shares[party_rank][0] + sum(
+                all_shares[(party_rank + 1) % (nparties)]
+            )
+
+            if not value:
+                value = share_sum
+
+            elif share_sum != value:
+                raise ValueError(
+                    "Reconstruction values from all parties are not equal."
+                )
+
+        if get_shares:
+            return all_shares
+
+        return value
+
+    @staticmethod
+    def reconstruct(
+        share_ptrs: List["ReplicatedSharedTensor"],
+        get_shares: bool = False,
+        security_type: str = "semi-honest",
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        """Reconstruct value from shares.
+
+        Args:
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
+            security_type (str): Type of security followed by protocol.
+            get_shares (bool): Retrieve only shares.
+
+        Returns:
+            reconstructed_value (torch.Tensor): Reconstructed value.
+
+        Raises:
+            ValueError: Invalid security type
+        """
+        if security_type == "malicious":
+            return ReplicatedSharedTensor.__reconstruct_malicious(
+                share_ptrs, get_shares
+            )
+
+        elif security_type == "semi-honest":
+            return ReplicatedSharedTensor.__reconstruct_semi_honest(
+                share_ptrs, get_shares
+            )
+
+        raise ValueError("Invalid security Type")
+
+    @staticmethod
+    def distribute_shares(shares: List[ShareTensor], session: Session) -> List:
+        """Distribute a list of shares.
+
+        Args:
+            shares (List[ShareTensor): list of shares to distribute.
+            session (Session): Session.
+
+        Returns:
+            List of ShareTensor.
+
+        """
+        parties = session.parties
+
+        nshares = len(parties) - 1
+
+        ptr_list = []
+        for i in range(len(parties)):
+            party_shares = []
+
+            for j in range(i, i + nshares):
+                tensor = shares[j % (nshares + 1)].tensor
+                party_shares.append(tensor)
+
+            tensor = ReplicatedSharedTensor(
+                party_shares,
+                config=Config(encoder_base=1, encoder_precision=0),
+                session_uuid=session.rank_to_uuid[i],
+            ).send(parties[i])
+            ptr_list.append(tensor)
+
+        return ptr_list
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
