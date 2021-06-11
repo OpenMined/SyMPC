@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623421411575,
+  "lastUpdate": 1623424568781,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -744,6 +744,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.06454463253883358",
             "extra": "mean: 9.035753609599988 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "19b86b8d47f2d69a9c9c5f431bf1ca89951346f0",
+          "message": "Add debug info and reduce tolerance (#234)",
+          "timestamp": "2021-06-11T20:43:12+05:30",
+          "tree_id": "37683d80e7c469c11963fd27ba3e6842cb2354bc",
+          "url": "https://github.com/OpenMined/SyMPC/commit/19b86b8d47f2d69a9c9c5f431bf1ca89951346f0"
+        },
+        "date": 1623424568262,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.13684603825229286,
+            "unit": "iter/sec",
+            "range": "stddev: 0.24496456575509384",
+            "extra": "mean: 7.307482282799993 sec\nrounds: 5"
           }
         ]
       }
