@@ -4,6 +4,7 @@ from typing import List
 # third party
 import numpy as np
 import pytest
+import syft as sy
 import torch
 
 from sympc.session import Session
@@ -598,3 +599,44 @@ def test_grad_relu_backward(get_clients) -> None:
     expected = grad * mask
 
     assert np.allclose(res, expected, rtol=1e-3)
+
+
+class LinearSyNet(sy.Module):
+    def __init__(self, torch_ref):
+        super(LinearSyNet, self).__init__(torch_ref=torch_ref)
+        self.fc1 = self.torch_ref.nn.Linear(3, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        return x
+
+
+def test_forward(get_clients) -> None:
+    model = LinearSyNet(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+    mpc_model = model.share(session=session)
+
+    x_secret = torch.tensor(
+        [[0.125, -1.25, -4.25], [-3, 3, 8], [-3, 3, 8]], requires_grad=True
+    )
+    x_mpc = MPCTensor(secret=x_secret, session=session, requires_grad=True)
+
+    out_torch = model(x_secret)
+    out_mpc = mpc_model(x_mpc)
+
+    s_torch = torch.sum(out_torch)
+    s_mpc = out_mpc.sum()
+
+    s_torch.backward()
+    s_mpc.backward()
+
+    assert np.allclose(x_mpc.grad.get(), x_secret.grad, rtol=1e-2)
