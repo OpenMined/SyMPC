@@ -16,6 +16,7 @@ from sympc.tensor.grads.grad_functions import GradFunc
 from sympc.tensor.grads.grad_functions import GradMatMul
 from sympc.tensor.grads.grad_functions import GradMul
 from sympc.tensor.grads.grad_functions import GradPow
+from sympc.tensor.grads.grad_functions import GradReLU
 from sympc.tensor.grads.grad_functions import GradReshape
 from sympc.tensor.grads.grad_functions import GradSigmoid
 from sympc.tensor.grads.grad_functions import GradSub
@@ -561,3 +562,39 @@ def test_grad_matmul_backward(get_clients) -> None:
 
     with pytest.raises(ValueError):
         GradMatMul.backward(ctx, grad_mpc)
+
+
+def test_grad_relu_forward(get_clients) -> None:
+    # We need Function Secret Sharing (only for 2 parties) for
+    # comparing
+    parties = get_clients(2)
+    x = torch.Tensor([-7, 0, 12])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradReLU.forward(ctx, x_mpc)
+
+    assert "mask" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = x.relu()
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+def test_grad_relu_backward(get_clients) -> None:
+    parties = get_clients(2)
+    grad = torch.tensor([0, -1.453, 0.574, -0.89])
+
+    grad_mpc = grad.share(parties=parties)
+    mask = torch.tensor([0, 0, 1, 0])
+
+    ctx = {"mask": mask}
+
+    res_mpc = GradReLU.backward(ctx, grad_mpc)
+
+    res = res_mpc.reconstruct()
+    expected = grad * mask
+
+    assert np.allclose(res, expected, rtol=1e-3)
