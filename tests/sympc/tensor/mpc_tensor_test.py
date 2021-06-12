@@ -512,6 +512,7 @@ def test_backward_without_requires_grad(get_clients):
     s_mpc.backward()
 
     assert not res_mpc.requires_grad
+    assert res_mpc.grad is None
     assert x.grad is None
     assert y.grad is None
 
@@ -534,6 +535,7 @@ def test_backward_with_one_requires_grad(get_clients):
     s_mpc.backward()
     s.backward()
 
+    # TODO: add assert for res_mpc.grad and res.grad
     assert res_mpc.requires_grad
     assert np.allclose(x.grad.get(), x_secret.grad, rtol=1e-3)
     assert y.grad is None
