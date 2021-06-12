@@ -150,11 +150,15 @@ def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = 42.32
+    # Test with torch matrix
+    secret1 = torch.ones([10, 10]) * 5
+    a = MPCTensor(secret=secret1, session=session)
+    assert np.allclose(secret1, a.reconstruct(), atol=1e-5)
 
-    a = MPCTensor(secret=secret, session=session)
-
-    assert np.allclose(secret, a.reconstruct(), atol=1e-5)
+    # Test with regular float values
+    secret2 = 43.2
+    a = MPCTensor(secret=secret2, session=session)
+    assert np.allclose(secret2, a.reconstruct(), atol=1e-5)
 
 
 @pytest.mark.parametrize("parties", [2, 5, 11])
@@ -178,7 +182,7 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = 42.32
+    secret = torch.ones([10, 10])
 
     tensor = MPCTensor(secret=secret, session=session)
     tensor.share_ptrs[0][0] = tensor.share_ptrs[0][0] + 4
