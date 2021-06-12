@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623498160000,
+  "lastUpdate": 1623502852209,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -806,6 +806,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.021641820246167544",
             "extra": "mean: 7.062242118 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "309ab87edf6f2251839ca909d503069d477566f7",
+          "message": "added forward test (#232)\n\n* added forward tests\r\n\r\n* assured not flakiness",
+          "timestamp": "2021-06-12T18:27:50+05:30",
+          "tree_id": "baff7a3279d735d31a2c0eb5ed4f514c97a7b900",
+          "url": "https://github.com/OpenMined/SyMPC/commit/309ab87edf6f2251839ca909d503069d477566f7"
+        },
+        "date": 1623502851214,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.1356863133000414,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03952077046795081",
+            "extra": "mean: 7.369940089599993 sec\nrounds: 5"
           }
         ]
       }
