@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623424568781,
+  "lastUpdate": 1623498160000,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -775,6 +775,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.24496456575509384",
             "extra": "mean: 7.307482282799993 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4cb3359f4f8199bafcdaf10ea5aa766744288a5e",
+          "message": "added GradReLU function (#238)",
+          "timestamp": "2021-06-12T12:39:49+01:00",
+          "tree_id": "c03b6f465b4e0c0415db8bcb35f55a91cf9c7dec",
+          "url": "https://github.com/OpenMined/SyMPC/commit/4cb3359f4f8199bafcdaf10ea5aa766744288a5e"
+        },
+        "date": 1623498159505,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.1415980907042587,
+            "unit": "iter/sec",
+            "range": "stddev: 0.021641820246167544",
+            "extra": "mean: 7.062242118 sec\nrounds: 5"
           }
         ]
       }
