@@ -144,17 +144,35 @@ def test_hook_property(get_clients) -> None:
 
 @pytest.mark.parametrize("parties", [3, 5, 11])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
+def test_rst_distribute_reconstruct_float_secret(
+    get_clients, parties, security
+) -> None:
     parties = get_clients(parties)
     protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = 42.32
+    secret = 43.2
+    a = MPCTensor(secret=secret, session=session)
+    assert np.allclose(secret, a.reconstruct(), atol=1e-3)
+
+
+@pytest.mark.parametrize("parties", [3, 5, 11])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_rst_distribute_reconstruct_tensor_secret(
+    get_clients, parties, security
+) -> None:
+    parties = get_clients(parties)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor(
+        [[1, -2.0, 0.0], [3.9, -4.394, -0.9], [-43, 100, -0.4343], [1.344, -5.0, 0.55]]
+    )
 
     a = MPCTensor(secret=secret, session=session)
-
-    assert np.allclose(secret, a.reconstruct(), atol=1e-5)
+    assert np.allclose(secret, a.reconstruct(), atol=1e-3)
 
 
 @pytest.mark.parametrize("parties", [2, 5, 11])
@@ -178,7 +196,9 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = 42.32
+    secret = torch.Tensor(
+        [[1, -2.0, 0.0], [3.9, -4.394, -0.9], [-43, 100, -0.4343], [1.344, -5.0, 0.55]]
+    )
 
     tensor = MPCTensor(secret=secret, session=session)
     tensor.share_ptrs[0][0] = tensor.share_ptrs[0][0] + 4
