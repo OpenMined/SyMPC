@@ -15,6 +15,9 @@ steps where needed to introduce that change and make all test pass.
 With this lists here, SyMPC has the control and this "Double PR tests error" is solved.
 """
 
+# third party
+import syft as sy
+
 import sympc
 
 from . import protocol  # noqa: 401
@@ -206,7 +209,15 @@ allowed_external_attrs = [
     ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.ShareTensor"),
     (
         "sympc.session.Session.przs_generate_random_share",
-        "sympc.tensor.ShareTensor",
+        sy.lib.misc.union.UnionGenerator[
+            "sympc.tensor.ReplicatedSharedTensor", "sympc.tensor.ShareTensor"
+        ],
+    ),
+    (
+        "sympc.session.Session.prrs_generate_random_share",
+        sy.lib.misc.union.UnionGenerator[
+            "sympc.tensor.ReplicatedSharedTensor", "sympc.tensor.ShareTensor"
+        ],
     ),
     (
         "sympc.store.CryptoStore.populate_store",
