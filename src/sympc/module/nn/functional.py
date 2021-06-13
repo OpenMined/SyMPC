@@ -51,6 +51,72 @@ def mse_loss(pred: MPCTensor, target: MPCTensor, reduction: str = "mean") -> MPC
     return result
 
 
+Kernel2D = Tuple[int, int]
+Stride2D = Tuple[int, int]
+Padding2D = Tuple[int, int]
+Dilation2D = Tuple[int, int]
+MaxPool2DArgs = Tuple[Kernel2D, Stride2D, Padding2D, Dilation2D]
+
+
+def _sanity_check_max_pool2d(
+    kernel_size: Union[int, Tuple[int, int]],
+    stride: Optional[Union[int, Tuple[int, int]]] = None,
+    padding: Union[int, Tuple[int, int]] = 0,
+    dilation: Union[int, Tuple[int, int]] = 1,
+) -> MaxPool2DArgs:
+    """Sanity check the parameters required for max_pool2d (backward and forward pass).
+
+    Args:
+        kernel_size (Union[int, Tuple[int, int]]): the kernel size
+            in case it is passed as an integer then that specific value is used for height and width
+        stride (Union[int, Tuple[int, int]]): the stride size
+            in case it is passed as an integer then that specific value is used for height and width
+        padding (Union[int, Tuple[int, int]]): the padding size
+            in case it is passed as an integer then that specific value is used for height and width
+        dilation (Union[int, Tuple[int, int]]): the dilation size
+            in case it is passed as an integer then that specific value is used for height and width
+
+    Returns:
+        A tuple representing the parameters, all converted to a Tuple with
+    2 elements for height and width.
+
+    Raises:
+        ValueError: if the passed in parameters are not
+    """
+    if isinstance(kernel_size, int):
+        kernel_size = (kernel_size, kernel_size)
+
+    if len(kernel_size) != 2:
+        raise ValueError("Kernel_size should have only 2 dimensions")
+
+    if stride is None:
+        stride = kernel_size
+
+    if isinstance(stride, int):
+        stride = (stride, stride)
+
+    if len(stride) != 2:
+        raise ValueError("Stride should have only 2 dimensions")
+
+    if isinstance(padding, int):
+        padding = (padding, padding)
+
+    if padding[0] > kernel_size[0] or padding[1] > kernel_size[1]:
+        raise ValueError("Padding should be <= kernel_size / 2")
+
+    if len(padding) != 2:
+        raise ValueError("Padding should have only 2 dimensions")
+
+    if isinstance(dilation, int):
+        dilation = (dilation, dilation)
+
+    if len(dilation) != 2:
+        raise ValueError("Dilation should have only 2 dimensions")
+
+    if dilation[0] != 1 or dilation[1] != 1:
+        raise ValueError("Supported only dilation == 1")
+
+
 def _reshape_max_pool2d(
     x: MPCTensor,
     kernel_size: Tuple[int, int],
@@ -167,43 +233,8 @@ def max_pool2d(
 
     Returns:
         A tuple representing maximum values and the indices (as a one hot encoding
-
-    Raises:
-        ValueError: in case kernel_size is passed as a tuple with a number of elements != 2
     """
-    if isinstance(kernel_size, int):
-        kernel_size = (kernel_size, kernel_size)
-
-    if len(kernel_size) != 2:
-        raise ValueError("Kernel_size should have only 2 dimensions")
-
-    if stride is None:
-        stride = kernel_size
-
-    if isinstance(stride, int):
-        stride = (stride, stride)
-
-    if len(stride) != 2:
-        raise ValueError("Stride should have only 2 dimensions")
-
-    if isinstance(padding, int):
-        padding = (padding, padding)
-
-    if padding[0] > kernel_size[0] or padding[1] > kernel_size[1]:
-        raise ValueError("Padding should be <= kernel_size / 2")
-
-    if len(padding) != 2:
-        raise ValueError("Padding should have only 2 dimensions")
-
-    if isinstance(dilation, int):
-        dilation = (dilation, dilation)
-
-    if len(dilation) != 2:
-        raise ValueError("Dilation should have only 2 dimensions")
-
-    if dilation[0] != 1 or dilation[1] != 1:
-        raise ValueError("Supported only dilation == 1")
-
+    kernel_size, stride, padding, dilation = _sanity_check_max_pool2d
     x_reshaped = _reshape_max_pool2d(
         x, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation
     )
@@ -314,39 +345,9 @@ def max_pool2d_backward(
     Raises:
         ValueError: In case some of the values for the parameters are not supported
     """
-    if isinstance(kernel_size, int):
-        kernel_size = (kernel_size, kernel_size)
-
-    if len(kernel_size) != 2:
-        raise ValueError("Kernel_size should have only 2 dimensions")
-
-    if stride is None:
-        stride = kernel_size
-
-    if isinstance(stride, int):
-        stride = (stride, stride)
-
-    if len(stride) != 2:
-        raise ValueError("Stride should have only 2 dimensions")
-
-    if isinstance(padding, int):
-        padding = (padding, padding)
-
-    if padding[0] > kernel_size[0] or padding[1] > kernel_size[1]:
-        raise ValueError("Padding should be <= kernel_size / 2")
-
-    if len(padding) != 2:
-        raise ValueError("Padding should have only 2 dimensions")
-
-    if isinstance(dilation, int):
-        dilation = (dilation, dilation)
-
-    if len(dilation) != 2:
-        raise ValueError("Dilation should have only 2 dimensions")
-
-    if dilation[0] != 1 or dilation[1] != 1:
-        raise ValueError("Supported only dilation == 1")
-
+    kernel_size, stride, padding, dilation = _sanity_check_max_pool2d(
+        kernel_size, stride, padding, dilation
+    )
     if len(grad.shape) != 4 and len(grad.shape) != 3:
         raise ValueError(
             f"Expected gradient to have 3/4 dimensions (4 with batch). Found {len(grad.shape)}"
