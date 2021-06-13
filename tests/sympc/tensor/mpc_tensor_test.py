@@ -250,6 +250,27 @@ def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
+falcon = Protocol.registered_protocols["Falcon"]()
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_public_mpc_falcon(get_clients, op_str) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected_result = op(x_secret, y_secret)
+    result = op(x, y_secret).reconstruct()
+
+    assert np.allclose(result, expected_result, atol=10e-4)
+
+
 @pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "truediv"])
 def test_ops_integer(get_clients, nr_clients, op_str) -> None:

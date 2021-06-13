@@ -695,7 +695,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         elif op_str in {"add", "sub"}:
             shares = list(self.share_ptrs)
             # Only the rank 0 party has to add the element
-            shares[0] = op(shares[0], y)
+            if self.session.protocol.share_class == ShareTensor:
+                shares[0] = op(shares[0], y)
+            else:
+                shares = [op(share, y) for share in self.share_ptrs]
         else:
             raise ValueError(f"{op_str} not supported")
 
