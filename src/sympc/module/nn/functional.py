@@ -89,7 +89,7 @@ def helper_max_pool2d_reshape(
 ) -> ShareTensor:
     """Function that runs at each party for preparing the share.
 
-    Reshape each share tensor to prepare it for callign 'argmax'.
+    Reshape each share tensor to prepare it for calling 'argmax'.
     The new share would have "each element" as the input on which we
     will run the max_pool2d kernel.
 
