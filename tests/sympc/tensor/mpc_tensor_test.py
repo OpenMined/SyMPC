@@ -544,3 +544,16 @@ def test_invalid_share_class(get_clients) -> None:
     x_s.session.protocol.share_class = "invalid"
     with pytest.raises(TypeError):
         x_s + x
+
+
+def test_ops_different_share_class(get_clients) -> None:
+    clients = get_clients(2)
+    session1 = Session(parties=clients)
+    session2 = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session1)
+    SessionManager.setup_mpc(session2)
+    x = torch.tensor([1, 2, 3])
+    x_share = MPCTensor(secret=x, session=session1)
+    x_rst = MPCTensor(secret=x, session=session2)
+    with pytest.raises(TypeError):
+        x_share + x_rst

@@ -231,8 +231,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         op = getattr(operator, op_str)
         shares = []
         if op_str in {"add", "sub"}:
-            for i in range(len(self.shares)):
-                shares.append(op(self.shares[i], y.shares[i]))
+            for x_share, y_share in zip(self.shares, y.shares):
+                shares.append(op(x_share, y_share))
         else:
             raise ValueError(f"{op_str} not supported")
 
