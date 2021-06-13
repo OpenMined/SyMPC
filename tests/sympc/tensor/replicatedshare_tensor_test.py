@@ -156,7 +156,6 @@ def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
     r2 = 5
 
     secret1 = torch.FloatTensor(10, 10).uniform_(r1, r2)
-    print(secret1)
     a = MPCTensor(secret=secret1, session=session)
     assert np.allclose(secret1, a.reconstruct(), atol=1e-3)
 
@@ -191,8 +190,6 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
     r2 = 5
 
     secret = torch.FloatTensor(10, 10).uniform_(r1, r2)
-    print(secret)
-
     tensor = MPCTensor(secret=secret, session=session)
     tensor.share_ptrs[0][0] = tensor.share_ptrs[0][0] + 4
 
