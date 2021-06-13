@@ -626,7 +626,7 @@ class GradReLU(GradFunc):
 
 
 class GradMaxPool2D(GradFunc):
-    """The Reshape gradient function."""
+    """The MaxPool2D gradient function."""
 
     @staticmethod
     def forward(
