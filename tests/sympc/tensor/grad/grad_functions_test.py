@@ -1,5 +1,4 @@
 # stdlib
-from typing import List
 
 # third party
 import numpy as np
@@ -25,7 +24,6 @@ from sympc.tensor.grads.grad_functions import GradSigmoid
 from sympc.tensor.grads.grad_functions import GradSub
 from sympc.tensor.grads.grad_functions import GradSum
 from sympc.tensor.grads.grad_functions import GradT
-from sympc.utils import parallel_execution
 
 
 class LinearSyNet(sy.Module):
@@ -323,7 +321,7 @@ def test_grad_conv2d_forward(get_clients) -> None:
     ctx = {}
     res_mpc = GradConv2d.forward(ctx, input, weight, **kwargs)
 
-    assert "input" in ctx
+    assert "x" in ctx
     assert "weight" in ctx
     assert "stride" in ctx
     assert "padding" in ctx
@@ -361,7 +359,7 @@ def test_grad_conv2d_backward(get_clients) -> None:
     grad_mpc = grad.share(parties=parties)
 
     ctx = {
-        "input": x_mpc,
+        "x": x_mpc,
         "weight": y_mpc,
         "stride": 1,
         "padding": 0,
@@ -375,41 +373,6 @@ def test_grad_conv2d_backward(get_clients) -> None:
 
     assert np.allclose(res_mpc_input.reconstruct(), expected_input, rtol=1e-3)
     assert np.allclose(res_mpc_weight.reconstruct(), expected_weight, rtol=1e-3)
-
-
-@pytest.mark.parametrize(
-    "common_args", [[(6, 6), 2, 1, (3, 3), 1], [(4, 4), 1, 0, (2, 2), 1]]
-)
-@pytest.mark.parametrize("nr_parties", [2, 3, 4])
-def test_get_grad_input_padding(get_clients, common_args: List, nr_parties) -> None:
-    clients = get_clients(2)
-    session = Session(parties=clients)
-    SessionManager.setup_mpc(session)
-
-    grad = torch.Tensor([[[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]])
-    grad_mpc = MPCTensor(secret=grad, session=session)
-
-    input_size, stride, padding, kernel_size, dilation = common_args
-
-    expected_padding = torch.nn.functional.grad._grad_input_padding(
-        grad,
-        input_size,
-        (stride, stride),
-        (padding, padding),
-        kernel_size,
-        (dilation, dilation),
-    )
-
-    args = [[el] + common_args + [session] for el in grad_mpc.share_ptrs]
-    shares = parallel_execution(
-        GradConv2d.get_grad_input_padding, grad_mpc.session.parties
-    )(args)
-    grad_input_padding = MPCTensor(shares=shares, session=grad_mpc.session)
-    output_padding_tensor = grad_input_padding.reconstruct()
-    output_padding_tensor /= grad_mpc.session.nr_parties
-    calculated_padding = tuple(output_padding_tensor.to(torch.int).tolist())
-
-    assert calculated_padding == expected_padding
 
 
 def test_grad_reshape_forward(get_clients) -> None:
@@ -689,9 +652,7 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
 def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> None:
     parties = get_clients(2)
 
-    secret = torch.Tensor(
-        [[[0.23, 0.32, 0.423], [0.2, -0.3, -0.53], [0.32, 0.42, -100]]]
-    )
+    secret = torch.Tensor([[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.32, 0.42, -23]]])
 
     x = secret.share(parties=parties)
 
@@ -721,7 +682,7 @@ def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> 
     parties = get_clients(2)
 
     secret = torch.tensor(
-        [[[0.23, 0.32, 0.423], [0.2, -0.3, -0.53], [0.32, 0.42, -100]]],
+        [[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.32, 0.42, -23]]],
         requires_grad=True,
     )
 
