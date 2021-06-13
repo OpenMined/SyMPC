@@ -77,8 +77,7 @@ def _sanity_check_max_pool2d(
             in case it is passed as an integer then that specific value is used for height and width
 
     Returns:
-        A tuple representing the parameters, all converted to a Tuple with
-    2 elements for height and width.
+        A 4 element type with types Tuple[int, int] representing the converted parameters.
 
     Raises:
         ValueError: if the passed in parameters are not
@@ -115,6 +114,8 @@ def _sanity_check_max_pool2d(
 
     if dilation[0] != 1 or dilation[1] != 1:
         raise ValueError("Supported only dilation == 1")
+
+    return kernel_size, stride, padding, dilation
 
 
 def _reshape_max_pool2d(
@@ -234,7 +235,9 @@ def max_pool2d(
     Returns:
         A tuple representing maximum values and the indices (as a one hot encoding
     """
-    kernel_size, stride, padding, dilation = _sanity_check_max_pool2d
+    kernel_size, stride, padding, dilation = _sanity_check_max_pool2d(
+        kernel_size, stride, padding, dilation
+    )
     x_reshaped = _reshape_max_pool2d(
         x, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation
     )
