@@ -144,25 +144,35 @@ def test_hook_property(get_clients) -> None:
 
 @pytest.mark.parametrize("parties", [3, 5, 11])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_rst_distribute_reconstruct(get_clients, parties, security) -> None:
+def test_rst_distribute_reconstruct_float_secret(
+    get_clients, parties, security
+) -> None:
     parties = get_clients(parties)
     protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    # Test with torch matrix
+    secret = 43.2
+    a = MPCTensor(secret=secret, session=session)
+    assert np.allclose(secret, a.reconstruct(), atol=1e-3)
 
-    r1 = 0
-    r2 = 5
 
-    secret1 = torch.FloatTensor(10, 10).uniform_(r1, r2)
-    a = MPCTensor(secret=secret1, session=session)
-    assert np.allclose(secret1, a.reconstruct(), atol=1e-3)
+@pytest.mark.parametrize("parties", [3, 5, 11])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_rst_distribute_reconstruct_tensor_secret(
+    get_clients, parties, security
+) -> None:
+    parties = get_clients(parties)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
 
-    # Test with regular float values
-    secret2 = 43.2
-    a = MPCTensor(secret=secret2, session=session)
-    assert np.allclose(secret2, a.reconstruct(), atol=1e-3)
+    secret = torch.Tensor(
+        [[1, -2.0, 0.0], [3.9, -4.394, -0.9], [-43, 100, -0.4343], [1.344, -5.0, 0.55]]
+    )
+
+    a = MPCTensor(secret=secret, session=session)
+    assert np.allclose(secret, a.reconstruct(), atol=1e-3)
 
 
 @pytest.mark.parametrize("parties", [2, 5, 11])
@@ -186,10 +196,10 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    r1 = 0
-    r2 = 5
+    secret = torch.Tensor(
+        [[1, -2.0, 0.0], [3.9, -4.394, -0.9], [-43, 100, -0.4343], [1.344, -5.0, 0.55]]
+    )
 
-    secret = torch.FloatTensor(10, 10).uniform_(r1, r2)
     tensor = MPCTensor(secret=secret, session=session)
     tensor.share_ptrs[0][0] = tensor.share_ptrs[0][0] + 4
 
