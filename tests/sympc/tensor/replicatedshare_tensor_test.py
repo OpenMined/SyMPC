@@ -190,7 +190,7 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
 
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
-def test_ops_share_share_local(op_str, precision, base) -> None:
+def test_ops_share_private(op_str, precision, base) -> None:
     op = getattr(operator, op_str)
 
     x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
@@ -212,7 +212,7 @@ def test_ops_share_share_local(op_str, precision, base) -> None:
 
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
-def test_ops_share_tensor_local(op_str, precision, base) -> None:
+def test_ops_share_public(op_str, precision, base) -> None:
     op = getattr(operator, op_str)
 
     x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])

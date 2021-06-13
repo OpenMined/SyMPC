@@ -255,7 +255,7 @@ falcon = Protocol.registered_protocols["Falcon"]()
 
 @pytest.mark.parametrize("nr_clients", [3, 5, 7])
 @pytest.mark.parametrize("op_str", ["add", "sub"])
-def test_ops_public_mpc_falcon(get_clients, nr_clients, op_str) -> None:
+def test_ops_public_tensor_rst(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
@@ -294,7 +294,7 @@ def test_ops_integer(get_clients, nr_clients, op_str) -> None:
 
 @pytest.mark.parametrize("nr_clients", [3, 5, 7])
 @pytest.mark.parametrize("op_str", ["add", "sub"])
-def test_ops_integer_falcon(get_clients, nr_clients, op_str) -> None:
+def test_ops_public_integer_rst(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
@@ -314,7 +314,7 @@ def test_ops_integer_falcon(get_clients, nr_clients, op_str) -> None:
 
 @pytest.mark.parametrize("nr_clients", [3, 5, 7])
 @pytest.mark.parametrize("op_str", ["add", "sub"])
-def test_ops_mpc_mpc_falcon(get_clients, nr_clients, op_str) -> None:
+def test_ops_mpc_private_rst(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
     session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
