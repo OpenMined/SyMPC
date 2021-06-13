@@ -1,4 +1,5 @@
 # stdlib
+import operator
 from uuid import uuid4
 
 # third party
@@ -205,3 +206,44 @@ def test_invalid_malicious_reconstruction(get_clients, parties):
 
     with pytest.raises(ValueError):
         tensor.reconstruct()
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ops_share_private(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ReplicatedSharedTensor(
+        shares=[x], config=Config(encoder_base=base, encoder_precision=precision)
+    )
+    y_share = ReplicatedSharedTensor(
+        shares=[y], config=Config(encoder_base=base, encoder_precision=precision)
+    )
+
+    expected_res = op(x, y)
+    res = op(x_share, y_share)
+    tensor_decoded = res.fp_encoder.decode(res.shares[0])
+
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_ops_share_public(op_str, precision, base) -> None:
+    op = getattr(operator, op_str)
+
+    x = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+
+    x_share = ReplicatedSharedTensor(
+        shares=[x], config=Config(encoder_base=base, encoder_precision=precision)
+    )
+
+    expected_res = op(x, y)
+    res = op(x_share, y)
+    tensor_decoded = res.fp_encoder.decode(res.shares[0])
+
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)

@@ -652,7 +652,11 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If session from MPCTensor and "y" is not the same.
+            TypeError: If MPC tensors are not of same share class
         """
+        if self.session.protocol.share_class != y.session.protocol.share_class:
+            raise TypeError("Both MPC tensors should be of same share class.")
+
         if y.session.uuid != self.session.uuid:
             raise ValueError(
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
@@ -688,14 +692,22 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If "op_str" is not supported.
+            TypeError: if share_class is not supported.
         """
+        from sympc.tensor import ReplicatedSharedTensor
+
         op = getattr(operator, op_str)
         if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
         elif op_str in {"add", "sub"}:
             shares = list(self.share_ptrs)
             # Only the rank 0 party has to add the element
-            shares[0] = op(shares[0], y)
+            if self.session.protocol.share_class == ShareTensor:
+                shares[0] = op(shares[0], y)
+            elif self.session.protocol.share_class == ReplicatedSharedTensor:
+                shares = [op(share, y) for share in self.share_ptrs]
+            else:
+                raise TypeError("Invalid Share Class")
         else:
             raise ValueError(f"{op_str} not supported")
 

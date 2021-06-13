@@ -615,6 +615,7 @@ class LinearSyNet(sy.Module):
         return x
 
 
+@pytest.mark.order(9)
 def test_forward(get_clients) -> None:
     model = LinearSyNet(torch)
 

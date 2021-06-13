@@ -1,6 +1,7 @@
 """Used to abstract multiple shared values held by parties."""
 
 # stdlib
+import operator
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -13,6 +14,7 @@ from uuid import UUID
 # third party
 import torch
 
+import sympc
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
@@ -117,30 +119,192 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self.shares
 
-    def add(self, y):
+    @staticmethod
+    def sanity_checks(
+        x: "ReplicatedSharedTensor",
+        y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
+        op_str: str,
+    ) -> "ReplicatedSharedTensor":
+        """Check the type of "y" and convert it to share if necessary.
+
+        Args:
+            x (ReplicatedSharedTensor): Typically "self".
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): Tensor to check.
+            op_str (str): String operator.
+
+        Returns:
+            ReplicatedSharedTensor: the converted y value.
+
+        Raises:
+            ValueError: if both values are shares and they have different uuids
+            ValueError: if both values have different number of shares.
+        """
+        if not isinstance(y, ReplicatedSharedTensor):
+            if x.session_uuid is not None:
+                session = sympc.session.get_session(str(x.session_uuid))
+                ring_size = session.ring_size
+                config = session.config
+            else:
+                ring_size = x.ring_size
+                config = x.config
+
+            y = ReplicatedSharedTensor(shares=[y], ring_size=ring_size, config=config)
+
+        elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
+            raise ValueError(
+                f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
+            )
+        elif len(x.shares) != len(y.shares):
+            raise ValueError("Both RSTensors should have equal number of shares.")
+
+        return y
+
+    def __apply_public_op(
+        self, y: Union[torch.Tensor, float, int], op_str: str
+    ) -> "ReplicatedSharedTensor":
+        """Apply an operation on "self" which is a RSTensor and a public value.
+
+        Args:
+            y (Union[torch.Tensor, float, int]): Tensor to apply the operation.
+            op_str (str): The operation.
+
+        Returns:
+            ReplicatedSharedTensor: The operation "op_str" applied on "self" and "y"
+
+        Raises:
+            ValueError: If "op_str" is not supported.
+        """
+        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        rank = 0
+        nr_parties: int = 1  # to handle the case when session_uuid is none.
+        session_uuid = self.session_uuid
+        if session_uuid is not None:
+            session = sympc.session.get_session(str(self.session_uuid))
+            ring_size = session.ring_size
+            config = session.config
+            rank = session.rank
+            nr_parties = session.nr_parties
+        else:
+            ring_size = self.ring_size
+            config = self.config
+
+        op = getattr(operator, op_str)
+        shares = self.shares
+        if op_str in {"add", "sub"}:
+            if rank != 1:
+                idx = (nr_parties - rank) % nr_parties
+                shares[idx] = op(shares[idx], y.shares[0])
+        else:
+            raise ValueError(f"{op_str} not supported")
+
+        result = ReplicatedSharedTensor(
+            ring_size=ring_size, session_uuid=session_uuid, config=config
+        )
+        result.shares = shares
+        return result
+
+    def __apply_private_op(
+        self, y: "ReplicatedSharedTensor", op_str: str
+    ) -> "ReplicatedSharedTensor":
+        """Apply an operation on 2 RSTensors (secret shared values).
+
+        Args:
+            y (RSTensor): Tensor to apply the operation
+            op_str (str): The operation
+
+        Returns:
+            ReplicatedSharedTensor: The operation "op_str" applied on "self" and "y"
+
+        Raises:
+            ValueError: If "op_str" not supported.
+        """
+        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        session_uuid = self.session_uuid
+        if session_uuid is not None:
+            session = sympc.session.get_session(str(self.session_uuid))
+            ring_size = session.ring_size
+            config = session.config
+        else:
+            ring_size = self.ring_size
+            config = self.config
+
+        op = getattr(operator, op_str)
+        shares = []
+        if op_str in {"add", "sub"}:
+            for x_share, y_share in zip(self.shares, y.shares):
+                shares.append(op(x_share, y_share))
+        else:
+            raise ValueError(f"{op_str} not supported")
+
+        result = ReplicatedSharedTensor(
+            ring_size=ring_size, session_uuid=session_uuid, config=config
+        )
+        result.shares = shares
+        return result
+
+    def __apply_op(
+        self,
+        y: Union["ReplicatedSharedTensor", torch.Tensor, float, int],
+        op_str: str,
+    ) -> "ReplicatedSharedTensor":
+        """Apply a given operation ".
+
+         This function checks if "y" is private or public value.
+
+        Args:
+            y: tensor to apply the operation.
+            op_str: the operation.
+
+        Returns:
+            ReplicatedSharedTensor: the operation "op_str" applied on "self" and "y"
+        """
+        is_private = isinstance(y, ReplicatedSharedTensor)
+
+        if is_private:
+            result = self.__apply_private_op(y, op_str)
+        else:
+            result = self.__apply_public_op(y, op_str)
+
+        return result
+
+    def add(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
         """Apply the "add" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self + y
 
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
         """
+        return self.__apply_op(y, "add")
 
-    def sub(self, y):
-        """Apply the "sub" operation between "self" and "y".
+    def sub(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
+        """Apply the "sub" operation between  "self" and "y".
 
         Args:
-            y: self-y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self - y
 
-
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
         """
+        return self.__apply_op(y, "sub")
 
-    def rsub(self, y):
+    def rsub(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
         """Apply the "sub" operation between "y" and "self".
 
         Args:
-            y: self-y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): y -self
 
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
         """
+        return self.__apply_op(y, "sub")
 
     def mul(self, y):
         """Apply the "mul" operation between "self" and "y".
