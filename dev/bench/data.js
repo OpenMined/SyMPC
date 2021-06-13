@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623511011615,
+  "lastUpdate": 1623603809762,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -868,6 +868,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.13660206987240467",
             "extra": "mean: 8.067339057199996 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "70987f139932054da53fec8e0bf146d4ecfad4be",
+          "message": "Fixed reconstruction when torch matrices are a secret and added tests to verify same  (#241)\n\n* Fixed reconstruction when torch matrices are a secret and added tests to verify same\r\n\r\n* Fixed bug in malicious reconstruction\r\n\r\n* Improved tests with mixed matrices\r\n\r\n* Remove print statements in test\r\n\r\n* Add deterministic secret and seperate float and matrix tests",
+          "timestamp": "2021-06-13T22:30:32+05:30",
+          "tree_id": "4d128e6f231695cc98d7c6254a8915e748b434a4",
+          "url": "https://github.com/OpenMined/SyMPC/commit/70987f139932054da53fec8e0bf146d4ecfad4be"
+        },
+        "date": 1623603809259,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.13296588090879294,
+            "unit": "iter/sec",
+            "range": "stddev: 0.07195388971228597",
+            "extra": "mean: 7.520726318400006 sec\nrounds: 5"
           }
         ]
       }
