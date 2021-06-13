@@ -304,10 +304,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 all_shares[(party_rank + 1) % (nparties)]
             )
 
-            if (not isinstance(value, torch.Tensor)) and not value:
+            if value is None:
                 value = share_sum
-
-            elif (share_sum != value).all():
+            elif (share_sum != value).any():
                 raise ValueError(
                     "Reconstruction values from all parties are not equal."
                 )
