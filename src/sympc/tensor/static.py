@@ -245,7 +245,7 @@ def max_mpc(
             argmax_mpc = argmax_mpc * torch.Tensor([i for i in range(shape[dim])]).view(
                 size
             )
-            argmax_mpc = argmax_mpc.sum(dim=dim, keepdim=keepdim), argmax_mpc
+            argmax_mpc = argmax_mpc.sum(dim=dim, keepdim=keepdim)
         max_mpc = max_mpc.sum(dim=dim, keepdim=keepdim)
         res = max_mpc, argmax_mpc
 
