@@ -688,7 +688,10 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If "op_str" is not supported.
+            TypeError: if share_class is not supported.
         """
+        from sympc.tensor import ReplicatedSharedTensor
+
         op = getattr(operator, op_str)
         if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
@@ -697,8 +700,10 @@ class MPCTensor(metaclass=SyMPCTensor):
             # Only the rank 0 party has to add the element
             if self.session.protocol.share_class == ShareTensor:
                 shares[0] = op(shares[0], y)
-            else:
+            elif self.session.protocol.share_class == ReplicatedSharedTensor:
                 shares = [op(share, y) for share in self.share_ptrs]
+            else:
+                raise TypeError("Invalid Share Class")
         else:
             raise ValueError(f"{op_str} not supported")
 

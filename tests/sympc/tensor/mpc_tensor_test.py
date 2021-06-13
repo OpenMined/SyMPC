@@ -262,11 +262,11 @@ def test_ops_public_mpc_falcon(get_clients, op_str) -> None:
     op = getattr(operator, op_str)
 
     x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
-    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    y_public = torch.Tensor([[4.5, -2.5], [5, 2.25]])
     x = MPCTensor(secret=x_secret, session=session)
 
-    expected_result = op(x_secret, y_secret)
-    result = op(x, y_secret).reconstruct()
+    expected_result = op(x_secret, y_public)
+    result = op(x, y_public).reconstruct()
 
     assert np.allclose(result, expected_result, atol=10e-4)
 

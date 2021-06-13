@@ -152,7 +152,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
             raise ValueError(
-                f"Session UUIDS did not match {x.session_uuid} {y.session_uuid}"
+                f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
             )
         elif len(x.shares) != len(y.shares):
             raise ValueError("Both RSTensors should have equal number of shares.")
@@ -169,11 +169,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             op_str (str): The operation.
 
         Returns:
-            ReplicatedSharedTensor. The operation "op_str" applied on "self" and "y"
+            ReplicatedSharedTensor: The operation "op_str" applied on "self" and "y"
 
         Raises:
             ValueError: If "op_str" is not supported.
         """
+        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
         rank = 0
         nr_parties: int = 1
         session_uuid = self.session_uuid
@@ -205,18 +206,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def __apply_private_op(
         self, y: "ReplicatedSharedTensor", op_str: str
     ) -> "ReplicatedSharedTensor":
-        """Apply an operation on 2 RSTensor (secret shared values).
+        """Apply an operation on 2 RSTensors (secret shared values).
 
         Args:
             y (RSTensor): Tensor to apply the operation
             op_str (str): The operation
 
         Returns:
-            ReplicatedSharedTensor. The operation "op_str" applied on "self" and "y"
+            ReplicatedSharedTensor: The operation "op_str" applied on "self" and "y"
 
         Raises:
             ValueError: If "op_str" not supported.
         """
+        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
         session_uuid = self.session_uuid
         if session_uuid is not None:
             session = sympc.session.get_session(str(self.session_uuid))
@@ -254,15 +256,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             op_str: the operation.
 
         Returns:
-            ReplicatedSharedTensor. the operation "op_str" applied on "self" and "y"
+            ReplicatedSharedTensor: the operation "op_str" applied on "self" and "y"
         """
         is_private = isinstance(y, ReplicatedSharedTensor)
-        y_share = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
 
         if is_private:
-            result = self.__apply_private_op(y_share, op_str)
+            result = self.__apply_private_op(y, op_str)
         else:
-            result = self.__apply_public_op(y_share, op_str)
+            result = self.__apply_public_op(y, op_str)
 
         return result
 
@@ -275,7 +276,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self + y
 
         Returns:
-            ReplicatedSharedTensor. Result of the operation.
+            ReplicatedSharedTensor: Result of the operation.
         """
         return self.__apply_op(y, "add")
 
@@ -288,7 +289,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self - y
 
         Returns:
-            ReplicatedSharedTensor. Result of the operation.
+            ReplicatedSharedTensor: Result of the operation.
         """
         return self.__apply_op(y, "sub")
 
@@ -301,7 +302,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): y -self
 
         Returns:
-            ReplicatedSharedTensor. Result of the operation.
+            ReplicatedSharedTensor: Result of the operation.
         """
         return self.__apply_op(y, "sub")
 
