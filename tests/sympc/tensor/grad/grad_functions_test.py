@@ -648,11 +648,12 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
 ]
 
 
+@pytest.mark.order(10)
 @pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
 def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> None:
     parties = get_clients(2)
 
-    secret = torch.Tensor([[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.32, 0.42, -23]]])
+    secret = torch.Tensor([[[0.23, 0.32, 2.32], [0.2, -0.3, -0.53], [0.32, 0.42, -23]]])
 
     x = secret.share(parties=parties)
 
@@ -677,12 +678,13 @@ def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> N
     assert np.allclose(res, expected, rtol=1e-3)
 
 
+@pytest.mark.order(11)
 @pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
 def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> None:
     parties = get_clients(2)
 
     secret = torch.tensor(
-        [[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.32, 0.42, -23]]],
+        [[[0.23, 0.32, 2.3], [0.2, -0.3, -0.53], [0.32, 0.42, -23]]],
         requires_grad=True,
     )
 
