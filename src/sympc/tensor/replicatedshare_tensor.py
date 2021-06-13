@@ -191,7 +191,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         op = getattr(operator, op_str)
         shares = self.shares
         if op_str in {"add", "sub"}:
-            if rank - 1 != 0:
+            if rank != 1:
                 idx = (nr_parties - rank) % nr_parties
                 shares[idx] = op(shares[idx], y.shares[0])
         else:
