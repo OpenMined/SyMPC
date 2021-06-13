@@ -291,6 +291,43 @@ def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-3)
 
 
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_integer_falcon(get_clients, op_str) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([0.125, -1.25, -4.25, 4])
+    y = 4
+
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected_result = op(x_secret, y)
+    result = op(x, y).reconstruct()
+
+    assert np.allclose(result, expected_result, atol=10e-3)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_mpc_mpc_falcon(get_clients, op_str) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+    expected_result = op(x_secret, y_secret)
+    result = op(x, y).reconstruct()
+
+    assert np.allclose(result, expected_result, atol=10e-4)
+
+
 def test_mpc_len(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
@@ -493,3 +530,14 @@ def test_pow(get_clients, power) -> None:
 
     with pytest.raises(RuntimeError):
         power = x ** -2
+
+
+def test_invalid_share_class(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+    x = torch.tensor([1, 2, 3])
+    x_s = MPCTensor(secret=x, session=session)
+    x_s.session.protocol.share_class = "invalid"
+    with pytest.raises(TypeError):
+        x_s + x

@@ -125,7 +125,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
         op_str: str,
     ) -> "ReplicatedSharedTensor":
-        """Check the type of "y" and covert it to share if necessary.
+        """Check the type of "y" and convert it to share if necessary.
 
         Args:
             x (ReplicatedSharedTensor): Typically "self".
@@ -176,7 +176,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
         rank = 0
-        nr_parties: int = 1
+        nr_parties: int = 1  # to handle the case when session_uuid is none.
         session_uuid = self.session_uuid
         if session_uuid is not None:
             session = sympc.session.get_session(str(self.session_uuid))
