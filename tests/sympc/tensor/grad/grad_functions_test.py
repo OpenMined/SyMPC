@@ -614,7 +614,7 @@ def test_forward(get_clients) -> None:
     s_torch.backward()
     s_mpc.backward()
 
-    assert np.allclose(x_mpc.grad.reconstruct(), x_secret.grad, rtol=1e-3)
+    assert np.allclose(x_mpc.grad.get(), x_secret.grad, rtol=1e-2)
 
 
 def test_grad_maxpool_2d_dilation_error(get_clients) -> None:

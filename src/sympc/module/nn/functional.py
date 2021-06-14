@@ -218,7 +218,7 @@ def max_pool2d(
     padding: Union[int, Tuple[int, int]] = 0,
     dilation: Union[int, Tuple[int, int]] = 1,
 ) -> MPCTensor:
-    """Compute the max poold for a tensor with 2 dimension.
+    """Compute the max pool for a tensor with 2 dimension.
 
     Args:
         x (MPCTensor): the MPCTensor on which to apply the operation
