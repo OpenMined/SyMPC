@@ -19,6 +19,8 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.utils import get_type_from_ring
+from sympc.utils import islocal
+from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
 
@@ -170,7 +172,7 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
             raise ValueError(
-                f"Session UUIDS did not match {x.session_uuid} {y.session_uuid}"
+                f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
             )
 
         return y
@@ -484,6 +486,54 @@ class ShareTensor(metaclass=SyMPCTensor):
             res = method
 
         return res
+
+    @staticmethod
+    def reconstruct(
+        share_ptrs: List["ShareTensor"],
+        get_shares=False,
+        security_type: str = "semi-honest",
+    ) -> torch.Tensor:
+        """Reconstruct original value from shares.
+
+        Args:
+            share_ptrs (List[ShareTensor]): List of sharetensors.
+            get_shares (boolean): retrieve shares or reconstructed value.
+            security_type (str): Type of security by protocol.
+
+        Returns:
+            plaintext/shares (torch.Tensor/List[torch.Tensors]): Plaintext or list of shares.
+
+        """
+
+        def _request_and_get(share_ptr: ShareTensor) -> ShareTensor:
+            """Function used to request and get a share - Duet Setup.
+
+            Args:
+                share_ptr (ShareTensor): a ShareTensor
+
+            Returns:
+                ShareTensor. The ShareTensor in local.
+
+            """
+            if not islocal(share_ptr):
+                share_ptr.request(block=True)
+            res = share_ptr.get_copy()
+            return res
+
+        request = _request_and_get
+        request_wrap = parallel_execution(request)
+
+        args = [[share] for share in share_ptrs]
+        local_shares = request_wrap(args)
+
+        shares = [share.tensor for share in local_shares]
+
+        if get_shares:
+            return shares
+
+        plaintext = sum(shares)
+
+        return plaintext
 
     @staticmethod
     def distribute_shares(shares: List["ShareTensor"], session: Session):

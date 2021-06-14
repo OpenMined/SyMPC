@@ -24,6 +24,7 @@ def test_relu(get_clients) -> None:
     assert all(res.reconstruct() == res_expected)
 
 
+@pytest.mark.order(2)
 @pytest.mark.parametrize("reduction", ["sum", "mean"])
 def test_mse_loss(get_clients, reduction) -> None:
     clients = get_clients(4)

@@ -1,6 +1,7 @@
 """Used to abstract multiple shared values held by parties."""
 
 # stdlib
+import operator
 from typing import Any
 from typing import Callable
 from typing import Dict
@@ -13,8 +14,11 @@ from uuid import UUID
 # third party
 import torch
 
+import sympc
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
+from sympc.session import Session
+from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
@@ -34,8 +38,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     Attributes:
        shares: The shares held by the party
     """
-
-    AUTOGRAD_IS_ON: bool = True
 
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
@@ -64,6 +66,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.ring_size = ring_size
 
         self.config = config
+
         self.fp_encoder = FixedPointEncoder(
             base=config.encoder_base, precision=config.encoder_precision
         )
@@ -74,10 +77,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             for i in range(len(shares)):
                 self.shares.append(self._encode(shares[i]).to(tensor_type))
 
-    def _encode(self, data):
+    def _encode(self, data: torch.Tensor) -> torch.Tensor:
+        """Encode via FixedPointEncoder.
+
+        Args:
+            data (torch.Tensor): Tensor to be encoded
+
+        Returns:
+            encoded_data (torch.Tensor): Decoded values
+
+        """
         return self.fp_encoder.encode(data)
 
-    def decode(self):
+    def decode(self) -> List[torch.Tensor]:
         """Decode via FixedPointEncoder.
 
         Returns:
@@ -85,43 +97,214 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self._decode()
 
-    def _decode(self):
+    def _decode(self) -> List[torch.Tensor]:
         """Decodes shares list of RSTensor via FixedPointEncoder.
 
         Returns:
             List[torch.Tensor]: Decoded values
         """
         shares = []
+
         for i in range(len(self.shares)):
             tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
             shares.append(tensor)
 
         return shares
 
-    def add(self, y):
+    def get_shares(self) -> List[torch.Tensor]:
+        """Get shares.
+
+        Returns:
+            List[torch.Tensor]: List of shares.
+        """
+        return self.shares
+
+    @staticmethod
+    def sanity_checks(
+        x: "ReplicatedSharedTensor",
+        y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
+        op_str: str,
+    ) -> "ReplicatedSharedTensor":
+        """Check the type of "y" and convert it to share if necessary.
+
+        Args:
+            x (ReplicatedSharedTensor): Typically "self".
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): Tensor to check.
+            op_str (str): String operator.
+
+        Returns:
+            ReplicatedSharedTensor: the converted y value.
+
+        Raises:
+            ValueError: if both values are shares and they have different uuids
+            ValueError: if both values have different number of shares.
+        """
+        if not isinstance(y, ReplicatedSharedTensor):
+            if x.session_uuid is not None:
+                session = sympc.session.get_session(str(x.session_uuid))
+                ring_size = session.ring_size
+                config = session.config
+            else:
+                ring_size = x.ring_size
+                config = x.config
+
+            y = ReplicatedSharedTensor(shares=[y], ring_size=ring_size, config=config)
+
+        elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
+            raise ValueError(
+                f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
+            )
+        elif len(x.shares) != len(y.shares):
+            raise ValueError("Both RSTensors should have equal number of shares.")
+
+        return y
+
+    def __apply_public_op(
+        self, y: Union[torch.Tensor, float, int], op_str: str
+    ) -> "ReplicatedSharedTensor":
+        """Apply an operation on "self" which is a RSTensor and a public value.
+
+        Args:
+            y (Union[torch.Tensor, float, int]): Tensor to apply the operation.
+            op_str (str): The operation.
+
+        Returns:
+            ReplicatedSharedTensor: The operation "op_str" applied on "self" and "y"
+
+        Raises:
+            ValueError: If "op_str" is not supported.
+        """
+        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        rank = 0
+        nr_parties: int = 1  # to handle the case when session_uuid is none.
+        session_uuid = self.session_uuid
+        if session_uuid is not None:
+            session = sympc.session.get_session(str(self.session_uuid))
+            ring_size = session.ring_size
+            config = session.config
+            rank = session.rank
+            nr_parties = session.nr_parties
+        else:
+            ring_size = self.ring_size
+            config = self.config
+
+        op = getattr(operator, op_str)
+        shares = self.shares
+        if op_str in {"add", "sub"}:
+            if rank != 1:
+                idx = (nr_parties - rank) % nr_parties
+                shares[idx] = op(shares[idx], y.shares[0])
+        else:
+            raise ValueError(f"{op_str} not supported")
+
+        result = ReplicatedSharedTensor(
+            ring_size=ring_size, session_uuid=session_uuid, config=config
+        )
+        result.shares = shares
+        return result
+
+    def __apply_private_op(
+        self, y: "ReplicatedSharedTensor", op_str: str
+    ) -> "ReplicatedSharedTensor":
+        """Apply an operation on 2 RSTensors (secret shared values).
+
+        Args:
+            y (RSTensor): Tensor to apply the operation
+            op_str (str): The operation
+
+        Returns:
+            ReplicatedSharedTensor: The operation "op_str" applied on "self" and "y"
+
+        Raises:
+            ValueError: If "op_str" not supported.
+        """
+        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        session_uuid = self.session_uuid
+        if session_uuid is not None:
+            session = sympc.session.get_session(str(self.session_uuid))
+            ring_size = session.ring_size
+            config = session.config
+        else:
+            ring_size = self.ring_size
+            config = self.config
+
+        op = getattr(operator, op_str)
+        shares = []
+        if op_str in {"add", "sub"}:
+            for x_share, y_share in zip(self.shares, y.shares):
+                shares.append(op(x_share, y_share))
+        else:
+            raise ValueError(f"{op_str} not supported")
+
+        result = ReplicatedSharedTensor(
+            ring_size=ring_size, session_uuid=session_uuid, config=config
+        )
+        result.shares = shares
+        return result
+
+    def __apply_op(
+        self,
+        y: Union["ReplicatedSharedTensor", torch.Tensor, float, int],
+        op_str: str,
+    ) -> "ReplicatedSharedTensor":
+        """Apply a given operation ".
+
+         This function checks if "y" is private or public value.
+
+        Args:
+            y: tensor to apply the operation.
+            op_str: the operation.
+
+        Returns:
+            ReplicatedSharedTensor: the operation "op_str" applied on "self" and "y"
+        """
+        is_private = isinstance(y, ReplicatedSharedTensor)
+
+        if is_private:
+            result = self.__apply_private_op(y, op_str)
+        else:
+            result = self.__apply_public_op(y, op_str)
+
+        return result
+
+    def add(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
         """Apply the "add" operation between "self" and "y".
 
         Args:
-            y: self+y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self + y
 
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
         """
+        return self.__apply_op(y, "add")
 
-    def sub(self, y):
-        """Apply the "sub" operation between "self" and "y".
+    def sub(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
+        """Apply the "sub" operation between  "self" and "y".
 
         Args:
-            y: self-y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self - y
 
-
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
         """
+        return self.__apply_op(y, "sub")
 
-    def rsub(self, y):
+    def rsub(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
         """Apply the "sub" operation between "y" and "self".
 
         Args:
-            y: self-y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): y -self
 
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
         """
+        return self.__apply_op(y, "sub")
 
     def mul(self, y):
         """Apply the "mul" operation between "self" and "y".
@@ -201,6 +384,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return True
 
+    def __getitem__(self, key: int) -> torch.Tensor:
+        """Allows to subset shares.
+
+        Args:
+            key (int): The share to be retrieved.
+
+        Returns:
+            share (torch.Tensor): Returned share.
+        """
+        return self.shares[key]
+
+    def __setitem__(self, key: int, newvalue: torch.Tensor) -> None:
+        """Allows to set share value to new value.
+
+        Args:
+            key (int): The share to be retrieved.
+            newvalue (torch.Tensor): New value of share.
+
+        """
+        self.shares[key] = newvalue
+
     def ne(self, y):
         """Not Equal operator.
 
@@ -208,6 +412,137 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             y: self!=y
 
         """
+
+    @staticmethod
+    def __reconstruct_semi_honest(
+        share_ptrs: List["ReplicatedSharedTensor"],
+        get_shares: bool = False,
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        """Reconstruct value from shares.
+
+        Args:
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
+            get_shares (bool): Retrieve only shares.
+
+        Returns:
+            reconstructed_value (torch.Tensor): Reconstructed value.
+        """
+        shares1 = share_ptrs[0].get_shares()[0].get()
+        shares2 = share_ptrs[1].get_shares().get()
+
+        shares = [shares1] + shares2
+
+        if get_shares:
+            return shares
+
+        return sum(shares)
+
+    @staticmethod
+    def __reconstruct_malicious(
+        share_ptrs: List["ReplicatedSharedTensor"],
+        get_shares: bool = False,
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        """Reconstruct value from shares.
+
+        Args:
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
+            get_shares (bool): Retrieve only shares.
+
+        Returns:
+            reconstructed_value (torch.Tensor): Reconstructed value.
+
+        Raises:
+            ValueError: When parties share values are not equal.
+        """
+        nparties = len(share_ptrs)
+
+        # Get shares from all parties
+        all_shares = []
+        for party_rank in range(nparties):
+            all_shares.append(share_ptrs[party_rank].get_shares().get())
+
+        # reconstruct shares from all parties and verify
+        value = None
+        for party_rank in range(nparties):
+            share_sum = all_shares[party_rank][0] + sum(
+                all_shares[(party_rank + 1) % (nparties)]
+            )
+
+            if value is None:
+                value = share_sum
+            elif (share_sum != value).any():
+                raise ValueError(
+                    "Reconstruction values from all parties are not equal."
+                )
+
+        if get_shares:
+            return all_shares
+
+        return value
+
+    @staticmethod
+    def reconstruct(
+        share_ptrs: List["ReplicatedSharedTensor"],
+        get_shares: bool = False,
+        security_type: str = "semi-honest",
+    ) -> Union[torch.Tensor, List[torch.Tensor]]:
+        """Reconstruct value from shares.
+
+        Args:
+            share_ptrs (List[ReplicatedSharedTensor]): List of RSTensor pointers.
+            security_type (str): Type of security followed by protocol.
+            get_shares (bool): Retrieve only shares.
+
+        Returns:
+            reconstructed_value (torch.Tensor): Reconstructed value.
+
+        Raises:
+            ValueError: Invalid security type
+        """
+        if security_type == "malicious":
+            return ReplicatedSharedTensor.__reconstruct_malicious(
+                share_ptrs, get_shares
+            )
+
+        elif security_type == "semi-honest":
+            return ReplicatedSharedTensor.__reconstruct_semi_honest(
+                share_ptrs, get_shares
+            )
+
+        raise ValueError("Invalid security Type")
+
+    @staticmethod
+    def distribute_shares(shares: List[ShareTensor], session: Session) -> List:
+        """Distribute a list of shares.
+
+        Args:
+            shares (List[ShareTensor): list of shares to distribute.
+            session (Session): Session.
+
+        Returns:
+            List of ShareTensor.
+
+        """
+        parties = session.parties
+
+        nshares = len(parties) - 1
+
+        ptr_list = []
+        for i in range(len(parties)):
+            party_shares = []
+
+            for j in range(i, i + nshares):
+                tensor = shares[j % (nshares + 1)].tensor
+                party_shares.append(tensor)
+
+            tensor = ReplicatedSharedTensor(
+                party_shares,
+                config=Config(encoder_base=1, encoder_precision=0),
+                session_uuid=session.rank_to_uuid[i],
+            ).send(parties[i])
+            ptr_list.append(tensor)
+
+        return ptr_list
 
     @staticmethod
     def hook_property(property_name: str) -> Any:

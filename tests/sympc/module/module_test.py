@@ -88,6 +88,7 @@ def test_exception_conv2d_kernel_mismatch(get_clients):
         model.share(session=session)
 
 
+@pytest.mark.order(1)
 def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
     model = ConvNet(torch)
 
@@ -111,7 +112,7 @@ def test_run_conv_model(get_clients: Callable[[int], List[Any]]):
 
     res = res_mpc.reconstruct()
     expected = expected.detach().numpy()
-    assert np.allclose(res, expected, atol=1e-3)
+    assert np.allclose(res, expected, atol=1e-2)
 
 
 @pytest.mark.parametrize("is_remote", [False, True])

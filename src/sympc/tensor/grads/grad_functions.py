@@ -18,6 +18,7 @@ from typing import Union
 # third party
 import torch
 
+from sympc.approximations import APPROXIMATIONS
 from sympc.tensor import ShareTensor
 from sympc.tensor.mpc_tensor import MPCTensor
 from sympc.utils.utils import parallel_execution
@@ -632,6 +633,40 @@ class GradReshape(GradFunc):
         return grad.reshape(shape)
 
 
+class GradReLU(GradFunc):
+    """The sigmoid gradient function."""
+
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: MPCTensor) -> MPCTensor:
+        """Perform the feedforward and compute the result for the ReLU operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): The operand on which to apply the sigmoid function
+
+        Returns:
+            relu(x) (MPCTensor): The sigmoid approximation applied on the input
+        """
+        mask = APPROXIMATIONS["sign"](x.gt(0.0))
+        ctx["mask"] = mask
+        return x * mask
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the ReLU operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            res_grad (MPCTensor): The gradient passed to the parent node
+        """
+        mask = ctx["mask"]
+        res_grad = grad * mask
+        return res_grad
+
+
 def forward(
     _self: MPCTensor, grad_fn: GradFunc, *args: List[Any], **kwargs: Dict[str, Any]
 ) -> Any:
@@ -675,4 +710,5 @@ GRAD_FUNCS: Dict[str, GradFunc] = {
     "flatten": GradFlatten,
     "conv2d": GradConv2d,
     "reshape": GradReshape,
+    "relu": GradReLU,
 }

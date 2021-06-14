@@ -12,6 +12,7 @@ from sympc.tensor.static import cat
 from sympc.tensor.static import stack
 
 
+@pytest.mark.order(3)
 def test_argmax_multiple_max(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
@@ -20,7 +21,8 @@ def test_argmax_multiple_max(get_clients) -> None:
     x = MPCTensor(secret=torch.Tensor([1, 2, 3, -1, 3]), session=session)
 
     with pytest.raises(ValueError):
-        x.argmax()
+        res = x.argmax()
+        print(res.reconstruct())
 
 
 def test_argmax(get_clients) -> None:
@@ -39,6 +41,7 @@ def test_argmax(get_clients) -> None:
     assert res == expected, f"Expected argmax to be {expected}"
 
 
+@pytest.mark.order(4)
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
 def test_argmax_dim(dim, keepdim, get_clients) -> None:
     clients = get_clients(2)
@@ -56,6 +59,7 @@ def test_argmax_dim(dim, keepdim, get_clients) -> None:
     assert (res == expected).all(), f"Expected argmax to be {expected}"
 
 
+@pytest.mark.order(5)
 def test_max_multiple_max(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
@@ -83,6 +87,7 @@ def test_max(get_clients) -> None:
     assert res == expected, f"Expected argmax to be {expected}"
 
 
+@pytest.mark.order(6)
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
 def test_max_dim(dim, keepdim, get_clients) -> None:
     clients = get_clients(2)

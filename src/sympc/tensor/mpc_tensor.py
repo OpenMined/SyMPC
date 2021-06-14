@@ -21,9 +21,7 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
-from sympc.utils import islocal
 from sympc.utils import ispointer
-from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
 
@@ -368,39 +366,20 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Args:
             decode (bool): True if decode using FixedPointEncoder. Defaults to True
-            get_shares (bool): True if get shares. Defaults to False.
+            get_shares (bool): Retrieve only shares.
 
         Returns:
             torch.Tensor. The secret reconstructed.
         """
-
-        def _request_and_get(share_ptr: ShareTensor) -> ShareTensor:
-            """Function used to request and get a share - Duet Setup.
-
-            Args:
-                share_ptr (ShareTensor): a ShareTensor
-
-            Returns:
-                ShareTensor. The ShareTensor in local.
-
-            """
-            if not islocal(share_ptr):
-                share_ptr.request(block=True)
-            res = share_ptr.get_copy()
-            return res
-
-        request = _request_and_get
-        request_wrap = parallel_execution(request)
-
-        args = [[share] for share in self.share_ptrs]
-        local_shares = request_wrap(args)
-
-        shares = [share.tensor for share in local_shares]
+        result = self.session.protocol.share_class.reconstruct(
+            self.share_ptrs,
+            get_shares=get_shares,
+            security_type=self.session.protocol.security_type,
+        )
 
         if get_shares:
-            return shares
 
-        plaintext = sum(shares)
+            return result
 
         if decode:
             fp_encoder = FixedPointEncoder(
@@ -408,9 +387,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 precision=self.session.config.encoder_precision,
             )
 
-            plaintext = fp_encoder.decode(plaintext)
+            result = fp_encoder.decode(result)
 
-        return plaintext
+        return result
 
     get = reconstruct
 
@@ -673,7 +652,11 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If session from MPCTensor and "y" is not the same.
+            TypeError: If MPC tensors are not of same share class
         """
+        if self.session.protocol.share_class != y.session.protocol.share_class:
+            raise TypeError("Both MPC tensors should be of same share class.")
+
         if y.session.uuid != self.session.uuid:
             raise ValueError(
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
@@ -709,14 +692,22 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If "op_str" is not supported.
+            TypeError: if share_class is not supported.
         """
+        from sympc.tensor import ReplicatedSharedTensor
+
         op = getattr(operator, op_str)
         if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
         elif op_str in {"add", "sub"}:
             shares = list(self.share_ptrs)
             # Only the rank 0 party has to add the element
-            shares[0] = op(shares[0], y)
+            if self.session.protocol.share_class == ShareTensor:
+                shares[0] = op(shares[0], y)
+            elif self.session.protocol.share_class == ReplicatedSharedTensor:
+                shares = [op(share, y) for share in self.share_ptrs]
+            else:
+                raise TypeError("Invalid Share Class")
         else:
             raise ValueError(f"{op_str} not supported")
 

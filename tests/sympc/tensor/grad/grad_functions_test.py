@@ -4,6 +4,7 @@ from typing import List
 # third party
 import numpy as np
 import pytest
+import syft as sy
 import torch
 
 from sympc.session import Session
@@ -16,6 +17,7 @@ from sympc.tensor.grads.grad_functions import GradFunc
 from sympc.tensor.grads.grad_functions import GradMatMul
 from sympc.tensor.grads.grad_functions import GradMul
 from sympc.tensor.grads.grad_functions import GradPow
+from sympc.tensor.grads.grad_functions import GradReLU
 from sympc.tensor.grads.grad_functions import GradReshape
 from sympc.tensor.grads.grad_functions import GradSigmoid
 from sympc.tensor.grads.grad_functions import GradSub
@@ -561,3 +563,81 @@ def test_grad_matmul_backward(get_clients) -> None:
 
     with pytest.raises(ValueError):
         GradMatMul.backward(ctx, grad_mpc)
+
+
+def test_grad_relu_forward(get_clients) -> None:
+    # We need Function Secret Sharing (only for 2 parties) for
+    # comparing
+    parties = get_clients(2)
+    x = torch.Tensor([-7, 0, 12])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradReLU.forward(ctx, x_mpc)
+
+    assert "mask" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = x.relu()
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+def test_grad_relu_backward(get_clients) -> None:
+    parties = get_clients(2)
+    grad = torch.tensor([0, -1.453, 0.574, -0.89])
+
+    grad_mpc = grad.share(parties=parties)
+    mask = torch.tensor([0, 0, 1, 0])
+
+    ctx = {"mask": mask}
+
+    res_mpc = GradReLU.backward(ctx, grad_mpc)
+
+    res = res_mpc.reconstruct()
+    expected = grad * mask
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+class LinearSyNet(sy.Module):
+    def __init__(self, torch_ref):
+        super(LinearSyNet, self).__init__(torch_ref=torch_ref)
+        self.fc1 = self.torch_ref.nn.Linear(3, 10)
+        self.fc2 = self.torch_ref.nn.Linear(10, 1)
+
+    def forward(self, x):
+        x = self.fc1(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        x = self.fc2(x)
+        x = self.torch_ref.nn.functional.relu(x)
+        return x
+
+
+@pytest.mark.order(9)
+def test_forward(get_clients) -> None:
+    model = LinearSyNet(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+    mpc_model = model.share(session=session)
+
+    x_secret = torch.tensor(
+        [[0.125, -1.25, -4.25], [-3, 3, 8], [-3, 3, 8]], requires_grad=True
+    )
+    x_mpc = MPCTensor(secret=x_secret, session=session, requires_grad=True)
+
+    out_torch = model(x_secret)
+    out_mpc = mpc_model(x_mpc)
+
+    s_torch = torch.sum(out_torch)
+    s_mpc = out_mpc.sum()
+
+    s_torch.backward()
+    s_mpc.backward()
+
+    assert np.allclose(x_mpc.grad.get(), x_secret.grad, rtol=1e-2)
