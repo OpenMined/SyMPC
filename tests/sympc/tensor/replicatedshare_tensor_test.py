@@ -250,13 +250,14 @@ def test_ops_share_public(op_str, precision, base) -> None:
 
 
 @pytest.mark.parametrize("parties", [3, 5, 7])
-def test_ops_publicmul(get_clients, parties):
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_ops_publicmul(get_clients, parties, security):
 
     # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_precision=0, encoder_base=1)
+    config = Config(encoder_base=1, encoder_precision=0)
 
     parties = get_clients(parties)
-    protocol = Falcon("semi-honest")
+    protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
 

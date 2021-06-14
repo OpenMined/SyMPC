@@ -35,7 +35,7 @@ def test_invalid_security_type():
 def test_mul_private_integers(get_clients):
 
     # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_precision=0, encoder_base=1)
+    config = Config(encoder_base=1, encoder_precision=0)
 
     parties = get_clients(3)
     protocol = Falcon("semi-honest")
@@ -58,7 +58,7 @@ def test_mul_private_integers(get_clients):
 def test_mul_private_exception_nothreeparties(get_clients, parties):
 
     # Not encoding because truncation hasn't been implemented yet
-    config = Config(encoder_precision=0, encoder_base=1)
+    config = Config(encoder_base=1, encoder_precision=0)
 
     parties = get_clients(parties)
     protocol = Falcon("semi-honest")
@@ -80,7 +80,7 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
 def test_mul_private_exception_malicious(get_clients):
 
     # Not encoding because truncation hasn't been implemented yet
-    config = Config(encoder_precision=0, encoder_base=1)
+    config = Config(encoder_base=1, encoder_precision=0)
 
     parties = get_clients(3)
     protocol = Falcon("malicious")
