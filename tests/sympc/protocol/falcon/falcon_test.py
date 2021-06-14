@@ -32,7 +32,7 @@ def test_invalid_security_type():
         Falcon(security_type="covert")
 
 
-def test_mul_private_integers(get_clients):
+def test_mul_private_integer(get_clients):
 
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
@@ -45,6 +45,28 @@ def test_mul_private_integers(get_clients):
     secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
 
     secret2 = 8
+
+    tensor1 = MPCTensor(secret=secret1, session=session)
+    tensor2 = MPCTensor(secret=secret2, session=session)
+
+    result = tensor1 * tensor2
+
+    assert (result.reconstruct() == (secret1 * secret2)).all()
+
+
+def test_mul_private_integer_matrix(get_clients):
+
+    # Not encoding because truncation hasn't been implemented yet for Falcon
+    config = Config(encoder_base=1, encoder_precision=0)
+
+    parties = get_clients(3)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+
+    secret2 = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
 
     tensor1 = MPCTensor(secret=secret1, session=session)
     tensor2 = MPCTensor(secret=secret2, session=session)

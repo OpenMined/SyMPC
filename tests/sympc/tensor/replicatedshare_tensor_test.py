@@ -251,7 +251,7 @@ def test_ops_share_public(op_str, precision, base) -> None:
 
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_publicmul(get_clients, parties, security):
+def test_ops_publicmul_integer(get_clients, parties, security):
 
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
@@ -262,8 +262,29 @@ def test_ops_publicmul(get_clients, parties, security):
     SessionManager.setup_mpc(session)
 
     secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-
     value = 8
+
+    tensor = MPCTensor(secret=secret, session=session)
+    result = tensor * value
+
+    assert (result.reconstruct() == (secret * value)).all()
+
+
+@pytest.mark.parametrize("parties", [3, 5, 7])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_ops_publicmul_integer_matrix(get_clients, parties, security):
+
+    # Not encoding because truncation hasn't been implemented yet for Falcon
+    config = Config(encoder_base=1, encoder_precision=0)
+
+    parties = get_clients(parties)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    value = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
+
     tensor = MPCTensor(secret=secret, session=session)
     result = tensor * value
 

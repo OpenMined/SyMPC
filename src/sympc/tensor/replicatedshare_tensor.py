@@ -123,14 +123,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def sanity_checks(
         x: "ReplicatedSharedTensor",
         y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
-        op_str: str = None,
     ) -> tuple("ReplicatedSharedTensor",):
         """Check the type of "y" and convert it to share if necessary.
 
         Args:
             x (ReplicatedSharedTensor): Typically "self".
             y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): Tensor to check.
-            op_str (str): String operator.
 
         Returns:
             ReplicatedSharedTensor: the converted y value.
@@ -192,7 +190,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" is not supported.
         """
-        y, other = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        y, other = ReplicatedSharedTensor.sanity_checks(self, y)
         session, ring_size, config, rank, nr_parties = other
         session_uuid = self.session_uuid
 
@@ -226,7 +224,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" not supported.
         """
-        y, other = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        y, other = ReplicatedSharedTensor.sanity_checks(self, y)
         session, ring_size, config, rank, nr_parties = other
         session_uuid = self.session_uuid
 
