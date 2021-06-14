@@ -247,3 +247,23 @@ def test_ops_share_public(op_str, precision, base) -> None:
     tensor_decoded = res.fp_encoder.decode(res.shares[0])
 
     assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("parties", [3, 5, 7])
+def test_ops_publicmul(get_clients, parties):
+
+    # Not encoding because truncation hasn't been implemented yet for Falcon
+    config = Config(encoder_precision=0, encoder_base=1)
+
+    parties = get_clients(parties)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+
+    value = 8
+    tensor = MPCTensor(secret=secret, session=session)
+    result = tensor * value
+
+    assert (result.reconstruct() == (secret * value)).all()

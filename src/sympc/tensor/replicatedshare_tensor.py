@@ -123,8 +123,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def sanity_checks(
         x: "ReplicatedSharedTensor",
         y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
-        op_str: str,
-    ) -> "ReplicatedSharedTensor":
+        op_str: str = None,
+    ) -> tuple("ReplicatedSharedTensor",):
         """Check the type of "y" and convert it to share if necessary.
 
         Args:
@@ -157,7 +157,25 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         elif len(x.shares) != len(y.shares):
             raise ValueError("Both RSTensors should have equal number of shares.")
 
-        return y
+        rank = 0
+        nr_parties: int = 1  # to handle the case when session_uuid is none.
+        session_uuid = x.session_uuid
+
+        session = None
+        ring_size = None
+        config = None
+
+        if session_uuid is not None:
+            session = sympc.session.get_session(str(x.session_uuid))
+            ring_size = session.ring_size
+            config = session.config
+            rank = session.rank
+            nr_parties = session.nr_parties
+        else:
+            ring_size = x.ring_size
+            config = x.config
+
+        return y, (session, ring_size, config, rank, nr_parties)
 
     def __apply_public_op(
         self, y: Union[torch.Tensor, float, int], op_str: str
@@ -174,19 +192,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" is not supported.
         """
-        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
-        rank = 0
-        nr_parties: int = 1  # to handle the case when session_uuid is none.
+        y, other = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        session, ring_size, config, rank, nr_parties = other
         session_uuid = self.session_uuid
-        if session_uuid is not None:
-            session = sympc.session.get_session(str(self.session_uuid))
-            ring_size = session.ring_size
-            config = session.config
-            rank = session.rank
-            nr_parties = session.nr_parties
-        else:
-            ring_size = self.ring_size
-            config = self.config
 
         op = getattr(operator, op_str)
         shares = self.shares
@@ -218,15 +226,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" not supported.
         """
-        y = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        y, other = ReplicatedSharedTensor.sanity_checks(self, y, op_str)
+        session, ring_size, config, rank, nr_parties = other
         session_uuid = self.session_uuid
-        if session_uuid is not None:
-            session = sympc.session.get_session(str(self.session_uuid))
-            ring_size = session.ring_size
-            config = session.config
-        else:
-            ring_size = self.ring_size
-            config = self.config
 
         op = getattr(operator, op_str)
         shares = []
@@ -306,13 +308,29 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self.__apply_op(y, "sub")
 
-    def mul(self, y):
+    def mul(self, y: Union[int, float]) -> "ReplicatedSharedTensor":
         """Apply the "mul" operation between "self" and "y".
 
         Args:
             y: self*y
 
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
+
         """
+        y, other = self.sanity_checks(self, y)
+
+        shares = []
+
+        for share in self.shares:
+            shares.append(share * y.shares[0])
+
+        result = ReplicatedSharedTensor(
+            ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
+        )
+        result.shares = shares
+
+        return result
 
     def truediv(self, y):
         """Apply the "div" operation between "self" and "y".
@@ -320,7 +338,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self/y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
     def matmul(self, y):
         """Apply the "matmul" operation between "self" and "y".
@@ -328,7 +349,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self@y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
     def rmatmul(self, y):
         """Apply the "rmatmul" operation between "y" and "self".
@@ -336,7 +360,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self@y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
     def xor(self, y):
         """Apply the "xor" operation between "self" and "y".
@@ -344,7 +371,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self^y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
     def lt(self, y):
         """Lower than operator.
@@ -352,7 +382,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self<y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
     def gt(self, y):
         """Greater than operator.
@@ -360,9 +393,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self>y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
-    def eq(self, y: Any):
+    def eq(self, y: Any) -> bool:
         """Equal operator.
 
         Check if "self" is equal with another object given a set of attributes to compare.
@@ -411,7 +447,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Args:
             y: self!=y
 
+        Raises:
+            NotImplementedError: Raised when implementation not present
         """
+        raise NotImplementedError
 
     @staticmethod
     def __reconstruct_semi_honest(
@@ -512,7 +551,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         raise ValueError("Invalid security Type")
 
     @staticmethod
-    def distribute_shares(shares: List[ShareTensor], session: Session) -> List:
+    def distribute_shares(
+        shares: List[Union[ShareTensor, torch.Tensor]], session: Session
+    ) -> List:
         """Distribute a list of shares.
 
         Args:
@@ -532,8 +573,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             party_shares = []
 
             for j in range(i, i + nshares):
-                tensor = shares[j % (nshares + 1)].tensor
-                party_shares.append(tensor)
+                share = shares[j % (nshares + 1)]
+
+                if isinstance(share, torch.Tensor):
+                    party_shares.append(share)
+
+                elif isinstance(share, ShareTensor):
+                    tensor = share.tensor
+                    party_shares.append(tensor)
 
             tensor = ReplicatedSharedTensor(
                 party_shares,
