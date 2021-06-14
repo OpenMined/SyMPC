@@ -70,7 +70,7 @@ class Falcon(metaclass=Protocol):
     def mul(x, y, session) -> ReplicatedSharedTensor:
         """Master method for multiplication.
 
-        Performs Falcon's mult implementation, gets and reshares mul results and distributes shares.
+        Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
         This needs to be improved in future, it relies on orchestrator being a trusted third party.
         Falcon, requires parties to be able to communication between each other.
 
