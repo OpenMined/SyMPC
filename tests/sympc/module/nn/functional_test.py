@@ -61,6 +61,7 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
 ]
 
 
+@pytest.mark.order(12)
 @pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
 def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     clients = get_clients(2)
