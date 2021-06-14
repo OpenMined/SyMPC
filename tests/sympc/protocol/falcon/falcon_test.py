@@ -95,7 +95,6 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
     tensor2 = MPCTensor(secret=secret2, session=session)
 
     with pytest.raises(ValueError):
-
         tensor1 * tensor2
 
 
@@ -116,5 +115,4 @@ def test_mul_private_exception_malicious(get_clients):
     tensor2 = MPCTensor(secret=secret2, session=session)
 
     with pytest.raises(NotImplementedError):
-
         tensor1 * tensor2

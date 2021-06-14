@@ -87,13 +87,13 @@ class Falcon(metaclass=Protocol):
             NotImplementedError: Raised when implementation not present
 
         """
-        if not len(session.parties) == 3:
+        if len(session.parties) != 3:
             raise ValueError("Falcon requires 3 parties")
 
         result = None
 
         if session.protocol.security_type == "semi-honest":
-            result = Falcon.mul_implementation(x, y)
+            result = Falcon.multiplication_protocol(x, y)
 
         elif session.protocol.security_type == "malicious":
             raise NotImplementedError(
@@ -116,7 +116,7 @@ class Falcon(metaclass=Protocol):
         return shares
 
     @staticmethod
-    def mul_implementation(x, y) -> List[ReplicatedSharedTensor]:
+    def multiplication_protocol(x:MPCTensor, y:MPCTensor) -> List[ReplicatedSharedTensor]:
         """Implementation of Falcon's multiplication with semi-honest security guarantee.
 
         Args:
