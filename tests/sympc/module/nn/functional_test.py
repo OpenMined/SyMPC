@@ -68,7 +68,7 @@ def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    secret = torch.Tensor([[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.22, 0.42, -30]]])
+    secret = torch.Tensor([[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.22, 0.42, -10]]])
     mpc = MPCTensor(secret=secret, session=session)
 
     res, _ = sympc.module.nn.max_pool2d(

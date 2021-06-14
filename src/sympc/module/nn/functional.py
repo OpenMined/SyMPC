@@ -181,8 +181,8 @@ def helper_max_pool2d_reshape(
 
     padding_value = 0
     if session.rank == 0:
-        # ATTENTION: Min value for max_pool2d that works -50
-        padding_value = -50
+        # ATTENTION: Min value for max_pool2d that works -25
+        padding_value = -25
 
     tensor = np.pad(tensor, padding, mode="constant", constant_values=padding_value)
 
