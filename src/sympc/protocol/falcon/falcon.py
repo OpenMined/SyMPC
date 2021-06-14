@@ -116,7 +116,9 @@ class Falcon(metaclass=Protocol):
         return shares
 
     @staticmethod
-    def multiplication_protocol(x:MPCTensor, y:MPCTensor) -> List[ReplicatedSharedTensor]:
+    def multiplication_protocol(
+        x: MPCTensor, y: MPCTensor
+    ) -> List[ReplicatedSharedTensor]:
         """Implementation of Falcon's multiplication with semi-honest security guarantee.
 
         Args:
