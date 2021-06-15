@@ -653,6 +653,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If session from MPCTensor and "y" is not the same.
             TypeError: If MPC tensors are not of same share class
+            NotImplementedError: When op has not been implemented yet
         """
         if self.session.protocol.share_class != y.session.protocol.share_class:
             raise TypeError("Both MPC tensors should be of same share class.")
@@ -674,10 +675,17 @@ class MPCTensor(metaclass=SyMPCTensor):
 
             elif self.session.protocol.share_class == ReplicatedSharedTensor:
 
-                result = Falcon.mul(self, y, self.session)
-                result = MPCTensor(
-                    shares=result, shape=self.shape, session=self.session
-                )
+                if op_str == "mul":
+
+                    result = Falcon.mul_master(self, y, self.session)
+                    result = MPCTensor(shares=result, session=self.session)
+                    result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
+
+                else:
+
+                    raise NotImplementedError(
+                        f"{op_str} has not implemented for ReplicatedSharedTensor"
+                    )
 
             else:
 

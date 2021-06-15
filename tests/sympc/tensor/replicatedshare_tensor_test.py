@@ -66,13 +66,17 @@ def test_send_get(get_clients, precision=12, base=4) -> None:
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol, parties=[client])
     SessionManager.setup_mpc(session)
+
     share1 = torch.Tensor([1.4, 2.34, 3.43])
     share2 = torch.Tensor([1, 2, 3])
     share3 = torch.Tensor([1.4, 2.34, 3.43])
+
     session_uuid = session.rank_to_uuid[0]
+
     x_share = ReplicatedSharedTensor(
         shares=[share1, share2, share3], session_uuid=session_uuid
     )
+
     x_ptr = x_share.send(client)
     result = x_ptr.get()
 
@@ -89,6 +93,7 @@ def test_fixed_point(precision, base) -> None:
     )
     fp_encoder = FixedPointEncoder(precision=precision, base=base)
     tensor_type = get_type_from_ring(rst.ring_size)
+
     for i in range(len(shares)):
         shares[i] = fp_encoder.encode(shares[i]).to(tensor_type)
 
@@ -252,7 +257,6 @@ def test_ops_share_public(op_str, precision, base) -> None:
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_ops_publicmul_integer(get_clients, parties, security):
-
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
 
@@ -273,7 +277,6 @@ def test_ops_publicmul_integer(get_clients, parties, security):
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_ops_publicmul_integer_matrix(get_clients, parties, security):
-
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
 

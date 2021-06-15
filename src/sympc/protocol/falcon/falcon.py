@@ -8,7 +8,6 @@ from typing import Any
 from typing import Dict
 from typing import List
 
-from sympc.config import Config
 from sympc.protocol.protocol import Protocol
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
@@ -67,7 +66,7 @@ class Falcon(metaclass=Protocol):
         return True
 
     @staticmethod
-    def mul(x, y, session) -> ReplicatedSharedTensor:
+    def mul_master(x, y, session) -> ReplicatedSharedTensor:
         """Master method for multiplication.
 
         Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
@@ -107,11 +106,32 @@ class Falcon(metaclass=Protocol):
                 + " setting"
             )
 
-        vals = [result[0].get(), result[1].get(), result[2].get()]
-        # Add random mask to vals
-        shares = MPCTensor.generate_shares(
-            sum(vals), 3, config=Config(encoder_base=1, encoder_precision=0)
+        random0 = (
+            session.session_ptrs[0]
+            .przs_generate_random_share(shape=x.shape)
+            .get_shares()
+            .get()[0]
         )
+        random1 = (
+            session.session_ptrs[1]
+            .przs_generate_random_share(shape=x.shape)
+            .get_shares()
+            .get()[0]
+        )
+        random2 = (
+            session.session_ptrs[2]
+            .przs_generate_random_share(shape=x.shape)
+            .get_shares()
+            .get()[0]
+        )
+
+        # Add random mask to vals
+        shares = [
+            result[0].get() + random0,
+            result[1].get() + random1,
+            result[2].get() + random2,
+        ]
+
         shares = ReplicatedSharedTensor.distribute_shares(shares, x.session)
         return shares
 

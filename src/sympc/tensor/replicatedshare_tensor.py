@@ -23,7 +23,7 @@ from sympc.utils import get_type_from_ring
 
 from .tensor import SyMPCTensor
 
-PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
+PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T", "shape"}
 METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 
 
@@ -41,7 +41,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
-    PROPERTIES_FORWARD = {"T"}
+    PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(
         self,
