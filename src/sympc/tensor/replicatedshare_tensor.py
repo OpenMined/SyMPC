@@ -306,7 +306,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self.__apply_op(y, "sub")
 
-    def mul(self, y: Union[int, float,torch.Tensor]) -> "ReplicatedSharedTensor":
+    def mul(self, y: Union[int, float, torch.Tensor]) -> "ReplicatedSharedTensor":
         """Apply the "mul" operation between "self" and "y".
 
         Args:
