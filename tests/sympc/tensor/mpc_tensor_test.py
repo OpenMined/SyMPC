@@ -535,6 +535,73 @@ def test_pow(get_clients, power) -> None:
         power = x ** -2
 
 
+def test_backward(get_clients):
+    clients = get_clients(4)
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]], requires_grad=True)
+    y_secret = torch.tensor([[4.5, -2.5], [5, 2.25], [-3, 3]], requires_grad=True)
+    x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
+    y = MPCTensor(secret=y_secret, session=session, requires_grad=True)
+
+    res_mpc = x * y
+    res = x_secret * y_secret
+    s_mpc = res_mpc.sum()
+    s = torch.sum(res)
+    s_mpc.backward()
+    s.backward()
+
+    assert np.allclose(x.grad.get(), x_secret.grad, rtol=1e-3)
+    assert np.allclose(y.grad.get(), y_secret.grad, rtol=1e-3)
+
+
+def test_backward_without_requires_grad(get_clients):
+    clients = get_clients(4)
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]])
+    y_secret = torch.tensor([[4.5, -2.5], [5, 2.25], [-3, 3]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+
+    res_mpc = x - y
+    s_mpc = res_mpc.sum()
+    s_mpc.backward()
+
+    assert not res_mpc.requires_grad
+    assert res_mpc.grad is None
+    assert x.grad is None
+    assert y.grad is None
+
+
+def test_backward_with_one_requires_grad(get_clients):
+    clients = get_clients(4)
+    session = Session(parties=clients)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]], requires_grad=True)
+    y_secret = torch.tensor([[4.5, -2.5], [5, 2.25], [-3, 3]])
+    x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
+    y = MPCTensor(secret=y_secret, session=session)
+
+    res_mpc = x - y
+    res = x_secret - y_secret
+    s_mpc = res_mpc.sum()
+    s = torch.sum(res)
+    s_mpc.backward()
+    s.backward()
+
+    # TODO: add assert for res_mpc.grad and res.grad
+    assert res_mpc.requires_grad
+    assert np.allclose(x.grad.get(), x_secret.grad, rtol=1e-3)
+    assert y.grad is None
+
+
 def test_invalid_share_class(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
