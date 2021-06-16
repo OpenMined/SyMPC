@@ -23,7 +23,7 @@ SyMPC **/ˈsɪmpəθi/** is a library which extends `PySyft <https://github.com/
 Installation
 ############
 
-SyMPC is a companion library for PySyft. Therefore, we will need to install pysyft among other dependencies. We recommend using a virtual environment like conda.
+SyMPC is a companion library for PySyft. Therefore, we will need to install PySyft among other dependencies. We recommend using a virtual environment like `conda`.
 
 .. code:: bash
 
