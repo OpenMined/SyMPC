@@ -5,13 +5,12 @@
     <a href="http://duet.openmined.org/"><img src="https://github.com/OpenMined/design-assets/raw/master/logos/OM/mark-primary-trans.png" alt="SyMPC" width="200"></a>
     <br>
     SyMPC
-    <br>
     </h1>
-    <h3 align="center">
-    <br>
+    <h4 align="center">
     A library that extends PySyft with SMPC support
     <br>
-    </h3>
+    <br>
+    </h4>
 
     <a href=""><img src="https://github.com/OpenMined/SyMPC/actions/workflows/tests.yml/badge.svg" /></a>
     <a href="https://openmined.slack.com/messages/support"><img src="https://img.shields.io/badge/chat-on%20slack-7A5979.svg" /></a>
