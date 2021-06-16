@@ -17,7 +17,7 @@
     <a href="https://codecov.io/gh/OpenMined/SyMPC"><img src="https://codecov.io/gh/OpenMined/SyMPC/branch/main/graph/badge.svg?token=TS2rZyJRlo" /></a>
 
 
-SyMPC **/ˈsɪmpəθi/** is a library which extends `PySyft <https://github.com/OpenMined/PySyft>`_ ≥0.3 with SMPC support. It allows to compute over encrypted data, to evaluate and to train neural networks.
+SyMPC **/ˈsɪmpəθi/** is a library which extends `PySyft <https://github.com/OpenMined/PySyft>`_ ≥0.3 with SMPC support. It allows computing over encrypted data, and to train and evaluate neural networks.
 
 
 Installation
