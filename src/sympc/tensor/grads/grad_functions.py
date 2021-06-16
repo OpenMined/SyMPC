@@ -674,9 +674,9 @@ class GradMaxPool2D(GradFunc):
             stride=stride,
             padding=padding,
             dilation=dilation,
+            return_indices=True,
         )
 
-        ctx["grad_output"] = res
         ctx["indices"] = indices
 
         return res

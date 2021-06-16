@@ -588,7 +588,6 @@ def test_grad_relu_backward(get_clients) -> None:
     assert np.allclose(res, expected, rtol=1e-3)
 
 
-
 @pytest.mark.order(9)
 def test_forward(get_clients) -> None:
     model = LinearSyNet(torch)
@@ -633,6 +632,62 @@ def test_grad_maxpool_2d_dilation_error(get_clients) -> None:
         GradMaxPool2D.forward({}, x, kernel_size=2, dilation=(1, 2))
 
 
+@pytest.mark.order(10)
+def test_grad_maxpool_2d_backward_value_error_indices_shape(get_clients) -> None:
+    parties = get_clients(2)
+
+    secret = torch.tensor(
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [3.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ],
+        requires_grad=True,
+    )
+
+    ctx = {
+        "x_shape": secret.shape,
+        "kernel_size": (5, 5),
+        "stride": 1,
+        "padding": (1, 1),
+        "dilation": 1,
+        "indices": torch.tensor([[1, 2], [3, 4]]),
+    }
+
+    with pytest.raises(ValueError):
+        GradMaxPool2D.backward(ctx, secret.share(parties=parties))
+
+
+@pytest.mark.order(11)
+def test_grad_maxpool_2d_backward_value_error_kernel_gt_input(get_clients) -> None:
+    parties = get_clients(2)
+
+    secret = torch.tensor(
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [3.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ],
+        requires_grad=True,
+    )
+
+    ctx = {
+        "x_shape": secret.shape,
+        "kernel_size": (5, 5),
+        "stride": 1,
+        "padding": (1, 1),
+        "dilation": 1,
+        "indices": torch.tensor([[[[1]]]]),
+    }
+
+    with pytest.raises(ValueError):
+        GradMaxPool2D.backward(ctx, secret.share(parties=parties))
+
+
 POSSIBLE_CONFIGS_MAXPOOL_2D = [
     (1, 1, 0),
     (2, 1, 0),
@@ -645,15 +700,47 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
     (3, 2, 1),
     (3, 3, 0),
     (3, 3, 1),
+    ((5, 3), (1, 2), (2, 1)),
 ]
 
 
-@pytest.mark.order(10)
+def test_grad_maxpool_2d_forward_value_error_kernel_gt_input(get_clients) -> None:
+    parties = get_clients(2)
+
+    secret = torch.Tensor(
+        [
+            [
+                [0.23, 0.32],
+                [0.2, -0.3],
+                [0.22, 0.42],
+            ]
+        ]
+    )
+
+    x = secret.share(parties=parties)
+
+    with pytest.raises(ValueError):
+        GradMaxPool2D.forward(
+            {}, x, kernel_size=(6, 3), stride=1, padding=1, dilation=1
+        )
+
+
+@pytest.mark.order(13)
 @pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
 def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> None:
     parties = get_clients(2)
 
-    secret = torch.Tensor([[[0.23, 0.32, 2.32], [0.2, -0.3, -0.53], [0.32, 0.42, -10]]])
+    secret = torch.Tensor(
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.2, -0.3, -0.53, -15, 0.32],
+                [0.22, 0.42, -10, -0.55, 2.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [3.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ]
+    )
 
     x = secret.share(parties=parties)
 
@@ -668,7 +755,6 @@ def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> N
     assert "padding" in ctx
     assert "dilation" in ctx
     assert "indices" in ctx
-    assert "grad_output" in ctx
 
     res = res_mpc.reconstruct()
     expected = torch.max_pool2d(
@@ -678,13 +764,21 @@ def test_grad_maxpool_2d_forward(get_clients, kernel_size, stride, padding) -> N
     assert np.allclose(res, expected, rtol=1e-3)
 
 
-@pytest.mark.order(11)
+@pytest.mark.order(14)
 @pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
 def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> None:
     parties = get_clients(2)
 
     secret = torch.tensor(
-        [[[0.23, 0.32, 2.3], [0.2, -0.3, -0.53], [0.32, 0.42, -10]]],
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.2, -0.3, -0.53, -15, 0.32],
+                [0.22, 0.42, -10, -0.55, 2.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [3.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ],
         requires_grad=True,
     )
 
@@ -701,6 +795,7 @@ def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> 
         stride=stride,
         padding=padding,
         dilation=1,
+        return_indices=True,
     )
 
     ctx = {
@@ -709,15 +804,13 @@ def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> 
         "stride": stride,
         "padding": padding,
         "dilation": 1,
-        "grad_output": grad_mpc,
         "indices": indices,
     }
-
-    res_mpc = GradMaxPool2D.backward(ctx, grad_mpc)
-
-    res = res_mpc.reconstruct()
 
     output.backward(gradient=output)
     expected_grad = secret.grad
 
+    res_mpc = GradMaxPool2D.backward(ctx, grad_mpc)
+
+    res = res_mpc.reconstruct()
     assert np.allclose(res, expected_grad, rtol=1e-3)

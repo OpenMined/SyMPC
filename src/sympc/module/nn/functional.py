@@ -80,7 +80,7 @@ def _sanity_check_max_pool2d(
         A 4 element type with types Tuple[int, int] representing the converted parameters.
 
     Raises:
-        ValueError: if the passed in parameters are not
+        ValueError: if the parameters are not passing the sanity check
     """
     if isinstance(kernel_size, int):
         kernel_size = (kernel_size, kernel_size)
@@ -217,7 +217,8 @@ def max_pool2d(
     stride: Optional[Union[int, Tuple[int, int]]] = None,
     padding: Union[int, Tuple[int, int]] = 0,
     dilation: Union[int, Tuple[int, int]] = 1,
-) -> MPCTensor:
+    return_indices: bool = False,
+) -> Union[MPCTensor, Tuple[MPCTensor, MPCTensor]]:
     """Compute the max pool for a tensor with 2 dimension.
 
     Args:
@@ -230,13 +231,27 @@ def max_pool2d(
             in case it is passed as an integer then that specific value is used for height and width
         dilation (Union[int, Tuple[int, int]]): the dilation size
             in case it is passed as an integer then that specific value is used for height and width
+        return_indices (bool): to return the indices of the max values
 
     Returns:
         A tuple representing maximum values and the indices (as a one hot encoding
+
+    Raises:
+        ValueError: if the kernel size is bigger than the input
     """
     kernel_size, stride, padding, dilation = _sanity_check_max_pool2d(
         kernel_size, stride, padding, dilation
     )
+
+    if (
+        x.shape[-2] + 2 * padding[0] < kernel_size[0]
+        or x.shape[-1] + 2 * padding[1] < kernel_size[1]
+    ):
+        raise ValueError(
+            f"Kernel size ({kernel_size}) has more elements on an axis than "
+            f"input shape ({x.shape}) considering padding of {padding}"
+        )
+
     x_reshaped = _reshape_max_pool2d(
         x, kernel_size=kernel_size, stride=stride, padding=padding, dilation=dilation
     )
@@ -244,14 +259,17 @@ def max_pool2d(
     res_max_columns, columns = x_reshaped.max(dim=-1, one_hot=True)
     res_max, rows = res_max_columns.max(dim=-1, one_hot=True)
 
-    indices = columns * rows.unsqueeze(-1)
-
     output_shape = x.shape[:-2] + (
         (x.shape[-2] - kernel_size[0] + 2 * padding[0]) // stride[0] + 1,
         (x.shape[-1] - kernel_size[1] + 2 * padding[1]) // stride[1] + 1,
     )
 
-    return res_max.reshape(*output_shape), indices.reshape(output_shape + kernel_size)
+    res = res_max.reshape(*output_shape)
+    if return_indices:
+        indices = columns * rows.unsqueeze(-1)
+        res = (res, indices.reshape(output_shape + kernel_size))
+
+    return res
 
 
 def max_pool2d_backward_helper(
@@ -260,7 +278,7 @@ def max_pool2d_backward_helper(
     kernel_size: Tuple[int, int],
     stride: Tuple[int, int],
     padding: Tuple[int, int],
-):
+) -> ShareTensor:
     """Helper function to compute the gradient needed to be passed to the parent node.
 
     Args:
@@ -272,11 +290,21 @@ def max_pool2d_backward_helper(
 
     Returns:
         A ShareTensor specific for the computed gradient
+
+    Raises:
+        ValueError: if the input shape (taken into consideration the padding) is smaller than the
+            kernel shape
     """
     session = get_session(str(grads_share.session_uuid))
 
     res_shape = input_shape[:-2]
     res_shape += (input_shape[-2] + 2 * padding[0], input_shape[-1] + 2 * padding[1])
+
+    if res_shape[-2] < kernel_size[0] or res_shape[-1] < kernel_size[1]:
+        raise ValueError(
+            f"Kernel size ({kernel_size}) has more elements on an axis than "
+            f"input shape ({res_shape}) considering padding of {padding}"
+        )
 
     tensor_type = session.tensor_type
     tensor = torch.zeros(res_shape, dtype=tensor_type)

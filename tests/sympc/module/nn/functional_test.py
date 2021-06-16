@@ -58,6 +58,7 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
     (3, 2, 1),
     (3, 3, 0),
     (3, 3, 1),
+    ((5, 3), (1, 2), (2, 1)),
 ]
 
 
@@ -68,10 +69,20 @@ def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    secret = torch.Tensor([[[0.23, 0.32, 0.62], [0.2, -0.3, -0.53], [0.22, 0.42, -10]]])
+    secret = torch.Tensor(
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.2, -0.3, -0.53, -15, 0.32],
+                [0.22, 0.42, -10, -0.55, 2.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [23.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ]
+    )
     mpc = MPCTensor(secret=secret, session=session)
 
-    res, _ = sympc.module.nn.max_pool2d(
+    res = sympc.module.nn.max_pool2d(
         mpc, kernel_size=kernel_size, stride=stride, padding=padding
     )
     res_expected = torch.max_pool2d(
@@ -79,3 +90,21 @@ def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     )
 
     assert np.allclose(res.reconstruct(), res_expected, atol=1e-4)
+
+
+@pytest.mark.order(14)
+def test_max_pool2d_raises_value_error_kernel_gt_input(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([[[0.23]]])
+    mpc = MPCTensor(secret=secret, session=session)
+
+    with pytest.raises(ValueError):
+        sympc.module.nn.max_pool2d(mpc, kernel_size=5, stride=1, padding=1)
+
+    with pytest.raises(ValueError):
+        sympc.module.nn.max_pool2d(
+            mpc, kernel_size=2, stride=1, padding=0, return_indices=True
+        )
