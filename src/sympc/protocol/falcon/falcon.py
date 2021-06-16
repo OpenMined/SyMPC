@@ -99,30 +99,10 @@ class Falcon(metaclass=Protocol):
             raise NotImplementedError(
                 "Multiplication has not been implemented for malicious setting"
             )
-
         else:
             raise NotImplementedError(
                 f"mult operation not implemented for {session.protocol.security_type} setting"
             )
-
-        """random0 = (
-            session.session_ptrs[0]
-            .przs_generate_random_share(shape=x.shape)
-            .get_shares()
-            .get()[0]
-        )
-        random1 = (
-            session.session_ptrs[1]
-            .przs_generate_random_share(shape=x.shape)
-            .get_shares()
-            .get()[0]
-        )
-        random2 = (
-            session.session_ptrs[2]
-            .przs_generate_random_share(shape=x.shape)
-            .get_shares()
-            .get()[0]
-        )"""
 
         przs_masks = [
             session.session_ptrs[index]
