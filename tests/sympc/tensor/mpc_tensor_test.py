@@ -601,7 +601,7 @@ def test_backward_with_one_requires_grad(get_clients):
     assert np.allclose(x.grad.get(), x_secret.grad, rtol=1e-3)
     assert y.grad is None
 
-    
+
 def test_invalid_share_class(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
