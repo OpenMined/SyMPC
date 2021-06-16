@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623604146284,
+  "lastUpdate": 1623854060230,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -930,6 +930,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.09339408177527164",
             "extra": "mean: 7.531465561599998 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "anubhavraj.08@gmail.com",
+            "name": "Anubhav Raj Singh",
+            "username": "aanurraj"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "4531945ff37016157cb90676f6fc370923fd0f7b",
+          "message": "added backward function test for MPC Tensor (#229)\n\n* added backward test\r\n\r\n* added test without grad\r\n\r\n* added new tests\r\n\r\n* imporoved tests\r\n\r\n* resolve conflicts",
+          "timestamp": "2021-06-16T20:01:05+05:30",
+          "tree_id": "b476fa8e55771f9f10bf77e4d41de44e1200f630",
+          "url": "https://github.com/OpenMined/SyMPC/commit/4531945ff37016157cb90676f6fc370923fd0f7b"
+        },
+        "date": 1623854059539,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.12490856169292656,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06715659992415246",
+            "extra": "mean: 8.005856335600004 sec\nrounds: 5"
           }
         ]
       }
