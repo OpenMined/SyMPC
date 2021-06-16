@@ -678,8 +678,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 if op_str == "mul":
 
                     result = Falcon.mul_master(self, y, self.session)
-                    result = MPCTensor(shares=result, session=self.session)
-                    result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
+                    result.shape = MPCTensor._get_shape("mul", self.shape, y.shape)
 
                 else:
 

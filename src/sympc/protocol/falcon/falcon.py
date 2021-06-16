@@ -9,6 +9,7 @@ from typing import Dict
 from typing import List
 
 from sympc.protocol.protocol import Protocol
+from sympc.session import Session
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
@@ -66,7 +67,7 @@ class Falcon(metaclass=Protocol):
         return True
 
     @staticmethod
-    def mul_master(x, y, session) -> ReplicatedSharedTensor:
+    def mul_master(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
         """Master method for multiplication.
 
         Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
@@ -133,7 +134,8 @@ class Falcon(metaclass=Protocol):
         ]
 
         shares = ReplicatedSharedTensor.distribute_shares(shares, x.session)
-        return shares
+        result = MPCTensor(shares=shares, session=x.session)
+        return result
 
     @staticmethod
     def multiplication_protocol(
