@@ -102,12 +102,10 @@ class Falcon(metaclass=Protocol):
 
         else:
             raise NotImplementedError(
-                "Multiplication has not been implemented for "
-                + session.protocol.security_type
-                + " setting"
+                f"mult operation not implemented for {session.protocol.security_type} setting"
             )
 
-        random0 = (
+        """random0 = (
             session.session_ptrs[0]
             .przs_generate_random_share(shape=x.shape)
             .get_shares()
@@ -124,13 +122,21 @@ class Falcon(metaclass=Protocol):
             .przs_generate_random_share(shape=x.shape)
             .get_shares()
             .get()[0]
-        )
+        )"""
+
+        przs_masks = [
+            session.session_ptrs[index]
+            .przs_generate_random_share(shape=x.shape)
+            .get_shares()
+            .get()[0]
+            for index in range(0, 3)
+        ]
 
         # Add random mask to vals
         shares = [
-            result[0].get() + random0,
-            result[1].get() + random1,
-            result[2].get() + random2,
+            result[0].get() + przs_masks[0],
+            result[1].get() + przs_masks[1],
+            result[2].get() + przs_masks[2],
         ]
 
         shares = ReplicatedSharedTensor.distribute_shares(shares, x.session)

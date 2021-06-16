@@ -681,13 +681,11 @@ class MPCTensor(metaclass=SyMPCTensor):
                     result.shape = MPCTensor._get_shape("mul", self.shape, y.shape)
 
                 else:
-
                     raise NotImplementedError(
                         f"{op_str} has not implemented for ReplicatedSharedTensor"
                     )
 
             else:
-
                 raise TypeError("Invalid Share Class")
 
         elif op_str in {"sub", "add"}:
