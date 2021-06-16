@@ -45,6 +45,18 @@ If we want to start learning how to use SyMPC we can go to the *examples* folder
     $ jupyter notebook examples/introduction.ipynb
 
 
+Docker
+######
+
+If we cannot or do not want to use conda and install the dependencies, we can instead use the dockerfile provided
+in this repository to build and run an image.
+
+.. code:: bash
+    
+    $ docker build -t sympc -f docker-images/Dockerfile .
+    $ docker run -i -t sympc
+
+
 Contributing
 ############
 
