@@ -33,6 +33,22 @@ SyMPC is a companion library for PySyft. Therefore, we will need to install PySy
     $ pip install .
 
 
+If we cannot or do not want to use a virtual environment, we can use a docker image.
+First, we need to `install docker <https://docs.docker.com/get-docker/>`_.
+
+Once installed, we should be able to build an image called `sympc` and run it.
+
+.. code:: bash
+    
+    $ docker build -t sympc -f docker-images/Dockerfile .
+    $ docker run -i -t sympc
+
+At that point, we have an isolated environment with the SyMPC repository copied and all its dependencies
+installed. We can use it as our development environment or make our experiments.
+So we can run the examples (`Getting Started`_), execute the tests or modify the code to start 
+`Contributing`_.
+
+
 Getting Started
 ###############
 
@@ -44,17 +60,14 @@ If we want to start learning how to use SyMPC we can go to the *examples* folder
     $ pip install jupyter
     $ jupyter notebook examples/introduction.ipynb
 
-
-Docker
-######
-
-If we cannot or do not want to use conda and install the dependencies, we can instead use the dockerfile provided
-in this repository to build and run an image.
+If we decided to use docker, we would need to run the image and publish the jupyter notebook port
 
 .. code:: bash
     
-    $ docker build -t sympc -f docker-images/Dockerfile .
-    $ docker run -i -t sympc
+    $ sudo docker run -i -t -p 8888:8888 sympc
+    $ jupyter notebook examples/introduction.ipynb --allow-root --ip=0.0.0.0
+
+Finally, we would need to copy the url shown in the docker to our browser.
 
 
 Contributing
