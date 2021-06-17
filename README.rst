@@ -32,21 +32,12 @@ SyMPC is a companion library for PySyft. Therefore, we will need to install PySy
     $ pip install -r requirements.txt
     $ pip install .
 
-
-If we cannot or do not want to use a virtual environment, we can use a docker image.
-First, we need to `install docker <https://docs.docker.com/get-docker/>`_.
-
-Once installed, we should be able to build an image called `sympc` and run it.
+You can also run SyMPC using docker by running the following commands. 
 
 .. code:: bash
     
-    $ docker build -t sympc -f docker-images/Dockerfile .
-    $ docker run -i -t sympc
-
-At that point, we have an isolated environment with the SyMPC repository copied and all its dependencies
-installed. We can use it as our development environment or make our experiments.
-So we can run the examples (`Getting Started`_), execute the tests or modify the code to start 
-`Contributing`_.
+    $ docker build -t sympc -f docker-images/Dockerfile .  #builds image named sympc
+    $ docker run -i -t sympc  #runs the container 
 
 
 Getting Started
