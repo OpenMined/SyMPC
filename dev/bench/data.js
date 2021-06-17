@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623854060230,
+  "lastUpdate": 1623949484194,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -961,6 +961,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.06715659992415246",
             "extra": "mean: 8.005856335600004 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ff18bf4ebc41214aa573b730c1b8ad9568795407",
+          "message": "Max pooling 2D (#221)\n\n* Add max_pool2d forward and backwards\r\n\r\n* Remove arg that would be the result a tuple\r\n\r\n* Update src/sympc/module/nn/functional.py\r\n\r\nCo-authored-by: Anubhav Raj Singh <anubhavraj.08@gmail.com>\r\n\r\n* Update src/sympc/tensor/grads/grad_functions.py\r\n\r\nCo-authored-by: Anubhav Raj Singh <anubhavraj.08@gmail.com>\r\n\r\n* Separate function for sanity check\r\n\r\n* Actually return value from sanity check\r\n\r\n* Decrease the minimum value\r\n\r\n* Remove test for input padding\r\n\r\n* Add order\r\n\r\n* Add order\r\n\r\n* Use reconstruct not get\r\n\r\n* Fix typo in comment\r\n\r\n* Reduce maxpool more\r\n\r\n* Fix comments\r\n\r\nCo-authored-by: Anubhav Raj Singh <anubhavraj.08@gmail.com>",
+          "timestamp": "2021-06-17T18:01:34+01:00",
+          "tree_id": "b2dea89f08e68d439fb5f50d4d4c559c1de06df9",
+          "url": "https://github.com/OpenMined/SyMPC/commit/ff18bf4ebc41214aa573b730c1b8ad9568795407"
+        },
+        "date": 1623949483185,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.13491216444818369,
+            "unit": "iter/sec",
+            "range": "stddev: 0.11788824970307439",
+            "extra": "mean: 7.4122300542 sec\nrounds: 5"
           }
         ]
       }
