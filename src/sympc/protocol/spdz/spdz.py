@@ -176,7 +176,7 @@ def div_wraps(
     Returns:
         ShareTensor representing the number of wraparounds
     """
-    session = get_session(str(r_share.session_uuid))
+    session = get_session(r_share.session_uuid)
 
     beta_xr = count_wraps([x_share.tensor, r_share.tensor])
     theta_x = ShareTensor(config=Config(encoder_precision=0))
@@ -204,7 +204,7 @@ def spdz_mask(
     Returns:
         Tuple[ShareTensor, ShareTensor]
     """
-    session = get_session(str(x_sh.session_uuid))
+    session = get_session(x_sh.session_uuid)
 
     crypto_store = session.crypto_store
 

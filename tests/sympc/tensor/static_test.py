@@ -25,6 +25,7 @@ def test_argmax_multiple_max(get_clients) -> None:
         print(res.reconstruct())
 
 
+@pytest.mark.order(14)
 def test_argmax(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
@@ -71,6 +72,7 @@ def test_max_multiple_max(get_clients) -> None:
         x.argmax()
 
 
+@pytest.mark.order(13)
 def test_max(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
