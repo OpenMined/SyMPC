@@ -316,20 +316,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             ReplicatedSharedTensor: Result of the operation.
 
-        """
-        y, session_vals = self.sanity_checks(self, y)
+        Raises:
+            ValueError: Raised when private mul is performed parties!=3.
 
+        """
+        y_tensor, session_vals = self.sanity_checks(self, y)
+        session, ring_size, config, rank, nr_parties = session_vals
         is_private = isinstance(y, ReplicatedSharedTensor)
 
         if is_private:
+            # currently there is no way of getting session of RStensor since session is optional.
+            # This resulted in 0 parties. Needs fix in seperate PR.
+            if len(self.shares) == 2:
+                from sympc.protocol import Falcon
 
-            from sympc.protocol import Falcon
-
-            result = [Falcon.multiplication_protocol(self, y)]
-
+                result = [Falcon.multiplication_protocol(self, y_tensor)]
+            else:
+                raise ValueError(
+                    "Private mult between ReplicatedSharedTensors is allowed only for 3 parties"
+                )
         else:
-
-            result = [share * y.shares[0] for share in self.shares]
+            result = [share * y_tensor.shares[0] for share in self.shares]
 
         tensor = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
@@ -580,7 +587,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             return []
 
         parties = session.parties
-
         nshares = len(parties) - 1
 
         ptr_list = []
