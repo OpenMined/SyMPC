@@ -783,6 +783,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 ** self.session.config.encoder_precision
             )
             result = input_tensor.truediv(scale)
+        else:
+
+            result = input_tensor
 
         return result
 
