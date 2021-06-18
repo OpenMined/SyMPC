@@ -26,12 +26,17 @@ from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 from . import utils  # noqa: 401
 
+from . import module  # noqa: 401 isort: skip
+
 allowed_external_modules = [
     ("sympc", sympc),
     ("sympc.session", session),
     ("sympc.tensor", tensor),
     ("sympc.tensor.static", tensor.static),
     ("sympc.protocol", protocol),
+    ("sympc.module", module),
+    ("sympc.module.nn", module.nn),
+    ("sympc.module.nn.functional", module.nn.functional),
     ("sympc.store", store),
     ("sympc.protocol.falcon", protocol.falcon),
     ("sympc.protocol.falcon.falcon", protocol.falcon.falcon),
@@ -41,11 +46,6 @@ allowed_external_modules = [
     ("sympc.protocol.spdz.spdz", protocol.spdz.spdz),
     ("sympc.utils", utils),
     ("sympc.tensor.grads", tensor.grads),
-    ("sympc.tensor.grads.grad_functions", tensor.grads.grad_functions),
-    (
-        "sympc.tensor.grads.grad_functions.GradConv2d",
-        tensor.grads.grad_functions.GradConv2d,
-    ),
 ]
 
 allowed_external_classes = [
@@ -119,6 +119,10 @@ share_tensor_attrs = [
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.helper_argmax_pairwise", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.module.nn.functional.helper_max_pool2d_reshape",
+        "sympc.tensor.ShareTensor",
+    ),
     ("sympc.tensor.ShareTensor.shape", "syft.lib.python.Tuple"),
 ]
 
@@ -188,15 +192,15 @@ replicated_shared_tensor_attrs = [
     ("sympc.tensor.ShareTensor.repeat", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.dim", "syft.lib.python.Int"),
-    (
-        "sympc.tensor.grads.grad_functions.GradConv2d.get_grad_input_padding",
-        "sympc.tensor.ShareTensor",
-    ),
     ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.ShareTensor.flatten", "sympc.tensor.ShareTensor"),
 ]
 
 allowed_external_attrs = [
+    (
+        "sympc.module.nn.functional.max_pool2d_backward_helper",
+        "sympc.tensor.ShareTensor",
+    ),
     ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
     ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
     ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),
