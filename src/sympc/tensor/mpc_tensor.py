@@ -664,6 +664,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             )
 
         if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
+            
             from sympc.protocol import Falcon
             from sympc.protocol.spdz import spdz
             from sympc.tensor import ReplicatedSharedTensor
@@ -687,6 +688,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 raise TypeError("Invalid Share Class")
 
         elif op_str in {"sub", "add"}:
+            
             op = getattr(operator, op_str)
             shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
