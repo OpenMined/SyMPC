@@ -256,7 +256,7 @@ def test_ops_share_public(op_str, precision, base) -> None:
 
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_publicmul_integer(get_clients, parties, security):
+def test_ops_public_mul_integer(get_clients, parties, security):
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
 
@@ -276,7 +276,7 @@ def test_ops_publicmul_integer(get_clients, parties, security):
 
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_publicmul_integer_matrix(get_clients, parties, security):
+def test_ops_public_mul_integer_matrix(get_clients, parties, security):
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
 

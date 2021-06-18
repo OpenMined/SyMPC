@@ -664,7 +664,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             )
 
         if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
-            
+
             from sympc.protocol import Falcon
             from sympc.protocol.spdz import spdz
             from sympc.tensor import ReplicatedSharedTensor
@@ -688,7 +688,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 raise TypeError("Invalid Share Class")
 
         elif op_str in {"sub", "add"}:
-            
+
             op = getattr(operator, op_str)
             shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
@@ -759,12 +759,12 @@ class MPCTensor(metaclass=SyMPCTensor):
         return res.shape
 
     def truncation(
-        self, result: "MPCTensor", op_str: str, is_private: bool
+        self, input_tensor: "MPCTensor", op_str: str, is_private: bool
     ) -> "MPCTensor":
         """Checks if operation requires truncation and performs it if required.
 
         Args:
-            result (MPCTensor): Result of operation
+            input_tensor (MPCTensor): Result of operation
             op_str (str): Operation name
             is_private (bool): If operation is private
 
@@ -782,7 +782,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 self.session.config.encoder_base
                 ** self.session.config.encoder_precision
             )
-            result = result.truediv(scale)
+            result = input_tensor.truediv(scale)
 
         return result
 

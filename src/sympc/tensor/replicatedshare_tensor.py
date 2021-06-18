@@ -8,6 +8,7 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
+from typing import Tuple
 from typing import Union
 from uuid import UUID
 
@@ -123,7 +124,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def sanity_checks(
         x: "ReplicatedSharedTensor",
         y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
-    ) -> tuple("ReplicatedSharedTensor",):
+    ) -> Tuple["ReplicatedSharedTensor", Tuple[Session, int, Config, int, int]]:
         """Check the type of "y" and convert it to share if necessary.
 
         Args:
@@ -190,8 +191,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" is not supported.
         """
-        y, other = ReplicatedSharedTensor.sanity_checks(self, y)
-        session, ring_size, config, rank, nr_parties = other
+        y, session_vals = ReplicatedSharedTensor.sanity_checks(self, y)
+        session, ring_size, config, rank, nr_parties = session_vals
         session_uuid = self.session_uuid
 
         op = getattr(operator, op_str)
@@ -224,8 +225,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" not supported.
         """
-        y, other = ReplicatedSharedTensor.sanity_checks(self, y)
-        session, ring_size, config, rank, nr_parties = other
+        y, session_vals = ReplicatedSharedTensor.sanity_checks(self, y)
+        session, ring_size, config, rank, nr_parties = session_vals
         session_uuid = self.session_uuid
 
         op = getattr(operator, op_str)
@@ -316,13 +317,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ReplicatedSharedTensor: Result of the operation.
 
         """
-        y, other = self.sanity_checks(self, y)
+        y, session_vals = self.sanity_checks(self, y)
 
-        shares = []
-
-        for share in self.shares:
-            shares.append(share * y.shares[0])
-
+        shares = [share * y.shares[0] for share in self.shares]
         result = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
         )

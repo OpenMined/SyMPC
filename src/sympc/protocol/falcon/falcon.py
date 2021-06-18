@@ -107,8 +107,9 @@ class Falcon(metaclass=Protocol):
         przs_masks = [
             session.session_ptrs[index]
             .przs_generate_random_share(shape=x.shape)
-            .get_shares()
-            .get()[0]
+            .resolve_pointer_type()
+            .get_shares()[0]
+            .get()
             for index in range(0, 3)
         ]
 
