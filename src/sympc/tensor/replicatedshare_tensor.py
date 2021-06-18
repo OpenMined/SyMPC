@@ -319,13 +319,24 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         y, session_vals = self.sanity_checks(self, y)
 
-        shares = [share * y.shares[0] for share in self.shares]
-        result = ReplicatedSharedTensor(
+        is_private = isinstance(y, ReplicatedSharedTensor)
+
+        if is_private:
+
+            from sympc.protocol import Falcon
+
+            result = [Falcon.multiplication_protocol(self, y)]
+
+        else:
+
+            result = [share * y.shares[0] for share in self.shares]
+
+        tensor = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
         )
-        result.shares = shares
+        tensor.shares = result
 
-        return result
+        return tensor
 
     def truediv(self, y):
         """Apply the "div" operation between "self" and "y".
@@ -558,12 +569,22 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             List of ShareTensor.
 
+        Raises:
+            TypeError: when Datatype of shares is invalid.
+
         """
+        if not isinstance(shares, list):
+            raise TypeError("Shares to be distributed should be a list of shares")
+
+        if len(shares) == 0:
+            return []
+
         parties = session.parties
 
         nshares = len(parties) - 1
 
         ptr_list = []
+
         for i in range(len(parties)):
             party_shares = []
 

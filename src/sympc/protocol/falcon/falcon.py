@@ -13,6 +13,7 @@ from sympc.session import Session
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import parallel_execution
 
 
 class Falcon(metaclass=Protocol):
@@ -93,7 +94,28 @@ class Falcon(metaclass=Protocol):
         result = None
 
         if session.protocol.security_type == "semi-honest":
-            result = Falcon.multiplication_protocol(x, y)
+
+            z_shares = []
+            for party in range(0, len(x.share_ptrs)):
+                z_shares.append(x.share_ptrs[party] * y.share_ptrs[party])
+
+            reshared_shares = []
+
+            def get_shares_and_add_mask(party_rank):
+                przs_mask = (
+                    session.session_ptrs[party_rank]
+                    .przs_generate_random_share(shape=x.shape)
+                    .get_shares()
+                    .get()[0]
+                )
+                share = z_shares[party_rank].get_shares().get()[0] + przs_mask
+                return share
+
+            shares = parallel_execution(get_shares_and_add_mask)([[0], [1], [2]])
+            reshared_shares = ReplicatedSharedTensor.distribute_shares(
+                shares, x.session
+            )
+            result = MPCTensor(shares=reshared_shares, session=x.session)
 
         elif session.protocol.security_type == "malicious":
             raise NotImplementedError(
@@ -104,48 +126,24 @@ class Falcon(metaclass=Protocol):
                 f"mult operation not implemented for {session.protocol.security_type} setting"
             )
 
-        przs_masks = [
-            session.session_ptrs[index]
-            .przs_generate_random_share(shape=x.shape)
-            .get_shares()
-            .get()[0]
-            for index in range(0, 3)
-        ]
-
-        # Add random mask to vals
-        shares = [
-            result[0].get() + przs_masks[0],
-            result[1].get() + przs_masks[1],
-            result[2].get() + przs_masks[2],
-        ]
-
-        shares = ReplicatedSharedTensor.distribute_shares(shares, x.session)
-        result = MPCTensor(shares=shares, session=x.session)
         return result
 
     @staticmethod
     def multiplication_protocol(
-        x: MPCTensor, y: MPCTensor
-    ) -> List[ReplicatedSharedTensor]:
+        x: ReplicatedSharedTensor, y: ReplicatedSharedTensor
+    ) -> ReplicatedSharedTensor:
         """Implementation of Falcon's multiplication with semi-honest security guarantee.
 
         Args:
-            x (MPCTensor): Secret
-            y (MPCTensor): Another secret
+            x (ReplicatedSharedTensor): Secret
+            y (ReplicatedSharedTensor): Another secret
 
         Returns:
-            shares (ReplicatedSharedTensor): Shares in terms of ReplicatedSharedTensor.
+            shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
         """
-        z_shares = []
-
-        for party in range(0, len(x.share_ptrs)):
-
-            z_value = (
-                x.share_ptrs[party][0] * y.share_ptrs[party][0]
-                + x.share_ptrs[party][1] * y.share_ptrs[party][0]
-                + x.share_ptrs[party][0] * y.share_ptrs[party][1]
-            )
-
-            z_shares.append(z_value)
-
-        return z_shares
+        z_value = (
+            x.shares[0] * y.shares[0]
+            + x.shares[1] * y.shares[0]
+            + x.shares[0] * y.shares[1]
+        )
+        return z_value
