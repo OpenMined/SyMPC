@@ -327,7 +327,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if is_private:
             # currently there is no way of getting session of RStensor since session is optional.
             # This resulted in 0 parties. Needs fix in seperate PR.
-            if len(self.shares) == 2:
+            if nr_parties == 3:
                 from sympc.protocol import Falcon
 
                 result = [Falcon.multiplication_protocol(self, y_tensor)]
