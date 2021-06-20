@@ -39,8 +39,7 @@ repos:
     rev: 1.7.0
     hooks:
       - id: bandit
-        args: ["--exclude", "tests"]
-
+        exclude: tests
 
 
   - repo: https://github.com/pycqa/pydocstyle
@@ -49,7 +48,7 @@ repos:
       - id: pydocstyle
         args:
           - --convention=google
-        exclude: ^tests/
+        files: ^src/
 
   - repo: https://github.com/terrencepreilly/darglint
     rev: v1.8.0
