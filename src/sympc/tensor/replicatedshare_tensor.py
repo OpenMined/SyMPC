@@ -584,6 +584,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if len(shares) == 0:
             return []
 
+        if len(shares) != session.nr_parties:
+            return ValueError(
+                "Number of shares to be distributed should be same as number of parties"
+            )
+
         parties = session.parties
         nshares = len(parties) - 1
 

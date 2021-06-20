@@ -95,26 +95,24 @@ class Falcon(metaclass=Protocol):
 
         if session.protocol.security_type == "semi-honest":
 
-            def multiply_shares(party_rank):
-                return x.share_ptrs[party_rank] * y.share_ptrs[party_rank]
-
-            z_shares = parallel_execution(multiply_shares)([[0], [1], [2]])
-
-            reshared_shares = []
-
             def get_shares_and_add_mask(party_rank):
+                # Get shares
+                z_value = x.share_ptrs[party_rank] * y.share_ptrs[party_rank]
+                # Get PRZS Mask
                 przs_mask = (
                     session.session_ptrs[party_rank]
                     .przs_generate_random_share(shape=x.shape)
                     .get_shares()
                     .get()[0]
                 )
-                share = z_shares[party_rank].get_shares().get()[0] + przs_mask
+                # Add PRZS Mask
+                share = z_value.get_shares().get()[0] + przs_mask
                 return share
 
-            shares = parallel_execution(get_shares_and_add_mask)([[0], [1], [2]])
+            z_shares = parallel_execution(get_shares_and_add_mask)([[0], [1], [2]])
+            # Convert 3-3 shares to 2-3 shares by resharing
             reshared_shares = ReplicatedSharedTensor.distribute_shares(
-                shares, x.session
+                z_shares, x.session
             )
             result = MPCTensor(shares=reshared_shares, session=x.session)
 
