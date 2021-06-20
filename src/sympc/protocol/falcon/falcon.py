@@ -95,9 +95,10 @@ class Falcon(metaclass=Protocol):
 
         if session.protocol.security_type == "semi-honest":
 
-            z_shares = []
-            for party in range(0, len(x.share_ptrs)):
-                z_shares.append(x.share_ptrs[party] * y.share_ptrs[party])
+            def multiply_shares(party_rank):
+                return x.share_ptrs[party_rank] * y.share_ptrs[party_rank]
+
+            z_shares = parallel_execution(multiply_shares)([[0], [1], [2]])
 
             reshared_shares = []
 
@@ -117,10 +118,6 @@ class Falcon(metaclass=Protocol):
             )
             result = MPCTensor(shares=reshared_shares, session=x.session)
 
-        elif session.protocol.security_type == "malicious":
-            raise NotImplementedError(
-                "Multiplication has not been implemented for malicious setting"
-            )
         else:
             raise NotImplementedError(
                 f"mult operation not implemented for {session.protocol.security_type} setting"
