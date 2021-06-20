@@ -25,7 +25,6 @@ try:
     # third party
     import syft
 
-    syft.load("sympc")
 except ImportError as e:
     print("PySyft is needed to be able to use SyMPC")
     raise e
