@@ -141,8 +141,6 @@ def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
     result = op(x, y).reconstruct()
     expected_result = op(x_secret, y_secret)
     
-    assert 1==2
-
     assert np.allclose(result, expected_result, rtol=10e-4)
 
 
