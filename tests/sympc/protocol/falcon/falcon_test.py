@@ -13,12 +13,10 @@ from sympc.tensor import ReplicatedSharedTensor
 def test_share_class() -> None:
     assert Falcon.share_class == ReplicatedSharedTensor
 
-
 def test_session() -> None:
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol)
     assert type(session.protocol) == Falcon
-
 
 def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
     parties = get_clients(parties)
@@ -26,11 +24,9 @@ def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
     with pytest.raises(ValueError):
         Session(protocol=protocol, parties=parties)
 
-
 def test_invalid_security_type():
     with pytest.raises(ValueError):
         Falcon(security_type="covert")
-
 
 def test_mul_private_integer(get_clients):
 
@@ -43,7 +39,6 @@ def test_mul_private_integer(get_clients):
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-
     secret2 = 8
 
     tensor1 = MPCTensor(secret=secret1, session=session)
@@ -52,7 +47,6 @@ def test_mul_private_integer(get_clients):
     result = tensor1 * tensor2
 
     assert (result.reconstruct() == (secret1 * secret2)).all()
-
 
 def test_mul_private_integer_matrix(get_clients):
 
@@ -75,7 +69,6 @@ def test_mul_private_integer_matrix(get_clients):
 
     assert (result.reconstruct() == (secret1 * secret2)).all()
 
-
 @pytest.mark.parametrize("parties", [2, 4])
 def test_mul_private_exception_nothreeparties(get_clients, parties):
 
@@ -88,7 +81,6 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-
     secret2 = 8
 
     tensor1 = MPCTensor(secret=secret1, session=session)
@@ -96,7 +88,6 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
 
     with pytest.raises(ValueError):
         tensor1 * tensor2
-
 
 def test_mul_private_exception_malicious(get_clients):
 

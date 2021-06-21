@@ -664,18 +664,15 @@ class MPCTensor(metaclass=SyMPCTensor):
             )
 
         if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
-
             from sympc.protocol import Falcon
             from sympc.protocol.spdz import spdz
             from sympc.tensor import ReplicatedSharedTensor
 
             if self.session.protocol.share_class == ShareTensor:
-
                 result = spdz.mul_master(self, y, op_str, kwargs_)
                 result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
 
             elif self.session.protocol.share_class == ReplicatedSharedTensor:
-
                 if op_str == "mul":
                     result = Falcon.mul_master(self, y, self.session)
                     result.shape = MPCTensor._get_shape("mul", self.shape, y.shape)
@@ -784,7 +781,6 @@ class MPCTensor(metaclass=SyMPCTensor):
             )
             result = input_tensor.truediv(scale)
         else:
-
             result = input_tensor
 
         return result
