@@ -171,8 +171,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             rank = session.rank
             nr_parties = session.nr_parties
         else:
+            from sympc.protocol import Falcon
             ring_size = x.ring_size
             config = x.config
+            session = Session(
+                protocol=Falcon("semi-honest"),
+                config=config,
+                ring_size=ring_size,
+            )
+            rank = -1
 
         return y, (session, ring_size, config, rank, nr_parties)
 
