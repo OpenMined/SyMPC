@@ -42,7 +42,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
-    PROPERTIES_FORWARD = {"T","shape"}
+    PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(
         self,
@@ -73,13 +73,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         )
 
         tensor_type = get_type_from_ring(ring_size)
-        
+
         self.shares = []
-        
+
         if shares is not None:
             for i in range(len(shares)):
                 self.shares.append(self._encode(shares[i]).to(tensor_type))
-                
 
     def _encode(self, data: torch.Tensor) -> torch.Tensor:
         """Encode via FixedPointEncoder.

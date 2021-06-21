@@ -100,12 +100,18 @@ class Falcon(metaclass=Protocol):
 
             args = []
             for index in range(0, 3):
-                args.append([x.share_ptrs[index], y.share_ptrs[index],session.session_ptrs[index]])
+                args.append(
+                    [
+                        x.share_ptrs[index],
+                        y.share_ptrs[index],
+                        session.session_ptrs[index],
+                    ]
+                )
 
             z_shares_ptrs = parallel_execution(
                 Falcon.compute_zvalue_and_add_mask, session.parties
             )(args)
-            
+
             z_shares = []
             for share in z_shares_ptrs:
                 z_shares.append(share.get())
@@ -134,17 +140,15 @@ class Falcon(metaclass=Protocol):
         Args:
             x (ReplicatedSharedTensor): Secret.
             y (ReplicatedSharedTensor): Another secret.
-            session_ptr (Sessionr): Session pointer.
+            session_ptr (Session): Session pointer.
 
         Returns:
             share (Torch.tensor): The masked local z share.
         """
-        z_value = x*y
-        przs_mask = (
-             session_ptr.przs_generate_random_share(shape=x.shape)
-        )
+        z_value = x * y
+        przs_mask = session_ptr.przs_generate_random_share(shape=x.shape)
         # Add PRZS Mask
-        share = z_value.get_shares()[0]+przs_mask.get_shares()[0]
+        share = z_value.get_shares()[0] + przs_mask.get_shares()[0]
         return share
 
     @staticmethod
