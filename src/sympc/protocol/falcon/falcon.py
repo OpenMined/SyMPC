@@ -127,7 +127,11 @@ class Falcon(metaclass=Protocol):
         return result
 
     @staticmethod
-    def compute_zvalue_and_add_mask(x:ReplicatedSharedTensor, y:ReplicatedSharedTensor, przs_mask:ReplicatedSharedTensor) -> torch.Tensor:
+    def compute_zvalue_and_add_mask(
+        x: ReplicatedSharedTensor,
+        y: ReplicatedSharedTensor,
+        przs_mask: ReplicatedSharedTensor,
+    ) -> torch.Tensor:
         """Operation to compute local z share and add mask to it.
 
         Args:

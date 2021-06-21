@@ -172,6 +172,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             nr_parties = session.nr_parties
         else:
             from sympc.protocol import Falcon
+
             ring_size = x.ring_size
             config = x.config
             session = Session(
