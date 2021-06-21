@@ -14,6 +14,85 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import parallel_execution
+from sympc.session import get_session
+
+def get_shares_and_add_mask(x,y):
+    session = get_session(x.session_uuid)
+    # Get shares
+    z_value = x*y
+    # Get PRZS Mask
+    przs_mask = (
+             session.session_ptrs[session.rank]
+             .przs_generate_random_share(shape=x.shape)
+             .get_shares()
+             .get()[0]
+             )
+    # Add PRZS Mask
+    share = z_value.get_shares().get()[0] + przs_mask
+    return share
+
+def mul_master(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
+    """Master method for multiplication.
+
+        Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
+        This needs to be improved in future, it relies on orchestrator being a trusted third party.
+        Falcon, requires parties to be able to communication between each other.
+
+        Args:
+            x (MPCTensor): Secret
+            y (MPCTensor): Another secret
+            session (Session): Session the tensors belong to
+
+        Returns:
+            shares (ReplicatedSharedTensor): Shares in terms of ReplicatedSharedTensor.
+
+        Raises:
+            ValueError: Raised when number of parties are not three.
+            NotImplementedError: Raised when implementation not present
+
+    """
+    if len(session.parties) != 3:
+        raise ValueError("Falcon requires 3 parties")
+
+    result = None
+
+    if session.protocol.security_type == "semi-honest":
+
+        """def get_shares_and_add_mask(party_rank):
+                # Get shares
+                z_value = x.share_ptrs[party_rank] * y.share_ptrs[party_rank]
+                # Get PRZS Mask
+                przs_mask = (
+                    session.session_ptrs[party_rank]
+                    .przs_generate_random_share(shape=x.shape)
+                    .get_shares()
+                    .get()[0]
+                )
+                # Add PRZS Mask
+                share = z_value.get_shares().get()[0] + przs_mask
+                return share"""
+        
+
+        args=[]
+
+        for i in range(0,2):
+                
+            args.append([x.share_ptrs[i],y.share_ptrs[i]])
+
+        z_shares = parallel_execution(get_shares_and_add_mask,session.parties)(args)
+        # Convert 3-3 shares to 2-3 shares by resharing
+        reshared_shares = ReplicatedSharedTensor.distribute_shares(
+                z_shares, x.session
+        )
+        result = MPCTensor(shares=reshared_shares, session=x.session)
+
+    else:
+            raise NotImplementedError(
+                f"mult operation not implemented for {session.protocol.security_type} setting"
+            )
+
+    return result
+
 
 
 class Falcon(metaclass=Protocol):
@@ -66,62 +145,6 @@ class Falcon(metaclass=Protocol):
             return False
 
         return True
-
-    @staticmethod
-    def mul_master(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
-        """Master method for multiplication.
-
-        Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
-        This needs to be improved in future, it relies on orchestrator being a trusted third party.
-        Falcon, requires parties to be able to communication between each other.
-
-        Args:
-            x (MPCTensor): Secret
-            y (MPCTensor): Another secret
-            session (Session): Session the tensors belong to
-
-        Returns:
-            shares (ReplicatedSharedTensor): Shares in terms of ReplicatedSharedTensor.
-
-        Raises:
-            ValueError: Raised when number of parties are not three.
-            NotImplementedError: Raised when implementation not present
-
-        """
-        if len(session.parties) != 3:
-            raise ValueError("Falcon requires 3 parties")
-
-        result = None
-
-        if session.protocol.security_type == "semi-honest":
-
-            def get_shares_and_add_mask(party_rank):
-                # Get shares
-                z_value = x.share_ptrs[party_rank] * y.share_ptrs[party_rank]
-                # Get PRZS Mask
-                przs_mask = (
-                    session.session_ptrs[party_rank]
-                    .przs_generate_random_share(shape=x.shape)
-                    .get_shares()
-                    .get()[0]
-                )
-                # Add PRZS Mask
-                share = z_value.get_shares().get()[0] + przs_mask
-                return share
-
-            z_shares = parallel_execution(get_shares_and_add_mask)([[0], [1], [2]])
-            # Convert 3-3 shares to 2-3 shares by resharing
-            reshared_shares = ReplicatedSharedTensor.distribute_shares(
-                z_shares, x.session
-            )
-            result = MPCTensor(shares=reshared_shares, session=x.session)
-
-        else:
-            raise NotImplementedError(
-                f"mult operation not implemented for {session.protocol.security_type} setting"
-            )
-
-        return result
 
     @staticmethod
     def multiplication_protocol(

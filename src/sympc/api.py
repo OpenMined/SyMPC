@@ -175,6 +175,7 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.ReplicatedSharedTensor.clone",
         "sympc.tensor.ReplicatedSharedTensor",
     ),
+    ("sympc.tensor.ReplicatedSharedTensor.shape", "syft.lib.python.Tuple"),
     ("sympc.tensor.ReplicatedSharedTensor.get_shares", "syft.lib.python.List"),
     (
         "sympc.tensor.ReplicatedSharedTensor.numel",
