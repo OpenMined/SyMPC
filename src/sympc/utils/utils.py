@@ -104,13 +104,8 @@ def parallel_execution(
             kwargs = {}
 
         if parties:
-            
-            print("FUNCTION MODULE: ",fn.__module__)
-            print("qualname MODULE: ",fn.__qualname__)
             func_name = f"{fn.__module__}.{fn.__qualname__}"
-            print("func name: ",func_name)
             attr_getter = operator.attrgetter(func_name)
-            print("attr_getter: ",attr_getter)
             funcs = [attr_getter(party) for party in parties]
         else:
             funcs = list(repeat(fn, nr_parties))

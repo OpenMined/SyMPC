@@ -666,7 +666,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
 
             from sympc.protocol import Falcon
-            from sympc.protocol.falcon import falcon
             from sympc.protocol.spdz import spdz
             from sympc.tensor import ReplicatedSharedTensor
 
@@ -678,7 +677,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             elif self.session.protocol.share_class == ReplicatedSharedTensor:
 
                 if op_str == "mul":
-                    result = falcon.mul_master(self, y, self.session)
+                    result = Falcon.mul_master(self, y, self.session)
                     result.shape = MPCTensor._get_shape("mul", self.shape, y.shape)
                 else:
                     raise NotImplementedError(
