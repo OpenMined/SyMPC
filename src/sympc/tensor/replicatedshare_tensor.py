@@ -426,7 +426,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             ReplicatedSharedTensor : The ReplicatedSharedTensor in local.
-
         """
         if not islocal(share_ptr):
             share_ptr.request(block=True)
