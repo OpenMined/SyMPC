@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1623949484194,
+  "lastUpdate": 1624351176274,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -992,6 +992,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.11788824970307439",
             "extra": "mean: 7.4122300542 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "16245436+jmaunon@users.noreply.github.com",
+            "name": "jmaunon",
+            "username": "jmaunon"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ee3827cbdff3baac5bbfe005536fe435633014ce",
+          "message": "Remove deprecated syft.load (#246)\n\n* Remove deprecated syft.load\r\n\r\n* trigger GitHub actions",
+          "timestamp": "2021-06-22T14:06:07+05:30",
+          "tree_id": "fa77f7685eb3530e1a5b29190002f8f2cf730240",
+          "url": "https://github.com/OpenMined/SyMPC/commit/ee3827cbdff3baac5bbfe005536fe435633014ce"
+        },
+        "date": 1624351175678,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.1176311551190353,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04768485549038625",
+            "extra": "mean: 8.501149197999997 sec\nrounds: 5"
           }
         ]
       }
