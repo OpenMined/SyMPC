@@ -33,7 +33,6 @@ def test_invalid_security_type():
 
 
 def test_mul_private_integer(get_clients):
-
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
 
@@ -54,7 +53,6 @@ def test_mul_private_integer(get_clients):
 
 
 def test_mul_private_integer_matrix(get_clients):
-
     # Not encoding because truncation hasn't been implemented yet for Falcon
     config = Config(encoder_base=1, encoder_precision=0)
 
@@ -77,7 +75,6 @@ def test_mul_private_integer_matrix(get_clients):
 
 @pytest.mark.parametrize("parties", [2, 4])
 def test_mul_private_exception_nothreeparties(get_clients, parties):
-
     # Not encoding because truncation hasn't been implemented yet
     config = Config(encoder_base=1, encoder_precision=0)
 
@@ -97,7 +94,6 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
 
 
 def test_mul_private_exception_malicious(get_clients):
-
     # Not encoding because truncation hasn't been implemented yet
     config = Config(encoder_base=1, encoder_precision=0)
 
