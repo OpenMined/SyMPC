@@ -143,9 +143,10 @@ class Falcon(metaclass=Protocol):
         Returns:
             share (Torch.tensor): The masked local z share.
         """
+        # Parties calculate z value locally
         z_value = x * y
         przs_mask = session_ptr.przs_generate_random_share(shape=x.shape)
-        # Add PRZS Mask
+        # Add PRZS Mask to z  value
         share = z_value.get_shares()[0] + przs_mask.get_shares()[0]
         return share
 
