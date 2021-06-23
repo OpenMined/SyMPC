@@ -119,12 +119,13 @@ def cat_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> Shar
     return result
 
 
-def sum(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
+def sum(tensor: MPCTensor, dim: int = 0, keepdim: bool = False) -> MPCTensor:
     """Returns the sum of each row of the input tensor in the given dimension dim.
 
     Args:
         tensor (MPCTensor): the input tensor
         dim (int): the dimension to reduce across
+        keepdim (bool): whether the output tensor has dim retained or not
 
     Returns:
         MPCTensor: calculated MPCTensor
@@ -136,26 +137,30 @@ def sum(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
             [str(uuid) for uuid in session.rank_to_uuid.values()],
             tensor.share_ptrs,
             itertools.repeat(dim),
+            itertools.repeat(keepdim),
         )
     )
 
     sum_shares = parallel_execution(sum_share_tensor, session.parties)(args)
     from sympc.tensor import MPCTensor
 
-    expected_shape = torch.sum(torch.empty(tensor.shape), dim=dim).shape
+    expected_shape = torch.sum(
+        torch.empty(tensor.shape), dim=dim, keepdim=keepdim
+    ).shape
     result = MPCTensor(shares=sum_shares, session=session, shape=expected_shape)
 
     return result
 
 
 def sum_share_tensor(
-    session_uuid_str: str, *args: Tuple[ShareTensor, int]
+    session_uuid_str: str, *args: Tuple[ShareTensor, int, int]
 ) -> ShareTensor:
     """Helper method that performs torch.sum on the shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        args (Tuple[ShareTensor, int]): Shares of the tensor and the dimension to be summed across
+        args (Tuple[ShareTensor, int, int]): Shares of the tensor, the dimension
+            to be summed across, and the keepdim flag as a tuple
 
     Returns:
         ShareTensor: Respective shares after summation
@@ -165,7 +170,8 @@ def sum_share_tensor(
 
     tensor = args[0].tensor
     dim = args[1]
-    result.tensor = torch.sum(tensor, dim=dim)
+    keepdim = args[2]
+    result.tensor = torch.sum(tensor, dim=dim, keepdim=keepdim)
     return result
 
 
