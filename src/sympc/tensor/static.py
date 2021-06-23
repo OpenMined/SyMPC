@@ -118,6 +118,50 @@ def cat_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> Shar
     return result
 
 
+def sum(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
+    """Returns the sum of each row of the input tensor in the given dimension dim.
+
+    If dim is a list of dimensions, reduce over all of them.
+
+    Args:
+        tensor (MPCTensor): the input tensor
+        dim (int): the dimension (or dimensions) to reduce
+
+    Returns:
+        MPCTensor: calculated MPCTensor
+    """
+    session = tensor.session
+
+    args = list(
+        zip([str(uuid) for uuid in session.rank_to_uuid.values()], tensor.share_ptrs)
+    )
+
+    sum_shares = parallel_execution(sum_share_tensor, session.parties)(args)
+    from sympc.tensor import MPCTensor
+
+    expected_shape = torch.sum(torch.empty(tensor.shape), dim=dim).shape
+    result = MPCTensor(shares=sum_shares, session=session, shape=expected_shape)
+
+    return result
+
+
+def sum_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> ShareTensor:
+    """Helper method that performs torch.sum on the shares of the Tensors.
+
+    Args:
+        session_uuid_str (str): UUID to identify the session on each party side.
+        shares (Tuple[ShareTensor]): Shares of the tensor to be summed
+
+    Returns:
+        ShareTensor: Respective shares after summation
+    """
+    session = get_session(session_uuid_str)
+    result = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
+
+    result.tensor = torch.sum(shares[0].tensor)
+    return result
+
+
 def helper_argmax(
     x: MPCTensor,
     dim: Optional[Union[int, Tuple[int]]] = None,
@@ -290,4 +334,5 @@ STATIC_FUNCS: Dict[str, Callable] = {
     "max": max_mpc,
     "stack": stack,
     "cat": cat,
+    "sum": sum,
 }

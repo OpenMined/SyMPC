@@ -10,6 +10,7 @@ from sympc.session import SessionManager
 from sympc.tensor.mpc_tensor import MPCTensor
 from sympc.tensor.static import cat
 from sympc.tensor.static import stack
+from sympc.tensor.static import sum
 
 
 @pytest.mark.order(3)
@@ -141,3 +142,17 @@ def test_cat(get_clients):
     concatenated = cat([x, y])
 
     assert (secret_concatenated == concatenated.reconstruct()).all()
+
+
+def test_sum(get_clients):
+    clients = get_clients(2)
+
+    x_secret = torch.arange(12).view(3, 4)
+    secret_sum_result = torch.sum(x_secret)
+
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+    x = MPCTensor(secret=x_secret, session=session)
+    sum_result = sum(x)
+
+    assert (secret_sum_result == sum_result.reconstruct()).all()

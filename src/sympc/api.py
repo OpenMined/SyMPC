@@ -118,6 +118,7 @@ share_tensor_attrs = [
     ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
+    ("sympc.tensor.static.sum_share_tensor", "sympc.tensor.ShareTensor"),
     ("sympc.tensor.static.helper_argmax_pairwise", "sympc.tensor.ShareTensor"),
     (
         "sympc.module.nn.functional.helper_max_pool2d_reshape",
