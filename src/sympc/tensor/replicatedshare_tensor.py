@@ -521,8 +521,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             reconstructed_value (torch.Tensor): Reconstructed value.
 
         Raises:
-            ValueError: Invalid security type
+            ValueError: Invalid security type.
+            ValueError : SharePointers not provided.
         """
+        if not len(share_ptrs):
+            raise ValueError("Share pointers must be provided for reconstruction.")
         if security_type == "malicious":
             return ReplicatedSharedTensor.__reconstruct_malicious(
                 share_ptrs, get_shares
