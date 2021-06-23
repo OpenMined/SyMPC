@@ -165,7 +165,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         else:
             ring_size = x.ring_size
             config = x.config
-            session = Session(config=config, ring_size=ring_size, parties=["alice"])
+            session = Session(config=config, ring_size=ring_size)
+            session.nr_parties = 1
 
         return y, session
 
@@ -573,9 +574,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         if not isinstance(shares, list):
             raise TypeError("Shares to be distributed should be a list of shares")
-
-        if len(shares) == 0:
-            return []
 
         if len(shares) != session.nr_parties:
             return ValueError(

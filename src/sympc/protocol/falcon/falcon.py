@@ -13,6 +13,7 @@ import torch
 
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
+from sympc.session import get_session
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
@@ -103,16 +104,13 @@ class Falcon(metaclass=Protocol):
                     [
                         x.share_ptrs[index],
                         y.share_ptrs[index],
-                        session.session_ptrs[index],
                     ]
                 )
             z_shares_ptrs = parallel_execution(
                 Falcon.compute_zvalue_and_add_mask, session.parties
             )(args)
 
-            z_shares = []
-            for share in z_shares_ptrs:
-                z_shares.append(share.get())
+            z_shares = [share.get() for share in z_shares_ptrs]
 
             # Convert 3-3 shares to 2-3 shares by resharing
             reshared_shares = ReplicatedSharedTensor.distribute_shares(
@@ -131,21 +129,20 @@ class Falcon(metaclass=Protocol):
     def compute_zvalue_and_add_mask(
         x: ReplicatedSharedTensor,
         y: ReplicatedSharedTensor,
-        session_ptr: Session,
     ) -> torch.Tensor:
         """Operation to compute local z share and add mask to it.
 
         Args:
             x (ReplicatedSharedTensor): Secret.
             y (ReplicatedSharedTensor): Another secret.
-            session_ptr (Session): Session pointer.
 
         Returns:
             share (Torch.tensor): The masked local z share.
         """
         # Parties calculate z value locally
+        session = get_session(x.session_uuid)
         z_value = x * y
-        przs_mask = session_ptr.przs_generate_random_share(shape=x.shape)
+        przs_mask = session.przs_generate_random_share(shape=x.shape)
         # Add PRZS Mask to z  value
         share = z_value.get_shares()[0] + przs_mask.get_shares()[0]
         return share
