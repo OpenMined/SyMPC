@@ -122,11 +122,9 @@ def cat_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> Shar
 def sum(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
     """Returns the sum of each row of the input tensor in the given dimension dim.
 
-    If dim is a list of dimensions, reduce over all of them.
-
     Args:
         tensor (MPCTensor): the input tensor
-        dim (int): the dimension (or dimensions) to reduce
+        dim (int): the dimension to reduce across
 
     Returns:
         MPCTensor: calculated MPCTensor
@@ -157,7 +155,7 @@ def sum_share_tensor(
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        args (Tuple[ShareTensor, int]): Shares of the tensor and dimension to be summed
+        args (Tuple[ShareTensor, int]): Shares of the tensor and the dimension to be summed across
 
     Returns:
         ShareTensor: Respective shares after summation
