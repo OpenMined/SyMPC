@@ -144,15 +144,16 @@ def test_cat(get_clients):
     assert (secret_concatenated == concatenated.reconstruct()).all()
 
 
-def test_sum(get_clients):
+@pytest.mark.parametrize("dim", [0, 1, 2])
+def test_sum(get_clients, dim):
     clients = get_clients(2)
 
-    x_secret = torch.arange(12).view(3, 4)
-    secret_sum_result = torch.sum(x_secret)
+    x_secret = torch.arange(12).view(2, 2, 3)
+    secret_sum_result = torch.sum(x_secret, dim=dim)
 
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
     x = MPCTensor(secret=x_secret, session=session)
-    sum_result = sum(x)
+    sum_result = sum(x, dim=dim)
 
     assert (secret_sum_result == sum_result.reconstruct()).all()

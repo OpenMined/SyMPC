@@ -3,6 +3,7 @@
 Examples: torch.stack, torch.argmax
 """
 # stdlib
+import itertools
 from typing import Callable
 from typing import Dict
 from typing import List
@@ -133,7 +134,11 @@ def sum(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
     session = tensor.session
 
     args = list(
-        zip([str(uuid) for uuid in session.rank_to_uuid.values()], tensor.share_ptrs)
+        zip(
+            [str(uuid) for uuid in session.rank_to_uuid.values()],
+            tensor.share_ptrs,
+            itertools.repeat(dim),
+        )
     )
 
     sum_shares = parallel_execution(sum_share_tensor, session.parties)(args)
@@ -145,12 +150,14 @@ def sum(tensor: MPCTensor, dim: int = 0) -> MPCTensor:
     return result
 
 
-def sum_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> ShareTensor:
+def sum_share_tensor(
+    session_uuid_str: str, *args: Tuple[ShareTensor, int]
+) -> ShareTensor:
     """Helper method that performs torch.sum on the shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        shares (Tuple[ShareTensor]): Shares of the tensor to be summed
+        args (Tuple[ShareTensor, int]): Shares of the tensor and dimension to be summed
 
     Returns:
         ShareTensor: Respective shares after summation
@@ -158,7 +165,9 @@ def sum_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> Shar
     session = get_session(session_uuid_str)
     result = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
 
-    result.tensor = torch.sum(shares[0].tensor)
+    tensor = args[0].tensor
+    dim = args[1]
+    result.tensor = torch.sum(tensor, dim=dim)
     return result
 
 
