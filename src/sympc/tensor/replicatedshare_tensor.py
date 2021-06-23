@@ -158,33 +158,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         elif len(x.shares) != len(y.shares):
             raise ValueError("Both RSTensors should have equal number of shares.")
 
-        rank = 0
-        nr_parties: int = 1  # to handle the case when session_uuid is none.
         session_uuid = x.session_uuid
-
-        session = None
-        ring_size = None
-        config = None
 
         if session_uuid is not None:
             session = sympc.session.get_session(str(x.session_uuid))
-            ring_size = session.ring_size
-            config = session.config
-            rank = session.rank
-            nr_parties = session.nr_parties
         else:
-            from sympc.protocol import Falcon
-
             ring_size = x.ring_size
             config = x.config
-            session = Session(
-                protocol=Falcon("semi-honest"),
-                config=config,
-                ring_size=ring_size,
-            )
-            rank = -1
+            session = Session(config=config, ring_size=ring_size, parties=["alice"])
 
-        return y, (session, ring_size, config, rank, nr_parties)
+        return y, session
 
     def __apply_public_op(
         self, y: Union[torch.Tensor, float, int], op_str: str
@@ -201,21 +184,22 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" is not supported.
         """
-        y, session_vals = ReplicatedSharedTensor.sanity_checks(self, y)
-        session, ring_size, config, rank, nr_parties = session_vals
+        y, session = ReplicatedSharedTensor.sanity_checks(self, y)
         session_uuid = self.session_uuid
 
         op = getattr(operator, op_str)
         shares = self.shares
         if op_str in {"add", "sub"}:
-            if rank != 1:
-                idx = (nr_parties - rank) % nr_parties
+            if session.rank != 1:
+                idx = (session.nr_parties - session.rank) % session.nr_parties
                 shares[idx] = op(shares[idx], y.shares[0])
         else:
             raise ValueError(f"{op_str} not supported")
 
         result = ReplicatedSharedTensor(
-            ring_size=ring_size, session_uuid=session_uuid, config=config
+            ring_size=session.ring_size,
+            session_uuid=session_uuid,
+            config=session.config,
         )
         result.shares = shares
         return result
@@ -235,9 +219,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If "op_str" not supported.
         """
-        y, session_vals = ReplicatedSharedTensor.sanity_checks(self, y)
-        session, ring_size, config, rank, nr_parties = session_vals
-        session_uuid = self.session_uuid
+        y, session = ReplicatedSharedTensor.sanity_checks(self, y)
 
         op = getattr(operator, op_str)
         shares = []
@@ -248,7 +230,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             raise ValueError(f"{op_str} not supported")
 
         result = ReplicatedSharedTensor(
-            ring_size=ring_size, session_uuid=session_uuid, config=config
+            ring_size=session.ring_size,
+            session_uuid=self.session_uuid,
+            config=session.config,
         )
         result.shares = shares
         return result
@@ -330,12 +314,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: Raised when private mul is performed parties!=3.
 
         """
-        y_tensor, session_vals = self.sanity_checks(self, y)
-        session, ring_size, config, rank, nr_parties = session_vals
+        y_tensor, session = self.sanity_checks(self, y)
         is_private = isinstance(y, ReplicatedSharedTensor)
 
         if is_private:
-            if nr_parties == 3:
+            if session.nr_parties == 3:
                 from sympc.protocol import Falcon
 
                 result = [Falcon.multiplication_protocol(self, y_tensor)]
