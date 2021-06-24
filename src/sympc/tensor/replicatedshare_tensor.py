@@ -20,6 +20,8 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
+from sympc.utils import islocal
+from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
 
@@ -457,6 +459,23 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         raise NotImplementedError
 
     @staticmethod
+    def _request_and_get(
+        share_ptr: "ReplicatedSharedTensor",
+    ) -> "ReplicatedSharedTensor":
+        """Function used to request and get a share - Duet Setup.
+
+        Args:
+            share_ptr (ReplicatedSharedTensor): input ReplicatedSharedTensor
+
+        Returns:
+            ReplicatedSharedTensor : The ReplicatedSharedTensor in local.
+        """
+        if not islocal(share_ptr):
+            share_ptr.request(block=True)
+        res = share_ptr.get_copy()
+        return res
+
+    @staticmethod
     def __reconstruct_semi_honest(
         share_ptrs: List["ReplicatedSharedTensor"],
         get_shares: bool = False,
@@ -470,10 +489,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
         """
-        shares1 = share_ptrs[0].get_shares()[0].get()
-        shares2 = share_ptrs[1].get_shares().get()
+        request = ReplicatedSharedTensor._request_and_get
+        request_wrap = parallel_execution(request)
+        args = [[share] for share in share_ptrs[:2]]
+        local_shares = request_wrap(args)
 
-        shares = [shares1] + shares2
+        shares = [local_shares[0].shares[0]]
+        shares.extend(local_shares[1].shares)
 
         if get_shares:
             return shares
@@ -500,10 +522,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         nparties = len(share_ptrs)
 
         # Get shares from all parties
-        all_shares = []
-        for party_rank in range(nparties):
-            all_shares.append(share_ptrs[party_rank].get_shares().get())
+        request = ReplicatedSharedTensor._request_and_get
+        request_wrap = parallel_execution(request)
+        args = [[share] for share in share_ptrs]
+        local_shares = request_wrap(args)
 
+        all_shares = [rst.shares for rst in local_shares]
         # reconstruct shares from all parties and verify
         value = None
         for party_rank in range(nparties):
@@ -540,8 +564,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             reconstructed_value (torch.Tensor): Reconstructed value.
 
         Raises:
-            ValueError: Invalid security type
+            ValueError: Invalid security type.
+            ValueError : SharePointers not provided.
         """
+        if not len(share_ptrs):
+            raise ValueError("Share pointers must be provided for reconstruction.")
         if security_type == "malicious":
             return ReplicatedSharedTensor.__reconstruct_malicious(
                 share_ptrs, get_shares
