@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1624351176274,
+  "lastUpdate": 1624533003622,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1023,6 +1023,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.04768485549038625",
             "extra": "mean: 8.501149197999997 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e790dd651beca63f2594368e60c85388e85868ba",
+          "message": "Modified RSTensor to use parallel execution (#247)\n\n* Modified RSTensor to use parallel execution\r\n\r\n* minor refactor\r\n\r\n* Added sanity check for share_ptrs and tests\r\n\r\n* Fix typo",
+          "timestamp": "2021-06-24T16:36:50+05:30",
+          "tree_id": "8c886ff6d0922bba9158b7b913dc7be334b33ad5",
+          "url": "https://github.com/OpenMined/SyMPC/commit/e790dd651beca63f2594368e60c85388e85868ba"
+        },
+        "date": 1624533001051,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.127349807465465,
+            "unit": "iter/sec",
+            "range": "stddev: 0.1175754624578919",
+            "extra": "mean: 7.852387215200008 sec\nrounds: 5"
           }
         ]
       }
