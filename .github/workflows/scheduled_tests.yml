@@ -1,0 +1,51 @@
+name: Scheduled Tests
+
+on:
+  schedule:
+    - cron: "0 22 * * *" # 7pm Brazil, 10pm UTC, 8am AEST
+
+jobs:
+  python-tests-all-versions:
+    strategy:
+      max-parallel: 9
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.7, 3.8, 3.9]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+      - name: Install CPU Torch
+        if: runner.os != 'macos'
+        run: |
+          pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        shell: bash
+      - name: Install dependencies
+        run: |
+          hash -r
+          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
+          pip install -e .
+        shell: bash
+
+      - name: Run tests
+        run: |
+          pytest tests/ --deselect=tests/notebooks -n 8 -x
