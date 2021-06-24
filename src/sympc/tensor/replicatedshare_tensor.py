@@ -449,10 +449,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         request = ReplicatedSharedTensor._request_and_get
         request_wrap = parallel_execution(request)
         args = [[share] for share in share_ptrs[:2]]
-        local_share = request_wrap(args)
+        local_shares = request_wrap(args)
 
-        shares = [local_share[0].shares[0]]
-        shares.extend(local_share[1].shares)
+        shares = [local_shares[0].shares[0]]
+        shares.extend(local_shares[1].shares)
 
         if get_shares:
             return shares
@@ -482,9 +482,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         request = ReplicatedSharedTensor._request_and_get
         request_wrap = parallel_execution(request)
         args = [[share] for share in share_ptrs]
-        local_share = request_wrap(args)
+        local_shares = request_wrap(args)
 
-        all_shares = [rst.shares for rst in local_share]
+        all_shares = [rst.shares for rst in local_shares]
         # reconstruct shares from all parties and verify
         value = None
         for party_rank in range(nparties):
