@@ -32,6 +32,8 @@ allowed_external_modules = [
     ("sympc", sympc),
     ("sympc.session", session),
     ("sympc.tensor", tensor),
+    ("sympc.tensor.share_tensor", tensor.share_tensor),
+    ("sympc.tensor.replicatedshare_tensor", tensor.replicatedshare_tensor),
     ("sympc.tensor.static", tensor.static),
     ("sympc.protocol", protocol),
     ("sympc.module", module),
@@ -52,175 +54,210 @@ allowed_external_classes = [
     ("sympc.session.Session", "sympc.session.Session", session.Session),
     ("sympc.store.CryptoStore", "sympc.store.CryptoStore", store.CryptoStore),
     (
-        "sympc.tensor.ShareTensor",
-        "sympc.tensor.ShareTensor",
-        tensor.ShareTensor,
+        "sympc.tensor.share_tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor",
+        tensor.share_tensor.ShareTensor,
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor",
-        "sympc.tensor.ReplicatedSharedTensor",
-        tensor.ReplicatedSharedTensor,
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+        tensor.replicatedshare_tensor.ReplicatedSharedTensor,
     ),
 ]
 
 share_tensor_attrs = [
     (
-        "sympc.tensor.ShareTensor.__add__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__add__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.__sub__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__sub__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.__rmul__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__rmul__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.__mul__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__mul__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.__matmul__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__matmul__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.__truediv__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__truediv__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.__rmatmul__",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.__rmatmul__",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.t",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.t",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.sum",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.sum",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.clone",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.clone",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.tensor.ShareTensor.numel",
+        "sympc.tensor.share_tensor.ShareTensor.numel",
         "syft.lib.python.Int",  # FIXME: Can't we just return an int??
     ),
     (
-        "sympc.tensor.ShareTensor.T",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor.T",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
-    ("sympc.tensor.ShareTensor.squeeze", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.unsqueeze", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.reshape", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.view", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.static.helper_argmax_pairwise", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.squeeze",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.unsqueeze",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.reshape",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.view",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.share_tensor.ShareTensor"),
+    ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.share_tensor.ShareTensor"),
+    (
+        "sympc.tensor.static.helper_argmax_pairwise",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
     (
         "sympc.module.nn.functional.helper_max_pool2d_reshape",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
-    ("sympc.tensor.ShareTensor.shape", "syft.lib.python.Tuple"),
+    ("sympc.tensor.share_tensor.ShareTensor.shape", "syft.lib.python.Tuple"),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.repeat",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.narrow",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    ("sympc.tensor.share_tensor.ShareTensor.dim", "syft.lib.python.Int"),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.transpose",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.flatten",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
 ]
 
 replicated_shared_tensor_attrs = [
     (
-        "sympc.tensor.ReplicatedSharedTensor.__add__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__add__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__sub__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__sub__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__rmul__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__rmul__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__mul__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__mul__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__matmul__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__matmul__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__truediv__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__truediv__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__rmatmul__",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__rmatmul__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__setitem__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__setitem__",
         "syft.lib.python._SyNone",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.__getitem__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__getitem__",
         "torch.Tensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.t",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.t",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.sum",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.sum",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.clone",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.clone",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
-    ("sympc.tensor.ReplicatedSharedTensor.get_shares", "syft.lib.python.List"),
     (
-        "sympc.tensor.ReplicatedSharedTensor.numel",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.get_shares",
+        "syft.lib.python.List",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.numel",
         "syft.lib.python.Int",  # FIXME: Can't we just return an int??
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.T",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.T",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.ReplicatedSharedTensor.unsqueeze",
-        "sympc.tensor.ReplicatedSharedTensor",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.unsqueeze",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
-    ("sympc.tensor.ReplicatedSharedTensor.view", "sympc.tensor.ReplicatedSharedTensor"),
-    ("sympc.tensor.ShareTensor.repeat", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.narrow", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.dim", "syft.lib.python.Int"),
-    ("sympc.tensor.ShareTensor.transpose", "sympc.tensor.ShareTensor"),
-    ("sympc.tensor.ShareTensor.flatten", "sympc.tensor.ShareTensor"),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.view",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
 ]
 
 allowed_external_attrs = [
     (
         "sympc.module.nn.functional.max_pool2d_backward_helper",
-        "sympc.tensor.ShareTensor",
+        "sympc.tensor.share_tensor.ShareTensor",
     ),
     ("sympc.store.CryptoStore.get_primitives_from_store", "syft.lib.python.List"),
     ("sympc.store.CryptoStore.store", "syft.lib.python.Dict"),
     ("sympc.session.Session.crypto_store", "sympc.store.CryptoStore"),
     ("sympc.session.Session.init_generators", "syft.lib.python._SyNone"),
     ("sympc.session.Session.przs_generators", "syft.lib.python.List"),
-    ("sympc.protocol.fss.fss.mask_builder", "sympc.tensor.ShareTensor"),
-    ("sympc.protocol.fss.fss.evaluate", "sympc.tensor.ShareTensor"),
-    ("sympc.protocol.spdz.spdz.mul_parties", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.fss.fss.mask_builder", "sympc.tensor.share_tensor.ShareTensor"),
+    ("sympc.protocol.fss.fss.evaluate", "sympc.tensor.share_tensor.ShareTensor"),
+    ("sympc.protocol.spdz.spdz.mul_parties", "sympc.tensor.share_tensor.ShareTensor"),
     ("sympc.protocol.spdz.spdz.spdz_mask", "syft.lib.python.Tuple"),
-    ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.ShareTensor"),
+    ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.share_tensor.ShareTensor"),
     (
         "sympc.session.Session.przs_generate_random_share",
         sy.lib.misc.union.UnionGenerator[
-            "sympc.tensor.ReplicatedSharedTensor", "sympc.tensor.ShareTensor"
+            "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+            "sympc.tensor.share_tensor.ShareTensor",
         ],
     ),
     (
         "sympc.session.Session.prrs_generate_random_share",
         sy.lib.misc.union.UnionGenerator[
-            "sympc.tensor.ReplicatedSharedTensor", "sympc.tensor.ShareTensor"
+            "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+            "sympc.tensor.share_tensor.ShareTensor",
         ],
     ),
     (
