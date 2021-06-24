@@ -755,7 +755,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         res = op(x, y, **kwargs_)
         return res.shape
 
-    def truncation(
+    def truncate(
         self, input_tensor: "MPCTensor", op_str: str, is_private: bool
     ) -> "MPCTensor":
         """Checks if operation requires truncation and performs it if required.
@@ -818,7 +818,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
         # Check operation and apply truncation if required.
-        result = self.truncation(result, op_str, is_private)
+        result = self.truncate(result, op_str, is_private)
 
         return result
 

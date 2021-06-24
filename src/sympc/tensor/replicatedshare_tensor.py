@@ -8,7 +8,6 @@ from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Set
-from typing import Tuple
 from typing import Union
 from uuid import UUID
 
@@ -126,7 +125,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def sanity_checks(
         x: "ReplicatedSharedTensor",
         y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
-    ) -> Tuple["ReplicatedSharedTensor", Tuple[Session, int, Config, int, int]]:
+    ) -> "ReplicatedSharedTensor":
         """Check the type of "y" and convert it to share if necessary.
 
         Args:
