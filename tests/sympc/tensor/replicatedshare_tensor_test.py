@@ -176,6 +176,23 @@ def test_rst_distribute_reconstruct_tensor_secret(
     assert np.allclose(secret, a.reconstruct(), atol=1e-3)
 
 
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_rst_reconstruct_zero_share_ptrs(get_clients, security) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor(
+        [[1, -2.0, 0.0], [3.9, -4.394, -0.9], [-43, 100, -0.4343], [1.344, -5.0, 0.55]]
+    )
+
+    a = MPCTensor(secret=secret, session=session)
+    a.share_ptrs = []
+    with pytest.raises(ValueError):
+        a.reconstruct()
+
+
 @pytest.mark.parametrize("parties", [2, 5, 11])
 def test_share_distribution_number_shares(get_clients, parties):
     parties = get_clients(parties)
