@@ -653,6 +653,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If session from MPCTensor and "y" is not the same.
             TypeError: If MPC tensors are not of same share class
+            NotImplementedError: When op has not been implemented yet
         """
         if self.session.protocol.share_class != y.session.protocol.share_class:
             raise TypeError("Both MPC tensors should be of same share class.")
@@ -663,11 +664,28 @@ class MPCTensor(metaclass=SyMPCTensor):
             )
 
         if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
+            from sympc.protocol import Falcon
             from sympc.protocol.spdz import spdz
+            from sympc.tensor import ReplicatedSharedTensor
 
-            result = spdz.mul_master(self, y, op_str, kwargs_)
-            result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
+            if self.session.protocol.share_class == ShareTensor:
+                result = spdz.mul_master(self, y, op_str, kwargs_)
+                result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
+
+            elif self.session.protocol.share_class == ReplicatedSharedTensor:
+                if op_str == "mul":
+                    result = Falcon.mul_master(self, y, self.session)
+                    result.shape = MPCTensor._get_shape("mul", self.shape, y.shape)
+                else:
+                    raise NotImplementedError(
+                        f"{op_str} has not implemented for ReplicatedSharedTensor"
+                    )
+
+            else:
+                raise TypeError("Invalid Share Class")
+
         elif op_str in {"sub", "add"}:
+
             op = getattr(operator, op_str)
             shares = [
                 op(*share_tuple) for share_tuple in zip(self.share_ptrs, y.share_ptrs)
@@ -699,6 +717,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         op = getattr(operator, op_str)
         if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
+
         elif op_str in {"add", "sub"}:
             shares = list(self.share_ptrs)
             # Only the rank 0 party has to add the element
@@ -736,6 +755,36 @@ class MPCTensor(metaclass=SyMPCTensor):
         res = op(x, y, **kwargs_)
         return res.shape
 
+    def truncate(
+        self, input_tensor: "MPCTensor", op_str: str, is_private: bool
+    ) -> "MPCTensor":
+        """Checks if operation requires truncation and performs it if required.
+
+        Args:
+            input_tensor (MPCTensor): Result of operation
+            op_str (str): Operation name
+            is_private (bool): If operation is private
+
+        Returns:
+            result (MPCTensor): Truncated result
+        """
+        # Truncation should be added for RSTensor
+        if (
+            op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}
+            and (not is_private or self.session.nr_parties > 2)
+            and self.session.protocol.share_class == ShareTensor
+        ):
+            # For private op we do the division in the mul_parties function from spdz
+            scale = (
+                self.session.config.encoder_base
+                ** self.session.config.encoder_precision
+            )
+            result = input_tensor.truediv(scale)
+        else:
+            result = input_tensor
+
+        return result
+
     def __apply_op(
         self,
         y: Union["MPCTensor", torch.Tensor, float, int],
@@ -768,15 +817,8 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         result.shape = MPCTensor._get_shape(op_str, self.shape, y_shape, **kwargs_)
 
-        if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"} and (
-            not is_private or self.session.nr_parties > 2
-        ):
-            # For private op we do the division in the mul_parties function from spdz
-            scale = (
-                self.session.config.encoder_base
-                ** self.session.config.encoder_precision
-            )
-            result = result.truediv(scale)
+        # Check operation and apply truncation if required.
+        result = self.truncate(result, op_str, is_private)
 
         return result
 
