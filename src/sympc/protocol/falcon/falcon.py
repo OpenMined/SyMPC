@@ -98,18 +98,11 @@ class Falcon(metaclass=Protocol):
         result = None
 
         if session.protocol.security_type == "semi-honest":
-            args = []
-            for index in range(0, 3):
-                args.append(
-                    [
-                        x.share_ptrs[index],
-                        y.share_ptrs[index],
-                    ]
-                )
+            args = [[x.share_ptrs[index], y.share_ptrs[index]] for index in range(3)]
+
             z_shares_ptrs = parallel_execution(
                 Falcon.compute_zvalue_and_add_mask, session.parties
             )(args)
-
             z_shares = [share.get() for share in z_shares_ptrs]
 
             # Convert 3-3 shares to 2-3 shares by resharing

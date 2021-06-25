@@ -78,8 +78,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.shares = []
 
         if shares is not None:
-            for i in range(len(shares)):
-                self.shares.append(self._encode(shares[i]).to(tensor_type))
+            self.shares = [
+                self._encode(shares[i]).to(tensor_type) for i in range(len(shares))
+            ]
 
     def _encode(self, data: torch.Tensor) -> torch.Tensor:
         """Encode via FixedPointEncoder.
@@ -109,9 +110,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         shares = []
 
-        for i in range(len(self.shares)):
-            tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
-            shares.append(tensor)
+        for share in self.shares:
+            shares.append(self.fp_encoder.decode(share.type(torch.LongTensor)))
 
         return shares
 
@@ -601,15 +601,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         nshares = session.nr_parties - 1
         party_shares = []
 
-        for i in range(party_rank, party_rank + nshares):
-            share = shares[i % (nshares + 1)]
+        for share_index in range(party_rank, party_rank + nshares):
+            share = shares[share_index % (nshares + 1)]
 
             if isinstance(share, torch.Tensor):
                 party_shares.append(share)
 
             elif isinstance(share, ShareTensor):
-                tensor = share.tensor
-                party_shares.append(tensor)
+                party_shares.append(share.tensor)
 
         tensor = ReplicatedSharedTensor(
             party_shares,
@@ -671,9 +670,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         def property_new_rs_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
             shares = []
 
-            for i in range(len(_self.shares)):
-                tensor = getattr(_self.shares[i], property_name)
-                shares.append(tensor)
+            for share in _self.shares:
+                shares.append(getattr(share, property_name))
 
             res = ReplicatedSharedTensor(
                 session_uuid=_self.session_uuid, config=_self.config
@@ -714,9 +712,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
             shares = []
-            for i in range(len(_self.shares)):
-                tensor = getattr(_self.shares[i], method_name)(*args, **kwargs)
-                shares.append(tensor)
+            for share in _self.shares:
+                shares.append(getattr(share, method_name)(*args, **kwargs))
 
             res = ReplicatedSharedTensor(
                 session_uuid=_self.session_uuid, config=_self.config
