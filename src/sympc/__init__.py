@@ -12,12 +12,12 @@ from . import api  # noqa: 401
 from . import approximations  # noqa: 401
 from . import config  # noqa: 401
 from . import encoder  # noqa: 401
-from . import grads
 from . import protocol  # noqa: 401
 from . import session  # noqa: 401
 from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 
+from . import grads  # noqa: 401 isort: skip
 from . import module  # noqa: 401 isort: skip
 from . import optim  # noqa: 401 isort: skip
 
