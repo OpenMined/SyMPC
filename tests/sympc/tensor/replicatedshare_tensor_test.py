@@ -148,7 +148,7 @@ def test_hook_property(get_clients) -> None:
     assert (rst.T.shares[1] == y.T).all()
 
 
-@pytest.mark.parametrize("parties", [2, 5])
+@pytest.mark.parametrize("parties", [3, 5])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_rst_distribute_reconstruct_float_secret(
     get_clients, parties, security
@@ -163,7 +163,7 @@ def test_rst_distribute_reconstruct_float_secret(
     assert np.allclose(secret, a.reconstruct(), atol=1e-3)
 
 
-@pytest.mark.parametrize("parties", [2, 5])
+@pytest.mark.parametrize("parties", [3, 5])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_rst_distribute_reconstruct_tensor_secret(
     get_clients, parties, security
@@ -212,7 +212,7 @@ def test_share_distribution_number_shares(get_clients, parties):
         assert len(RSTensor.get_shares().get()) == (len(parties) - 1)
 
 
-@pytest.mark.parametrize("parties", [2, 5])
+@pytest.mark.parametrize("parties", [3, 5])
 def test_invalid_malicious_reconstruction(get_clients, parties):
     parties = get_clients(parties)
     protocol = Falcon("malicious")
@@ -271,7 +271,6 @@ def test_ops_share_public(op_str, precision, base) -> None:
     assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
-@pytest.mark.parametrize("parties", [3, 5])
 def test_rst_resolve_pointer(get_clients) -> None:
     clients = get_clients(3)
     protocol = Falcon("semi-honest")
@@ -287,7 +286,7 @@ def test_rst_resolve_pointer(get_clients) -> None:
     assert share_pt_name == "ReplicatedSharedTensorPointer"
 
 
-@pytest.mark.parametrize("parties", [2, 5])
+@pytest.mark.parametrize("parties", [3, 5])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_ops_public_mul_integer(get_clients, parties, security):
     # Not encoding because truncation hasn't been implemented yet for Falcon
@@ -307,7 +306,7 @@ def test_ops_public_mul_integer(get_clients, parties, security):
     assert (result.reconstruct() == (secret * value)).all()
 
 
-@pytest.mark.parametrize("parties", [2, 5])
+@pytest.mark.parametrize("parties", [3, 5])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_ops_public_mul_integer_matrix(get_clients, parties, security):
     # Not encoding because truncation hasn't been implemented yet for Falcon
