@@ -636,6 +636,7 @@ class GradMaxPool2D(GradFunc):
         stride: Optional[Union[int, Tuple[int, int]]] = None,
         padding: Union[int, Tuple[int, int]] = 0,
         dilation: Union[int, Tuple[int, int]] = 1,
+        return_indices: bool = False,
     ) -> MPCTensor:
         """Perform the feedforward and compute the result for the MaxPool2D operation.
 
@@ -650,6 +651,7 @@ class GradMaxPool2D(GradFunc):
                 in case it is passed as an integer then that value is used for height and width
             dilation (Union[int, Tuple[int, int]]): the dilation size
                 in case it is passed as an integer then that value is used for height and width
+            return_indices (bool): to return the indices of the max values
 
         Returns:
             res (MPCTensor): The result of the reshape operation

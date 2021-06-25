@@ -20,6 +20,7 @@ import syft as sy
 
 import sympc
 
+from . import grads  # noqa: 401
 from . import protocol  # noqa: 401
 from . import session  # noqa: 401
 from . import store  # noqa: 401
@@ -48,7 +49,7 @@ allowed_external_modules = [
     ("sympc.protocol.spdz", protocol.spdz),
     ("sympc.protocol.spdz.spdz", protocol.spdz.spdz),
     ("sympc.utils", utils),
-    ("sympc.tensor.grads", tensor.grads),
+    ("sympc.grads", grads),
 ]
 
 allowed_external_classes = [

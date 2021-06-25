@@ -9,6 +9,8 @@ from typing import Union
 import numpy as np
 import torch
 
+from sympc.grads import GRAD_FUNCS
+from sympc.grads import forward
 from sympc.session import get_session
 from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
@@ -24,6 +26,9 @@ def relu(x: MPCTensor) -> MPCTensor:
     Returns:
         An MPCTensor which represents the ReLu applied on the input tensor
     """
+    relu_forward = GRAD_FUNCS.get("relu", None)
+    if relu_forward and x.session.autograd_active:
+        return forward(x, relu_forward)
     res = x * (x >= 0)
     return res
 
@@ -239,6 +244,18 @@ def max_pool2d(
     Raises:
         ValueError: if the kernel size is bigger than the input
     """
+    max_pool2d_forward = GRAD_FUNCS.get("max_pool2d", None)
+    if max_pool2d_forward and x.session.autograd_active:
+        return forward(
+            x,
+            max_pool2d_forward,
+            kernel_size,
+            stride,
+            padding,
+            dilation,
+            return_indices,
+        )
+
     kernel_size, stride, padding, dilation = _sanity_check_max_pool2d(
         kernel_size, stride, padding, dilation
     )
