@@ -247,3 +247,53 @@ def test_invalid_protocol_exception() -> None:
 def test_invalid_ringsize_exception() -> None:
     with pytest.raises(ValueError):
         Session(ring_size=2 ** 63)
+
+
+def test_przs_share_tensor_union_resolve(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    share_pt0 = session.session_ptrs[0].przs_generate_random_share(shape=(1, 2))
+    resolved_share_pt0 = share_pt0.resolve_pointer_type()
+    share_pt_name = type(resolved_share_pt0).__name__
+
+    assert share_pt_name == "ShareTensorPointer"
+
+
+def test_prrs_share_tensor_union_resolve(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    share_pt0 = session.session_ptrs[0].prrs_generate_random_share(shape=(1, 2))
+    resolved_share_pt0 = share_pt0.resolve_pointer_type()
+    share_pt_name = type(resolved_share_pt0).__name__
+
+    assert share_pt_name == "ShareTensorPointer"
+
+
+def test_przs_rst_union_resolve(get_clients) -> None:
+    clients = get_clients(3)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=clients)
+    SessionManager.setup_mpc(session)
+
+    share_pt0 = session.session_ptrs[0].przs_generate_random_share(shape=(1, 2))
+    resolved_share_pt0 = share_pt0.resolve_pointer_type()
+    share_pt_name = type(resolved_share_pt0).__name__
+
+    assert share_pt_name == "ReplicatedSharedTensorPointer"
+
+
+def test_prrs_rst_union_resolve(get_clients) -> None:
+    clients = get_clients(3)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=clients)
+    SessionManager.setup_mpc(session)
+
+    share_pt0 = session.session_ptrs[0].prrs_generate_random_share(shape=(1, 2))
+    resolved_share_pt0 = share_pt0.resolve_pointer_type()
+    share_pt_name = type(resolved_share_pt0).__name__
+
+    assert share_pt_name == "ReplicatedSharedTensorPointer"

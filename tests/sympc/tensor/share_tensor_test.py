@@ -8,6 +8,9 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.session import Session
+from sympc.session import SessionManager
+from sympc.tensor import MPCTensor
 from sympc.tensor import ShareTensor
 
 
@@ -219,3 +222,17 @@ def test_share_decode() -> None:
     x_share = ShareTensor(data=x)
 
     assert x == x_share.decode()
+
+
+def test_share_tensor_resolve_pointer(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+    secret = torch.randn(1, 2)
+    tensor = MPCTensor(secret=secret, session=session)
+
+    share_pt0 = tensor.share_ptrs[0]
+    resolved_share_pt0 = share_pt0.resolve_pointer_type()
+    share_pt_name = type(resolved_share_pt0).__name__
+
+    assert share_pt_name == "ShareTensorPointer"
