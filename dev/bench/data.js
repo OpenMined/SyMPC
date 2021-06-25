@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1624615197532,
+  "lastUpdate": 1624635295200,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1085,6 +1085,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.168212343506652",
             "extra": "mean: 7.8325862502 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "9ae54136f42b7fcfeafccd0aa0162539b832a49b",
+          "message": "Modified allowlist to use absolute paths. (#252)\n\n* Changed relative paths to absolute paths\r\n\r\n* Linting",
+          "timestamp": "2021-06-25T21:01:29+05:30",
+          "tree_id": "eda59d5be5cc6af636de1776ced123c94d7b0bc4",
+          "url": "https://github.com/OpenMined/SyMPC/commit/9ae54136f42b7fcfeafccd0aa0162539b832a49b"
+        },
+        "date": 1624635294207,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.11836156107812186,
+            "unit": "iter/sec",
+            "range": "stddev: 0.13845025626602475",
+            "extra": "mean: 8.448688838599997 sec\nrounds: 5"
           }
         ]
       }
