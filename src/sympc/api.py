@@ -248,7 +248,6 @@ allowed_external_attrs = [
     ("sympc.protocol.spdz.spdz.spdz_mask", "syft.lib.python.Tuple"),
     ("sympc.protocol.spdz.spdz.div_wraps", "sympc.tensor.share_tensor.ShareTensor"),
     ("sympc.protocol.falcon.falcon.Falcon.compute_zvalue_and_add_mask", "torch.Tensor"),
-
     (
         "sympc.session.Session.przs_generate_random_share",
         sy.lib.misc.union.UnionGenerator[

@@ -270,6 +270,7 @@ def test_ops_share_public(op_str, precision, base) -> None:
 
     assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
+
 def test_rst_resolve_pointer(get_clients) -> None:
     clients = get_clients(3)
     protocol = Falcon("semi-honest")
@@ -283,6 +284,7 @@ def test_rst_resolve_pointer(get_clients) -> None:
     share_pt_name = type(resolved_share_pt0).__name__
 
     assert share_pt_name == "ReplicatedSharedTensorPointer"
+
 
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
