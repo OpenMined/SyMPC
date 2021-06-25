@@ -271,6 +271,21 @@ def test_ops_share_public(op_str, precision, base) -> None:
     assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
 
 
+def test_rst_resolve_pointer(get_clients) -> None:
+    clients = get_clients(3)
+    protocol = Falcon("semi-honest")
+    session = Session(protocol=protocol, parties=clients)
+    SessionManager.setup_mpc(session)
+    secret = torch.randn(1, 2)
+    tensor = MPCTensor(secret=secret, session=session)
+
+    share_pt0 = tensor.share_ptrs[0]
+    resolved_share_pt0 = share_pt0.resolve_pointer_type()
+    share_pt_name = type(resolved_share_pt0).__name__
+
+    assert share_pt_name == "ReplicatedSharedTensorPointer"
+
+
 @pytest.mark.parametrize("parties", [3, 5, 7])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_ops_public_mul_integer(get_clients, parties, security):
