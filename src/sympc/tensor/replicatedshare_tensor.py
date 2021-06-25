@@ -582,6 +582,44 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         raise ValueError("Invalid security Type")
 
     @staticmethod
+    def distribute_shares_to_party(
+        shares: List[Union[ShareTensor, torch.Tensor]],
+        party_rank: int,
+        session: Session,
+    ):
+        """Distributes shares to party.
+
+        Args:
+            shares (List[Union[ShareTensor,torch.Tensor]]): Shares to be distributed.
+            party_rank (int): Rank of party.
+            session (Session): Current session
+
+        Returns:
+            tensor (ReplicatedSharedTensor): Tensor with shares
+        """
+        party = session.parties[party_rank]
+        nshares = session.nr_parties - 1
+        party_shares = []
+
+        for i in range(party_rank, party_rank + nshares):
+            share = shares[i % (nshares + 1)]
+
+            if isinstance(share, torch.Tensor):
+                party_shares.append(share)
+
+            elif isinstance(share, ShareTensor):
+                tensor = share.tensor
+                party_shares.append(tensor)
+
+        tensor = ReplicatedSharedTensor(
+            party_shares,
+            config=Config(encoder_base=1, encoder_precision=0),
+            session_uuid=session.rank_to_uuid[party_rank],
+        ).send(party)
+
+        return tensor
+
+    @staticmethod
     def distribute_shares(
         shares: List[Union[ShareTensor, torch.Tensor]], session: Session
     ) -> List:
@@ -592,7 +630,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             session (Session): Session.
 
         Returns:
-            List of ShareTensor.
+            List of ReplicatedShareTensors.
 
         Raises:
             TypeError: when Datatype of shares is invalid.
@@ -605,32 +643,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             return ValueError(
                 "Number of shares to be distributed should be same as number of parties"
             )
+        args = [
+            [shares, party_rank, session] for party_rank in range(session.nr_parties)
+        ]
 
-        parties = session.parties
-        nshares = len(parties) - 1
-
-        ptr_list = []
-        for i in range(len(parties)):
-            party_shares = []
-
-            for j in range(i, i + nshares):
-                share = shares[j % (nshares + 1)]
-
-                if isinstance(share, torch.Tensor):
-                    party_shares.append(share)
-
-                elif isinstance(share, ShareTensor):
-                    tensor = share.tensor
-                    party_shares.append(tensor)
-
-            tensor = ReplicatedSharedTensor(
-                party_shares,
-                config=Config(encoder_base=1, encoder_precision=0),
-                session_uuid=session.rank_to_uuid[i],
-            ).send(parties[i])
-            ptr_list.append(tensor)
-
-        return ptr_list
+        return parallel_execution(ReplicatedSharedTensor.distribute_shares_to_party)(
+            args
+        )
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
