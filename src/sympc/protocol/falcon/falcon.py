@@ -8,9 +8,16 @@ from typing import Any
 from typing import Dict
 from typing import List
 
+# third party
+import torch
+
 from sympc.protocol.protocol import Protocol
+from sympc.session import Session
+from sympc.session import get_session
+from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import parallel_execution
 
 
 class Falcon(metaclass=Protocol):
@@ -63,3 +70,99 @@ class Falcon(metaclass=Protocol):
             return False
 
         return True
+
+    @staticmethod
+    def mul_master(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
+        """Master method for multiplication.
+
+        Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
+        This needs to be improved in future, it relies on orchestrator being a trusted third party.
+        Falcon, requires parties to be able to communication between each other.
+
+        Args:
+            x (MPCTensor): Secret
+            y (MPCTensor): Another secret
+            session (Session): Session the tensors belong to
+
+        Returns:
+            shares (ReplicatedSharedTensor): Shares in terms of ReplicatedSharedTensor.
+
+        Raises:
+            ValueError: Raised when number of parties are not three.
+            NotImplementedError: Raised when implementation not present
+
+        """
+        if len(session.parties) != 3:
+            raise ValueError("Falcon requires 3 parties")
+
+        result = None
+
+        if session.protocol.security_type == "semi-honest":
+            args = []
+            for index in range(0, 3):
+                args.append(
+                    [
+                        x.share_ptrs[index],
+                        y.share_ptrs[index],
+                    ]
+                )
+            z_shares_ptrs = parallel_execution(
+                Falcon.compute_zvalue_and_add_mask, session.parties
+            )(args)
+
+            z_shares = [share.get() for share in z_shares_ptrs]
+
+            # Convert 3-3 shares to 2-3 shares by resharing
+            reshared_shares = ReplicatedSharedTensor.distribute_shares(
+                z_shares, x.session
+            )
+            result = MPCTensor(shares=reshared_shares, session=x.session)
+
+        else:
+            raise NotImplementedError(
+                f"mult operation not implemented for {session.protocol.security_type} setting"
+            )
+
+        return result
+
+    @staticmethod
+    def compute_zvalue_and_add_mask(
+        x: ReplicatedSharedTensor,
+        y: ReplicatedSharedTensor,
+    ) -> torch.Tensor:
+        """Operation to compute local z share and add mask to it.
+
+        Args:
+            x (ReplicatedSharedTensor): Secret.
+            y (ReplicatedSharedTensor): Another secret.
+
+        Returns:
+            share (Torch.tensor): The masked local z share.
+        """
+        # Parties calculate z value locally
+        session = get_session(x.session_uuid)
+        z_value = x * y
+        przs_mask = session.przs_generate_random_share(shape=x.shape)
+        # Add PRZS Mask to z  value
+        share = z_value.get_shares()[0] + przs_mask.get_shares()[0]
+        return share
+
+    @staticmethod
+    def multiplication_protocol(
+        x: ReplicatedSharedTensor, y: ReplicatedSharedTensor
+    ) -> ReplicatedSharedTensor:
+        """Implementation of Falcon's multiplication with semi-honest security guarantee.
+
+        Args:
+            x (ReplicatedSharedTensor): Secret
+            y (ReplicatedSharedTensor): Another secret
+
+        Returns:
+            shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
+        """
+        z_value = (
+            x.shares[0] * y.shares[0]
+            + x.shares[1] * y.shares[0]
+            + x.shares[0] * y.shares[1]
+        )
+        return z_value

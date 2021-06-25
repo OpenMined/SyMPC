@@ -66,13 +66,17 @@ def test_send_get(get_clients, precision=12, base=4) -> None:
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol, parties=[client])
     SessionManager.setup_mpc(session)
+
     share1 = torch.Tensor([1.4, 2.34, 3.43])
     share2 = torch.Tensor([1, 2, 3])
     share3 = torch.Tensor([1.4, 2.34, 3.43])
+
     session_uuid = session.rank_to_uuid[0]
+
     x_share = ReplicatedSharedTensor(
         shares=[share1, share2, share3], session_uuid=session_uuid
     )
+
     x_ptr = x_share.send(client)
     result = x_ptr.get()
 
@@ -89,6 +93,7 @@ def test_fixed_point(precision, base) -> None:
     )
     fp_encoder = FixedPointEncoder(precision=precision, base=base)
     tensor_type = get_type_from_ring(rst.ring_size)
+
     for i in range(len(shares)):
         shares[i] = fp_encoder.encode(shares[i]).to(tensor_type)
 
@@ -264,3 +269,43 @@ def test_ops_share_public(op_str, precision, base) -> None:
     tensor_decoded = res.fp_encoder.decode(res.shares[0])
 
     assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)
+
+
+@pytest.mark.parametrize("parties", [3, 5, 7])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_ops_public_mul_integer(get_clients, parties, security):
+    # Not encoding because truncation hasn't been implemented yet for Falcon
+    config = Config(encoder_base=1, encoder_precision=0)
+
+    parties = get_clients(parties)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    value = 8
+
+    tensor = MPCTensor(secret=secret, session=session)
+    result = tensor * value
+
+    assert (result.reconstruct() == (secret * value)).all()
+
+
+@pytest.mark.parametrize("parties", [3, 5, 7])
+@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
+def test_ops_public_mul_integer_matrix(get_clients, parties, security):
+    # Not encoding because truncation hasn't been implemented yet for Falcon
+    config = Config(encoder_base=1, encoder_precision=0)
+
+    parties = get_clients(parties)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    value = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
+
+    tensor = MPCTensor(secret=secret, session=session)
+    result = tensor * value
+
+    assert (result.reconstruct() == (secret * value)).all()
