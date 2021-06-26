@@ -1,6 +1,6 @@
 """ABY3 Protocol.
 
-ABY3 : Mixed Protocol for Machine Learning.
+ABY3 : A Mixed Protocol Framework for Machine Learning.
 https://eprint.iacr.org/2018/403.pdf
 """
 # stdlib
@@ -61,10 +61,10 @@ class ABY3(metaclass=Protocol):
     def trunc1(
         ptr_list: List["ReplicatedSharedTensor"], shape: torch.Size, session: Session
     ) -> List["ReplicatedSharedTensor"]:
-        """Apply the trunc1 algorithm for preprocessing.
+        """Performs the ABY3 trunc1 algorithm.
 
         Args:
-            ptr_list (List[ReplicatedSharedTensor]): Tensor to truncate
+            ptr_list (List[ReplicatedSharedTensor]): Tensors to truncate
             shape(torch.Size) : shape of tensor values
             session(Session) : session the tensor belong to
 
@@ -95,7 +95,7 @@ class ABY3(metaclass=Protocol):
             session (Session) : session of the input tensor.
 
         Returns:
-            Tuple[MPCTensor]: generate truncation pair.
+            Tuple[MPCTensor]: generated truncation pair.
         """
         r: List = []
         rPrime: List = []
@@ -120,11 +120,17 @@ class ABY3(metaclass=Protocol):
 
         Returns:
             MPCTensor: truncated MPCTensor.
+
+        Raises:
+            ValueError : parties involved in the computation is not equal to three.
         """
+        if session.nr_parties != 3:
+            raise ValueError("Share trunc1 algorithm works only for 3 parites.")
+
         share_ptrs = ABY3.trunc1(x.share_ptrs, x.shape, session)
         result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
 
-        # TODO trunc1 algorithm erroneous, to be optimized.
+        # TODO below trunc2 algorithm erroneous, to be optimized.
         """r, rPrime = ABY3.getTruncationPair(x, session)
         scale = session.config.encoder_base ** session.config.encoder_precision
         # op = getattr(operator,"sub")
