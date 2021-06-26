@@ -286,41 +286,35 @@ def test_rst_resolve_pointer(get_clients) -> None:
     assert share_pt_name == "ReplicatedSharedTensorPointer"
 
 
-@pytest.mark.parametrize("parties", [3])
-@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_public_mul_integer(get_clients, parties, security):
-    # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_base=1, encoder_precision=0)
+@pytest.mark.parametrize("security", ["semi-honest"])  # malicious to be added
+def test_ops_public_mul_integer(get_clients, security):
 
-    parties = get_clients(parties)
+    parties = get_clients(3)
     protocol = Falcon(security)
-    session = Session(protocol=protocol, parties=parties, config=config)
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
     value = 8
 
     tensor = MPCTensor(secret=secret, session=session)
     result = tensor * value
+    expected_res = secret * value
 
-    assert (result.reconstruct() == (secret * value)).all()
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-@pytest.mark.parametrize("parties", [3])
-@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_public_mul_integer_matrix(get_clients, parties, security):
-    # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_base=1, encoder_precision=0)
-
-    parties = get_clients(parties)
+@pytest.mark.parametrize("security", ["semi-honest"])  # malicous to be addded
+def test_ops_public_mul_integer_matrix(get_clients, security):
+    parties = get_clients(3)
     protocol = Falcon(security)
-    session = Session(protocol=protocol, parties=parties, config=config)
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-    value = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
+    secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    value = torch.Tensor([[4.5, -2.5], [5, 2.25]])
 
     tensor = MPCTensor(secret=secret, session=session)
     result = tensor * value
-
-    assert (result.reconstruct() == (secret * value)).all()
+    expected_res = secret * value
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
