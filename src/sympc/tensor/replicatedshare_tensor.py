@@ -586,7 +586,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         shares: List[Union[ShareTensor, torch.Tensor]],
         party_rank: int,
         session: Session,
-    ):
+    ) -> "ReplicatedSharedTensor":
         """Distributes shares to party.
 
         Args:
@@ -596,6 +596,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             tensor (ReplicatedSharedTensor): Tensor with shares
+
+        Raises:
+            TypeError: Invalid share class.
         """
         party = session.parties[party_rank]
         nshares = session.nr_parties - 1
@@ -610,6 +613,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             elif isinstance(share, ShareTensor):
                 party_shares.append(share.tensor)
 
+            else:
+                raise TypeError(f"{type(share)} is an invalid share class")
+
         tensor = ReplicatedSharedTensor(
             party_shares,
             config=Config(encoder_base=1, encoder_precision=0),
@@ -621,7 +627,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     @staticmethod
     def distribute_shares(
         shares: List[Union[ShareTensor, torch.Tensor]], session: Session
-    ) -> List:
+    ) -> List["ReplicatedSharedTensor"]:
         """Distribute a list of shares.
 
         Args:
@@ -646,9 +652,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             [shares, party_rank, session] for party_rank in range(session.nr_parties)
         ]
 
-        return parallel_execution(ReplicatedSharedTensor.distribute_shares_to_party)(
-            args
-        )
+        return [ReplicatedSharedTensor.distribute_shares_to_party(*arg) for arg in args]
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
