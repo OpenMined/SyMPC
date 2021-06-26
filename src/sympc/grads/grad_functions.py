@@ -637,7 +637,7 @@ class GradMaxPool2D(GradFunc):
         padding: Union[int, Tuple[int, int]] = 0,
         dilation: Union[int, Tuple[int, int]] = 1,
         return_indices: bool = False,
-    ) -> MPCTensor:
+    ) -> Union[MPCTensor, Tuple[MPCTensor, MPCTensor]]:
         """Perform the feedforward and compute the result for the MaxPool2D operation.
 
         Args:
@@ -654,7 +654,9 @@ class GradMaxPool2D(GradFunc):
             return_indices (bool): to return the indices of the max values
 
         Returns:
-            res (MPCTensor): The result of the reshape operation
+            result (Union[MPCTensor, Tuple[MPCTensor, MPCTensor]) Only MaxPool2d result if
+                "return_indices" is False or a tuple containing the result and the indices if
+                "return_indices" is True
 
         Raises:
             ValueError: if dilation is specified with a different value that 1
@@ -681,7 +683,10 @@ class GradMaxPool2D(GradFunc):
 
         ctx["indices"] = indices
 
-        return res
+        if not return_indices:
+            return res
+
+        return res, indices
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
