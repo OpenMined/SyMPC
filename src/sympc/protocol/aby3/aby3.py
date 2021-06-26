@@ -121,7 +121,11 @@ class ABY3(metaclass=Protocol):
         Returns:
             MPCTensor: truncated MPCTensor.
         """
-        r, rPrime = ABY3.getTruncationPair(x, session)
+        share_ptrs = ABY3.trunc1(x.share_ptrs, x.shape, session)
+        result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
+
+        # TODO trunc1 algorithm erroneous, to be optimized.
+        """r, rPrime = ABY3.getTruncationPair(x, session)
         scale = session.config.encoder_base ** session.config.encoder_precision
         # op = getattr(operator,"sub")
         x_rp = x - rPrime
@@ -129,6 +133,6 @@ class ABY3(metaclass=Protocol):
         zero = torch.tensor([0])
         x_rp = MPCTensor(shares=[x_rp, zero, zero], session=x.session, shape=x.shape)
 
-        result = r + x_rp
+        result = r + x_rp"""
 
         return result
