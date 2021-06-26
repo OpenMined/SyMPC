@@ -770,7 +770,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             result (MPCTensor): Truncated result
         """
         # Truncation should be added for RSTensor
-        from sympc.protocol import Falcon
+        from sympc.protocol import ABY3
         from sympc.tensor import ReplicatedSharedTensor
 
         result = input_tensor
@@ -790,8 +790,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             and (not is_private)
             and self.session.protocol.share_class == ReplicatedSharedTensor
         ):
-            print("enter")
-            result = Falcon.truncate(input_tensor, self.session)
+            result = ABY3.truncate(input_tensor, self.session)
 
         return result
 
