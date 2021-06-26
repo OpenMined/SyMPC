@@ -562,19 +562,21 @@ class GradReshape(GradFunc):
     """The Reshape gradient function."""
 
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: MPCTensor, shape: Tuple[int]) -> MPCTensor:
+    def forward(
+        ctx: Dict[str, Any], x: MPCTensor, *shape: Union[List[int], Tuple[int]]
+    ) -> MPCTensor:
         """Perform the feedforward and compute the result for the reshape operation.
 
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
             x (MPCTensor): the MPCTensor to be reshaped
-            shape (Tuple[int]): the new shape
+            shape (Union[List[int], Tuple[int]]): the new shape
 
         Returns:
             res (MPCTensor): The result of the reshape operation
         """
         ctx["x_shape"] = x.shape
-        return x.reshape(shape)
+        return x.reshape(*shape)
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
