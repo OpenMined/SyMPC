@@ -286,6 +286,7 @@ def test_rst_resolve_pointer(get_clients) -> None:
     assert share_pt_name == "ReplicatedSharedTensorPointer"
 
 
+
 @pytest.mark.parametrize("parties", [3])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_ops_public_mul_integer(get_clients, parties, security):
