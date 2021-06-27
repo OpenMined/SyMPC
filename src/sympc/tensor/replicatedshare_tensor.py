@@ -489,13 +489,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
         """
-        request = ReplicatedSharedTensor._request_and_get
-        request_wrap = parallel_execution(request)
-        args = [[share] for share in share_ptrs[:2]]
-        local_shares = request_wrap(args)
 
-        shares = [local_shares[0].shares[0]]
-        shares.extend(local_shares[1].shares)
+        shares = [share_ptrs[0].get_shares()[0].get()]
+        shares.extend(share_ptrs[1].get_shares().get())
 
         if get_shares:
             return shares
@@ -521,13 +517,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         nparties = len(share_ptrs)
 
-        # Get shares from all parties
-        request = ReplicatedSharedTensor._request_and_get
-        request_wrap = parallel_execution(request)
-        args = [[share] for share in share_ptrs]
-        local_shares = request_wrap(args)
-
-        all_shares = [rst.shares for rst in local_shares]
+        all_shares = [rst.get_shares().get() for rst in share_ptrs]
         # reconstruct shares from all parties and verify
         value = None
         for party_rank in range(nparties):
