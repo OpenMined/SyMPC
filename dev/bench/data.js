@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1624695931470,
+  "lastUpdate": 1624834933338,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1147,6 +1147,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.04435279548613432",
             "extra": "mean: 6.879535951000003 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a22a4e8bf50e0b256a88c226cfa86edd7ac917a5",
+          "message": "Fix gradient not being recorded (#254)\n\n* Fix gradient not being recorded\r\n\r\n* Import order fix\r\n\r\n* Correctly treat return_indices param for maxpool_2d\r\n\r\n* Fix reshape to receive *args",
+          "timestamp": "2021-06-27T23:59:07+01:00",
+          "tree_id": "824d6c6cb74ea0a5875d4d9e77c37674d8a65d0a",
+          "url": "https://github.com/OpenMined/SyMPC/commit/a22a4e8bf50e0b256a88c226cfa86edd7ac917a5"
+        },
+        "date": 1624834932738,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.12243417221315134,
+            "unit": "iter/sec",
+            "range": "stddev: 0.1613481335659656",
+            "extra": "mean: 8.167654356000003 sec\nrounds: 5"
           }
         ]
       }
