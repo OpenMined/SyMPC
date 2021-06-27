@@ -66,7 +66,7 @@ class Falcon(metaclass=Protocol):
         if not self.security_type == other.security_type:
             return False
 
-        if not type(self).__name__ == type(other).__name__:
+        if not type(self) == type(other):
             return False
 
         return True
