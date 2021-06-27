@@ -21,7 +21,6 @@ from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
-from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
 
@@ -489,7 +488,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             reconstructed_value (torch.Tensor): Reconstructed value.
         """
-
         shares = [share_ptrs[0].get_shares()[0].get()]
         shares.extend(share_ptrs[1].get_shares().get())
 
