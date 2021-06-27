@@ -1,4 +1,4 @@
 sycret
-syft @ git+https://github.com/OpenMined/PySyft@dev#egg=syft&subdirectory=packages/syft
+syft @ git+https://github.com/OpenMined/PySyft@86904676e224783f68fbadb0dd8a9baf9a4552ea#egg=syft&subdirectory=packages/syft
 torch>=1.6,<=1.8.1
 torchcsprng<=0.2.1
