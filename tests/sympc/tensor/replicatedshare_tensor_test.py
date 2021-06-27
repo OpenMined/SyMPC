@@ -294,7 +294,7 @@ def test_ops_public_mul_integer(get_clients, security):
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    secret = torch.Tensor([[0.125, 1001, -1.25, 4.82], [-4.25, 0.217, 3301, 4]])
     value = 8
 
     tensor = MPCTensor(secret=secret, session=session)
@@ -311,8 +311,8 @@ def test_ops_public_mul_integer_matrix(get_clients, security):
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
-    value = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    secret = torch.Tensor([[0.125, 1001, 4.82, -1.25], [-4.25, 0.217, 3301, 4]])
+    value = torch.Tensor([[4.5, 9.25, 3.47, -2.5], [50, 3.17, 5.82, 2.25]])
 
     tensor = MPCTensor(secret=secret, session=session)
     result = tensor * value

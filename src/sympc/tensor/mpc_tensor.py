@@ -773,7 +773,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         from sympc.protocol import ABY3
         from sympc.tensor import ReplicatedSharedTensor
 
-        result = input_tensor
+        result = None
         if (
             op_str in TRUNC_OPS
             and (not is_private or self.session.nr_parties > 2)
@@ -791,6 +791,8 @@ class MPCTensor(metaclass=SyMPCTensor):
             and self.session.protocol.share_class == ReplicatedSharedTensor
         ):
             result = ABY3.truncate(input_tensor, self.session)
+        else:
+            result = input_tensor
 
         return result
 

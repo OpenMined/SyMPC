@@ -38,7 +38,9 @@ def test_mul_private(get_clients):
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    secret1 = torch.tensor(
+        [[-100.25, 0.29, 30.45], [-90.82, 1000, 0.18], [1032.45, -323.18, 15.15]]
+    )
     secret2 = 8
 
     tensor1 = MPCTensor(secret=secret1, session=session)
@@ -59,7 +61,7 @@ def test_mul_private_matrix(get_clients):
         [[-100.25, 20.3, 30.12], [-50.1, 100.217, 1.2], [1032.15, -323.56, 15.15]]
     )
 
-    secret2 = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
+    secret2 = torch.tensor([[-1, 0.28, 3], [-9, 10.18, 1], [32, -23, 5]])
 
     tensor1 = MPCTensor(secret=secret1, session=session)
     tensor2 = MPCTensor(secret=secret2, session=session)
