@@ -18,6 +18,8 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 
+gen = csprng.create_random_device_generator()
+
 
 class ABY3(metaclass=Protocol):
     """ABY3 Protocol Implementation."""
@@ -52,7 +54,7 @@ class ABY3(metaclass=Protocol):
         if not self.security_type == other.security_type:
             return False
 
-        if not type(self).__name__ == type(other).__name__:
+        if not type(self) == type(other):
             return False
 
         return True
@@ -71,7 +73,6 @@ class ABY3(metaclass=Protocol):
         Returns:
             List["ReplicatedSharedTensor"] : Truncated shares.
         """
-        gen = csprng.create_random_device_generator()
         rand_value = torch.empty(size=shape, dtype=session.tensor_type).random_(
             generator=gen
         )
