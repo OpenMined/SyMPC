@@ -7,23 +7,23 @@ import syft as sy
 import torch
 
 import sympc
+from sympc.grads.grad_functions import GradAdd
+from sympc.grads.grad_functions import GradConv2d
+from sympc.grads.grad_functions import GradFlatten
+from sympc.grads.grad_functions import GradFunc
+from sympc.grads.grad_functions import GradMatMul
+from sympc.grads.grad_functions import GradMaxPool2D
+from sympc.grads.grad_functions import GradMul
+from sympc.grads.grad_functions import GradPow
+from sympc.grads.grad_functions import GradReLU
+from sympc.grads.grad_functions import GradReshape
+from sympc.grads.grad_functions import GradSigmoid
+from sympc.grads.grad_functions import GradSub
+from sympc.grads.grad_functions import GradSum
+from sympc.grads.grad_functions import GradT
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
-from sympc.tensor.grads.grad_functions import GradAdd
-from sympc.tensor.grads.grad_functions import GradConv2d
-from sympc.tensor.grads.grad_functions import GradFlatten
-from sympc.tensor.grads.grad_functions import GradFunc
-from sympc.tensor.grads.grad_functions import GradMatMul
-from sympc.tensor.grads.grad_functions import GradMaxPool2D
-from sympc.tensor.grads.grad_functions import GradMul
-from sympc.tensor.grads.grad_functions import GradPow
-from sympc.tensor.grads.grad_functions import GradReLU
-from sympc.tensor.grads.grad_functions import GradReshape
-from sympc.tensor.grads.grad_functions import GradSigmoid
-from sympc.tensor.grads.grad_functions import GradSub
-from sympc.tensor.grads.grad_functions import GradSum
-from sympc.tensor.grads.grad_functions import GradT
 
 
 class LinearSyNet(sy.Module):
