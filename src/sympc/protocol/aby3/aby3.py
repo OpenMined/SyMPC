@@ -87,6 +87,55 @@ class ABY3(metaclass=Protocol):
         return ptr_list
 
     @staticmethod
+    def truncate(x: MPCTensor, session: Session) -> MPCTensor:
+        """Perfoms the ABY3 truncation algorithm.
+
+        Args:
+            x (MPCTensor): input tensor
+            session (Session) : session of the input tensor.
+
+        Returns:
+            MPCTensor: truncated MPCTensor.
+
+        Raises:
+            ValueError : parties involved in the computation is not equal to three.
+
+        TODO :Switch to trunc2 algorithm  as it is communication efficient.
+        """
+        if session.nr_parties != 3:
+            raise ValueError("Share trunc1 algorithm works only for 3 parites.")
+
+        share_ptrs = ABY3.trunc1(x.share_ptrs, x.shape, session)
+        result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
+
+        return result
+
+    @staticmethod
+    def trunc2(x: MPCTensor, session: Session) -> MPCTensor:
+        """Truncates the MPCTensor by scale factor using trunc2 algorithm.
+
+        Args:
+            x (MPCTensor): input tensor
+            session (Session) : session of the input tensor.
+
+        Returns:
+            MPCTensor: truncated MPCTensor.
+
+        TODO : The trunc2 algorithm is erroneous, to be optimized.
+        """
+        r, rPrime = ABY3.getTruncationPair(x, session)
+        scale = session.config.encoder_base ** session.config.encoder_precision
+        # op = getattr(operator,"sub")
+        x_rp = x - rPrime
+        x_rp = x_rp.reconstruct(decode=False) // scale
+        zero = torch.tensor([0])
+        x_rp = MPCTensor(shares=[x_rp, zero, zero], session=x.session, shape=x.shape)
+
+        result = r + x_rp
+
+        return result
+
+    @staticmethod
     def getTruncationPair(x: MPCTensor, session: Session) -> Tuple[MPCTensor]:
         """Generates truncation pair for the given MPCTensor.
 
@@ -109,36 +158,3 @@ class ABY3(metaclass=Protocol):
         r_mpc = MPCTensor(shares=r, session=session, shape=x.shape)
         rPrime_mpc = MPCTensor(shares=rPrime, session=session, shape=x.shape)
         return r_mpc, rPrime_mpc
-
-    @staticmethod
-    def truncate(x: MPCTensor, session: Session) -> MPCTensor:
-        """Truncates the MPCTensor by scale factor using trunc2 algorithm.
-
-        Args:
-            x (MPCTensor): input tensor
-            session (Session) : session of the input tensor.
-
-        Returns:
-            MPCTensor: truncated MPCTensor.
-
-        Raises:
-            ValueError : parties involved in the computation is not equal to three.
-        """
-        if session.nr_parties != 3:
-            raise ValueError("Share trunc1 algorithm works only for 3 parites.")
-
-        share_ptrs = ABY3.trunc1(x.share_ptrs, x.shape, session)
-        result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
-
-        # TODO below trunc2 algorithm erroneous, to be optimized.
-        """r, rPrime = ABY3.getTruncationPair(x, session)
-        scale = session.config.encoder_base ** session.config.encoder_precision
-        # op = getattr(operator,"sub")
-        x_rp = x - rPrime
-        x_rp = x_rp.reconstruct(decode=False) // scale
-        zero = torch.tensor([0])
-        x_rp = MPCTensor(shares=[x_rp, zero, zero], session=x.session, shape=x.shape)
-
-        result = r + x_rp"""
-
-        return result

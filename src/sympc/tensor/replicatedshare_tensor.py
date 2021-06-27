@@ -342,7 +342,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Apply the "div" operation between "self" and "y".
 
         Args:
-            y (Union[int, float, torch.Tensor]): Denominator.
+            y (Union[int , float, torch.Tensor]): Denominator.
 
         Returns:
             ReplicatedSharedTensor: Result of the operation.
