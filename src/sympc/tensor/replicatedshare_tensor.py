@@ -338,11 +338,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return tensor
 
-    def truediv(self, y: Union[int, float, torch.Tensor]) -> "ReplicatedSharedTensor":
+    def truediv(self, y: Union[int, torch.Tensor]) -> "ReplicatedSharedTensor":
         """Apply the "div" operation between "self" and "y".
 
         Args:
-            y (Union[int , float, torch.Tensor]): Denominator.
+            y (Union[int , torch.Tensor]): Denominator.
 
         Returns:
             ReplicatedSharedTensor: Result of the operation.
