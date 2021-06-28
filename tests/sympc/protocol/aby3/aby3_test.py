@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 import torch
 
+from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.protocol import ABY3
 from sympc.protocol import Falcon
@@ -35,10 +36,12 @@ def test_invalid_parties_trunc(get_clients) -> None:
         ABY3.truncate(None, session)
 
 
-def test_trunc1(get_clients) -> None:
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_trunc1(get_clients, base, precision) -> None:
     parties = get_clients(3)
-    falcon = Falcon()
-    session = Session(parties=parties, protocol=falcon)
+    falcon = Falcon("semi-honest")
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(parties=parties, protocol=falcon, config=config)
     SessionManager.setup_mpc(session)
 
     x = torch.tensor([[1.24, 4.51, 6.87], [7.87, 1301, 541]])

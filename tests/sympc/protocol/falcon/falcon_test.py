@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 import torch
 
+from sympc.config import Config
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -51,10 +52,12 @@ def test_mul_private(get_clients):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-def test_mul_private_matrix(get_clients):
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_mul_private_matrix(get_clients, base, precision):
     parties = get_clients(3)
     protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties)
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor(
