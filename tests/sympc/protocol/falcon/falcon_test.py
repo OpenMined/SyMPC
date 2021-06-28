@@ -3,6 +3,8 @@ import numpy as np
 import pytest
 import torch
 
+from sympc.config import Config
+from sympc.protocol import ABY3
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -32,6 +34,22 @@ def test_invalid_security_type():
         Falcon(security_type="covert")
 
 
+def test_eq():
+    falcon = Falcon()
+    aby1 = ABY3(security_type="malicious")
+    aby2 = ABY3()
+    other2 = falcon
+
+    # Test equal protocol:
+    assert falcon == other2
+
+    # Test different protocol security type
+    assert falcon != aby1
+
+    # Test different protocol objects
+    assert falcon != aby2
+
+
 def test_mul_private(get_clients):
     parties = get_clients(3)
     protocol = Falcon("semi-honest")
@@ -51,10 +69,12 @@ def test_mul_private(get_clients):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-def test_mul_private_matrix(get_clients):
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_mul_private_matrix(get_clients, base, precision):
     parties = get_clients(3)
     protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties)
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor(

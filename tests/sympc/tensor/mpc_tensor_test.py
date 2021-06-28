@@ -642,3 +642,8 @@ def test_ops_different_share_class(get_clients) -> None:
     x_rst = MPCTensor(secret=x, session=session2)
     with pytest.raises(TypeError):
         x_share + x_rst
+
+
+def test_get_shape_none() -> None:
+    with pytest.raises(ValueError):
+        MPCTensor._get_shape("mul", None, None)

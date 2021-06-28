@@ -249,10 +249,10 @@ class FSS(metaclass=Protocol):
         Returns:
             bool: True if equal False if not.
         """
-        if not self.security_type == other.security_type:
+        if self.security_type != other.security_type:
             return False
 
-        if not type(self) == type(other):
+        if type(self) != type(other):
             return False
 
         return True

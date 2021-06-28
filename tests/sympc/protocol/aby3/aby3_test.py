@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 import torch
 
+from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.protocol import ABY3
 from sympc.protocol import Falcon
@@ -27,6 +28,22 @@ def test_invalid_security_type():
         ABY3(security_type="covert")
 
 
+def test_eq():
+    aby = ABY3()
+    falcon1 = Falcon(security_type="malicious")
+    falcon2 = Falcon()
+    other2 = aby
+
+    # Test equal protocol:
+    assert aby == other2
+
+    # Test different protocol security type
+    assert aby != falcon1
+
+    # Test different protocol objects
+    assert aby != falcon2
+
+
 def test_invalid_parties_trunc(get_clients) -> None:
     parties = get_clients(2)
     session = Session(parties=parties)
@@ -35,18 +52,19 @@ def test_invalid_parties_trunc(get_clients) -> None:
         ABY3.truncate(None, session)
 
 
-def test_trunc1(get_clients) -> None:
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_truncation_algorithm1(get_clients, base, precision) -> None:
     parties = get_clients(3)
-    falcon = Falcon()
-    session = Session(parties=parties, protocol=falcon)
+    falcon = Falcon("semi-honest")
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(parties=parties, protocol=falcon, config=config)
     SessionManager.setup_mpc(session)
 
     x = torch.tensor([[1.24, 4.51, 6.87], [7.87, 1301, 541]])
 
     x_mpc = MPCTensor(secret=x, session=session)
 
-    x_trunc = ABY3.trunc1(x_mpc.share_ptrs, x_mpc.shape, session)
-    result = MPCTensor(shares=x_trunc, session=session)
+    result = ABY3.truncate(x_mpc, session)
 
     fp_encoder = FixedPointEncoder(
         base=session.config.encoder_base, precision=session.config.encoder_precision
@@ -55,3 +73,22 @@ def test_trunc1(get_clients) -> None:
     expected_res = fp_encoder.decode(expected_res)
 
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
+
+
+def test_invalid_parties(get_clients) -> None:
+    parties = get_clients(2)
+    session = Session(parties=parties)
+    SessionManager.setup_mpc(session)
+    x = MPCTensor(secret=1, session=session)
+    with pytest.raises(ValueError):
+        ABY3.truncate(x, session)
+
+
+def test_invalid_mpc_pointer(get_clients) -> None:
+    parties = get_clients(3)
+    session = Session(parties=parties)
+    SessionManager.setup_mpc(session)
+    x = MPCTensor(secret=1, session=session)
+    # passing sharetensor pointer
+    with pytest.raises(ValueError):
+        ABY3.truncate(x, session)

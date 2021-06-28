@@ -12,6 +12,7 @@ from typing import Tuple
 # third party
 import torch
 
+from sympc.protocol import ABY3
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.session import get_session
@@ -66,10 +67,10 @@ class Falcon(metaclass=Protocol):
         Returns:
             bool: True if equal False if not.
         """
-        if not self.security_type == other.security_type:
+        if self.security_type != other.security_type:
             return False
 
-        if not type(self) == type(other):
+        if type(self) != type(other):
             return False
 
         return True
@@ -90,8 +91,6 @@ class Falcon(metaclass=Protocol):
             ValueError: Raised when number of parties are not three.
             ValueError : Raised when invalid security_type is provided.
         """
-        from sympc.protocol import ABY3
-
         if len(session.parties) != 3:
             raise ValueError("Falcon requires 3 parties")
 
@@ -136,11 +135,7 @@ class Falcon(metaclass=Protocol):
             Falcon.compute_zvalue_and_add_mask, session.parties
         )(args)
 
-        z_shares = [share.get() for share in z_shares_ptrs]
-
-        # Convert 3-3 shares to 2-3 shares by resharing
-        reshared_shares = ReplicatedSharedTensor.distribute_shares(z_shares, x.session)
-        result = MPCTensor(shares=reshared_shares, session=x.session)
+        result = MPCTensor(shares=z_shares_ptrs, session=x.session)
         result.shape = MPCTensor._get_shape("mul", x.shape, y.shape)  # for prrs
 
         return result
