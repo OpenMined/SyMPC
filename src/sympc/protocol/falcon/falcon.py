@@ -11,6 +11,7 @@ from typing import List
 # third party
 import torch
 
+from sympc.protocol import ABY3
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.session import get_session
@@ -63,10 +64,10 @@ class Falcon(metaclass=Protocol):
         Returns:
             bool: True if equal False if not.
         """
-        if not self.security_type == other.security_type:
+        if self.security_type != other.security_type:
             return False
 
-        if not type(self) == type(other):
+        if type(self) != type(other):
             return False
 
         return True
@@ -92,8 +93,6 @@ class Falcon(metaclass=Protocol):
             NotImplementedError: Raised when implementation not present
 
         """
-        from sympc.protocol import ABY3
-
         if len(session.parties) != 3:
             raise ValueError("Falcon requires 3 parties")
 

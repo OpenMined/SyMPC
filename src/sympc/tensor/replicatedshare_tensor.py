@@ -351,7 +351,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: If y is not an integer or LongTensor.
         """
         if not isinstance(y, (int, torch.LongTensor)):
-            raise ValueError("Div works (for the moment) only with integers!")
+            raise ValueError(
+                "Div works (for the moment) only with integers and LongTensor!"
+            )
 
         res = ReplicatedSharedTensor(session_uuid=self.session_uuid, config=self.config)
         res.shares = [share // y for share in self.shares]

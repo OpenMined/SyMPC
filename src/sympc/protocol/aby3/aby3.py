@@ -51,10 +51,10 @@ class ABY3(metaclass=Protocol):
         Returns:
             bool: True if equal False if not.
         """
-        if not self.security_type == other.security_type:
+        if self.security_type != other.security_type:
             return False
 
-        if not type(self) == type(other):
+        if type(self) != type(other):
             return False
 
         return True
@@ -124,7 +124,7 @@ class ABY3(metaclass=Protocol):
 
         TODO : The trunc2 algorithm is erroneous, to be optimized.
         """
-        r, rPrime = ABY3.getTruncationPair(x, session)
+        r, rPrime = ABY3.get_truncation_pair(x, session)
         scale = session.config.encoder_base ** session.config.encoder_precision
         # op = getattr(operator,"sub")
         x_rp = x - rPrime
@@ -137,7 +137,7 @@ class ABY3(metaclass=Protocol):
         return result
 
     @staticmethod
-    def getTruncationPair(x: MPCTensor, session: Session) -> Tuple[MPCTensor]:
+    def get_truncation_pair(x: MPCTensor, session: Session) -> Tuple[MPCTensor]:
         """Generates truncation pair for the given MPCTensor.
 
         Args:
