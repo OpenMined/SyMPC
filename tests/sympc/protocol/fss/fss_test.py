@@ -3,6 +3,7 @@ import pytest
 import torch
 
 from sympc.protocol import FSS
+from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
@@ -27,3 +28,19 @@ def test_share_tensor(get_clients) -> None:
 def test_invalid_security_type():
     with pytest.raises(ValueError):
         FSS(security_type="malicious")
+
+
+def test_eq():
+    fss = FSS()
+    falcon1 = Falcon(security_type="malicious")
+    falcon2 = Falcon()
+    other2 = fss
+
+    # Test equal protocol:
+    assert fss == other2
+
+    # Test different protocol security type
+    assert fss != falcon1
+
+    # Test different protocol objects
+    assert fss != falcon2

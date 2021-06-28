@@ -4,6 +4,7 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.protocol import ABY3
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -31,6 +32,22 @@ def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
 def test_invalid_security_type():
     with pytest.raises(ValueError):
         Falcon(security_type="covert")
+
+
+def test_eq():
+    falcon = Falcon()
+    aby1 = ABY3(security_type="malicious")
+    aby2 = ABY3()
+    other2 = falcon
+
+    # Test equal protocol:
+    assert falcon == other2
+
+    # Test different protocol security type
+    assert falcon != aby1
+
+    # Test different protocol objects
+    assert falcon != aby2
 
 
 def test_mul_private(get_clients):

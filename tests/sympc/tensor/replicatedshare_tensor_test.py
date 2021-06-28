@@ -344,3 +344,31 @@ def test_ops_public_mul_integer_parties(get_clients, parties, security):
     result = MPCTensor(shares=shares, session=session)
 
     assert (result.reconstruct() == (secret * value)).all()
+
+
+def test_truediv_exception() -> None:
+    rst = ReplicatedSharedTensor(shares=[1])
+    with pytest.raises(ValueError):
+        rst / 1.55
+
+
+def test_truediv() -> None:
+    secret = 10.25
+    rst = ReplicatedSharedTensor(shares=[secret])
+    rst = rst / 2
+    expected_res = rst.fp_encoder.encode(secret) // 2
+    assert rst.shares[0] == expected_res
+
+
+def test_rshift_exception() -> None:
+    rst = ReplicatedSharedTensor(shares=[1])
+    with pytest.raises(ValueError):
+        rst >> 1.55
+
+
+def test_rshift() -> None:
+    secret = 10.25
+    rst = ReplicatedSharedTensor(shares=[secret])
+    rst = rst >> 2
+    expected_res = rst.fp_encoder.encode(secret) >> 2
+    assert rst.shares[0] == expected_res

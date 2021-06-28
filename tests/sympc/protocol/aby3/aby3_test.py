@@ -28,6 +28,22 @@ def test_invalid_security_type():
         ABY3(security_type="covert")
 
 
+def test_eq():
+    aby = ABY3()
+    falcon1 = Falcon(security_type="malicious")
+    falcon2 = Falcon()
+    other2 = aby
+
+    # Test equal protocol:
+    assert aby == other2
+
+    # Test different protocol security type
+    assert aby != falcon1
+
+    # Test different protocol objects
+    assert aby != falcon2
+
+
 def test_invalid_parties_trunc(get_clients) -> None:
     parties = get_clients(2)
     session = Session(parties=parties)
