@@ -562,19 +562,21 @@ class GradReshape(GradFunc):
     """The Reshape gradient function."""
 
     @staticmethod
-    def forward(ctx: Dict[str, Any], x: MPCTensor, shape: Tuple[int]) -> MPCTensor:
+    def forward(
+        ctx: Dict[str, Any], x: MPCTensor, *shape: Union[List[int], Tuple[int]]
+    ) -> MPCTensor:
         """Perform the feedforward and compute the result for the reshape operation.
 
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
             x (MPCTensor): the MPCTensor to be reshaped
-            shape (Tuple[int]): the new shape
+            shape (Union[List[int], Tuple[int]]): the new shape
 
         Returns:
             res (MPCTensor): The result of the reshape operation
         """
         ctx["x_shape"] = x.shape
-        return x.reshape(shape)
+        return x.reshape(*shape)
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
@@ -636,7 +638,8 @@ class GradMaxPool2D(GradFunc):
         stride: Optional[Union[int, Tuple[int, int]]] = None,
         padding: Union[int, Tuple[int, int]] = 0,
         dilation: Union[int, Tuple[int, int]] = 1,
-    ) -> MPCTensor:
+        return_indices: bool = False,
+    ) -> Union[MPCTensor, Tuple[MPCTensor, MPCTensor]]:
         """Perform the feedforward and compute the result for the MaxPool2D operation.
 
         Args:
@@ -650,9 +653,12 @@ class GradMaxPool2D(GradFunc):
                 in case it is passed as an integer then that value is used for height and width
             dilation (Union[int, Tuple[int, int]]): the dilation size
                 in case it is passed as an integer then that value is used for height and width
+            return_indices (bool): to return the indices of the max values
 
         Returns:
-            res (MPCTensor): The result of the reshape operation
+            result (Union[MPCTensor, Tuple[MPCTensor, MPCTensor]) Only MaxPool2d result if
+                "return_indices" is False or a tuple containing the result and the indices if
+                "return_indices" is True
 
         Raises:
             ValueError: if dilation is specified with a different value that 1
@@ -679,7 +685,10 @@ class GradMaxPool2D(GradFunc):
 
         ctx["indices"] = indices
 
-        return res
+        if not return_indices:
+            return res
+
+        return res, indices
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:

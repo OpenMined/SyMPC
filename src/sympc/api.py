@@ -26,6 +26,7 @@ from . import store  # noqa: 401
 from . import tensor  # noqa: 401
 from . import utils  # noqa: 401
 
+from . import grads  # noqa: 401 isort: skip
 from . import module  # noqa: 401 isort: skip
 
 allowed_external_modules = [
@@ -48,7 +49,7 @@ allowed_external_modules = [
     ("sympc.protocol.spdz", protocol.spdz),
     ("sympc.protocol.spdz.spdz", protocol.spdz.spdz),
     ("sympc.utils", utils),
-    ("sympc.tensor.grads", tensor.grads),
+    ("sympc.grads", grads),
 ]
 
 allowed_external_classes = [
