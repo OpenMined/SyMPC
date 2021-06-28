@@ -53,7 +53,7 @@ def test_invalid_parties_trunc(get_clients) -> None:
 
 
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
-def test_trunc1(get_clients, base, precision) -> None:
+def test_truncation_algorithm1(get_clients, base, precision) -> None:
     parties = get_clients(3)
     falcon = Falcon("semi-honest")
     config = Config(encoder_base=base, encoder_precision=precision)

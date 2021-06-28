@@ -60,10 +60,10 @@ class ABY3(metaclass=Protocol):
         return True
 
     @staticmethod
-    def trunc1(
+    def truncation_algorithm1(
         ptr_list: List[torch.Tensor], shape: torch.Size, session: Session
     ) -> List[ReplicatedSharedTensor]:
-        """Performs the ABY3 trunc1 algorithm.
+        """Performs the ABY3 truncation algorithm1.
 
         Args:
             ptr_list (List[torch.Tensor]): Tensors to truncate
@@ -104,7 +104,7 @@ class ABY3(metaclass=Protocol):
         TODO :Switch to trunc2 algorithm  as it is communication efficient.
         """
         if session.nr_parties != 3:
-            raise ValueError("Share trunc1 algorithm works only for 3 parites.")
+            raise ValueError("Share truncation algorithm 1 works only for 3 parites.")
 
         # RSPointer - public ops, Tensor Pointer - Private ops
         ptr_list = []
@@ -117,13 +117,13 @@ class ABY3(metaclass=Protocol):
         else:
             raise ValueError("{ptr_name} not supported.")
 
-        share_ptrs = ABY3.trunc1(ptr_list, x.shape, session)
+        share_ptrs = ABY3.truncation_algorithm1(ptr_list, x.shape, session)
         result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
 
         return result
 
     @staticmethod
-    def trunc2(x: MPCTensor, session: Session) -> MPCTensor:
+    def truncation_algorithm2(x: MPCTensor, session: Session) -> MPCTensor:
         """Truncates the MPCTensor by scale factor using trunc2 algorithm.
 
         Args:
@@ -133,7 +133,7 @@ class ABY3(metaclass=Protocol):
         Returns:
             MPCTensor: truncated MPCTensor.
 
-        TODO : The trunc2 algorithm is erroneous, to be optimized.
+        TODO : The truncation algorithm 2 is erroneous, to be optimized.
         """
         r, rPrime = ABY3.get_truncation_pair(x, session)
         scale = session.config.encoder_base ** session.config.encoder_precision
@@ -166,7 +166,7 @@ class ABY3(metaclass=Protocol):
             rPrime.append(rst)
             r.append(rst)
 
-        r = ABY3.trunc1(r, x.shape, session)
+        r = ABY3.truncation_algorithm1(r, x.shape, session)
         r_mpc = MPCTensor(shares=r, session=session, shape=x.shape)
         rPrime_mpc = MPCTensor(shares=rPrime, session=session, shape=x.shape)
         return r_mpc, rPrime_mpc
