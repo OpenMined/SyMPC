@@ -62,7 +62,7 @@ class ABY3(metaclass=Protocol):
     @staticmethod
     def trunc1(
         ptr_list: List[torch.Tensor], shape: torch.Size, session: Session
-    ) -> List["ReplicatedSharedTensor"]:
+    ) -> List[ReplicatedSharedTensor]:
         """Performs the ABY3 trunc1 algorithm.
 
         Args:
@@ -79,7 +79,7 @@ class ABY3(metaclass=Protocol):
         base = session.config.encoder_base
         precision = session.config.encoder_precision
         scale = base ** precision
-        x1, x2, x3 = [share.get_copy() for share in ptr_list]
+        x1, x2, x3 = ptr_list
         x1_trunc = x1 >> precision if base == 2 else x1 // scale
         x_trunc = (x2 + x3) >> precision if base == 2 else (x2 + x3) // scale
         shares = [x1_trunc, x_trunc - rand_value, rand_value]
@@ -99,13 +99,25 @@ class ABY3(metaclass=Protocol):
 
         Raises:
             ValueError : parties involved in the computation is not equal to three.
+            ValueError : Invalid MPCTensor share pointers.
 
         TODO :Switch to trunc2 algorithm  as it is communication efficient.
         """
         if session.nr_parties != 3:
             raise ValueError("Share trunc1 algorithm works only for 3 parites.")
 
-        share_ptrs = ABY3.trunc1(x.share_ptrs, x.shape, session)
+        # RSPointer - public ops, Tensor Pointer - Private ops
+        ptr_list = []
+        ptr_name = x.share_ptrs[0].__name__
+        if ptr_name == "ReplicatedSharedTensorPointer":
+            ptr_list.append(x.share_ptrs[0].get_shares()[0].get_copy())
+            ptr_list.extend(x.share_ptrs[1].get_copy().shares)
+        elif ptr_name == "TensorPointer":
+            ptr_list = [share.get_copy() for share in x.share_ptrs]
+        else:
+            raise ValueError("{ptr_name} not supported.")
+
+        share_ptrs = ABY3.trunc1(ptr_list, x.shape, session)
         result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
 
         return result
