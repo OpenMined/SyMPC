@@ -61,12 +61,12 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def trunc1(
-        ptr_list: List["ReplicatedSharedTensor"], shape: torch.Size, session: Session
+        ptr_list: List[torch.Tensor], shape: torch.Size, session: Session
     ) -> List["ReplicatedSharedTensor"]:
         """Performs the ABY3 trunc1 algorithm.
 
         Args:
-            ptr_list (List[ReplicatedSharedTensor]): Tensors to truncate
+            ptr_list (List[torch.Tensor]): Tensors to truncate
             shape(torch.Size) : shape of tensor values
             session(Session) : session the tensor belong to
 
@@ -79,8 +79,7 @@ class ABY3(metaclass=Protocol):
         base = session.config.encoder_base
         precision = session.config.encoder_precision
         scale = base ** precision
-        x1 = ptr_list[0].get_copy().shares[0]
-        x2, x3 = ptr_list[1].get_copy().shares
+        x1, x2, x3 = [share.get_copy() for share in ptr_list]
         x1_trunc = x1 >> precision if base == 2 else x1 // scale
         x_trunc = (x2 + x3) >> precision if base == 2 else (x2 + x3) // scale
         shares = [x1_trunc, x_trunc - rand_value, rand_value]

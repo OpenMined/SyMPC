@@ -111,13 +111,7 @@ class Falcon(metaclass=Protocol):
                 Falcon.compute_zvalue_and_add_mask, session.parties
             )(args)
 
-            z_shares = [share.get() for share in z_shares_ptrs]
-
-            # Convert 3-3 shares to 2-3 shares by resharing
-            reshared_shares = ReplicatedSharedTensor.distribute_shares(
-                z_shares, x.session
-            )
-            result = MPCTensor(shares=reshared_shares, session=x.session)
+            result = MPCTensor(shares=z_shares_ptrs, session=x.session)
             result.shape = MPCTensor._get_shape("mul", x.shape, y.shape)  # for prrs
             result = ABY3.truncate(result, session)
 

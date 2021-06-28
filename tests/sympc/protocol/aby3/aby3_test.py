@@ -48,7 +48,9 @@ def test_trunc1(get_clients, base, precision) -> None:
 
     x_mpc = MPCTensor(secret=x, session=session)
 
-    x_trunc = ABY3.trunc1(x_mpc.share_ptrs, x_mpc.shape, session)
+    ptr_list = [x_mpc.share_ptrs[0].get_shares()[0]]
+    ptr_list.extend(x_mpc.share_ptrs[1].get_shares())
+    x_trunc = ABY3.trunc1(ptr_list, x_mpc.shape, session)
     result = MPCTensor(shares=x_trunc, session=session)
 
     fp_encoder = FixedPointEncoder(
