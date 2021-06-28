@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1624834933338,
+  "lastUpdate": 1624855296179,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1178,6 +1178,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.1613481335659656",
             "extra": "mean: 8.167654356000003 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "theo.leffyr@gmail.com",
+            "name": "Théo Ryffel",
+            "username": "LaRiffle"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e6f9585fe20e35fb76a172545bf921550fc7d3cb",
+          "message": "Fix the crypto provider generation for FSS (#262)",
+          "timestamp": "2021-06-28T05:39:24+01:00",
+          "tree_id": "82c0f59602458988aeac07154482e09e6ba663fe",
+          "url": "https://github.com/OpenMined/SyMPC/commit/e6f9585fe20e35fb76a172545bf921550fc7d3cb"
+        },
+        "date": 1624855295599,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.5112160468385959,
+            "unit": "iter/sec",
+            "range": "stddev: 0.016802497062601986",
+            "extra": "mean: 1.9561201299999993 sec\nrounds: 5"
           }
         ]
       }
