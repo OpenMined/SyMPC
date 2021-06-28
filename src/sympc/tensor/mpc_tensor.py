@@ -876,20 +876,20 @@ class MPCTensor(metaclass=SyMPCTensor):
             The attribute specific for this instance
         """
         # TODO: Fix this
-        from sympc.tensor.grads import GRAD_FUNCS
+        from sympc.grads import GRAD_FUNCS
         from sympc.tensor.static import STATIC_FUNCS
-
-        if attr_name in STATIC_FUNCS.keys():
-            return functools.partial(STATIC_FUNCS[attr_name], self)
 
         # Take the attribute and check if we need to assign a gradient function
         # Implementation similar to CrypTen
         grad_fn = GRAD_FUNCS.get(attr_name, None)
         session = object.__getattribute__(self, "session")
         if grad_fn and session.autograd_active:
-            from sympc.tensor.grads import forward
+            from sympc.grads import forward
 
             return functools.partial(forward, self, grad_fn)
+
+        if attr_name in STATIC_FUNCS.keys():
+            return functools.partial(STATIC_FUNCS[attr_name], self)
 
         approx_func = APPROXIMATIONS.get(attr_name, None)
         if approx_func is not None:

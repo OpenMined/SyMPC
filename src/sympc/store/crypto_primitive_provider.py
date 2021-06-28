@@ -54,6 +54,9 @@ class CryptoPrimitiveProvider:
         for remote_session_uuid, primitive in zip(
             session.rank_to_uuid.values(), primitives
         ):
+            if not isinstance(primitive, (list, tuple)):
+                primitive = (primitive,)
+
             for share in itertools.chain(*primitive):
                 share.session_uuid = remote_session_uuid
 
