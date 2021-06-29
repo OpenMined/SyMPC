@@ -105,16 +105,19 @@ def _get_triples(
 
         a = MPCTensor(shares=a_ptrs, session=session, shape=a_shape)
         b = MPCTensor(shares=b_ptrs, session=session, shape=b_shape)
-
-        c = Falcon.mul_semi_honest(a, b, session)
+        c = Falcon.mul_semi_honest(a, b, session, op_str, kwargs, truncate=False)
 
         a_shares = [share.get_copy() for share in a.share_ptrs]
         b_shares = [share.get_copy() for share in b.share_ptrs]
         c_shares = [share.get_copy() for share in c.share_ptrs]
 
+        # for x,y in zip(a.share_ptrs,b.share_ptrs):
+        #    print("a_shares ",x.get_copy().shares)
+        #    print("b_shares ",y.get_copy().shares)
         a_val = a.reconstruct(decode=False)
         b_val = b.reconstruct(decode=False)
         c_val = c.reconstruct(decode=False)
+
         if c_val != (a_val * b_val):
             raise ValueError("Computation aborted:Invalid Triples")
 

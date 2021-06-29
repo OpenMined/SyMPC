@@ -4,6 +4,7 @@ Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
+import operator
 from typing import Any
 from typing import Dict
 from typing import List
@@ -76,13 +77,21 @@ class Falcon(metaclass=Protocol):
         return True
 
     @staticmethod
-    def mul_master(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
+    def mul_master(
+        x: MPCTensor,
+        y: MPCTensor,
+        session: Session,
+        op_str: str,
+        kwargs_: Dict[Any, Any],
+    ) -> MPCTensor:
         """Master method for multiplication.
 
         Args:
             x (MPCTensor): Secret
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
+            op_str (str): Operation string.
+            kwargs_ (dict): Kwargs for some operations like conv2d
 
         Returns:
             MPCTensor: Result of the operation.
@@ -97,17 +106,23 @@ class Falcon(metaclass=Protocol):
         result = None
 
         if session.protocol.security_type == "semi-honest":
-            result = Falcon.mul_semi_honest(x, y, session)
+            result = Falcon.mul_semi_honest(x, y, session, op_str, kwargs_)
         elif session.protocol.security_type == "malicious":
-            result = Falcon.mul_malicious(x, y, session)
+            result = Falcon.mul_malicious(x, y, session, op_str, kwargs_)
         else:
             raise ValueError("Invalid security_type for Falcon multiplication")
 
-        result = ABY3.truncate(result, session)
         return result
 
     @staticmethod
-    def mul_semi_honest(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
+    def mul_semi_honest(
+        x: MPCTensor,
+        y: MPCTensor,
+        session: Session,
+        op_str: str,
+        kwargs_: Dict[Any, Any],
+        truncate: bool = True,
+    ) -> MPCTensor:
         """Falcon semihonest multiplication.
 
         Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
@@ -118,6 +133,9 @@ class Falcon(metaclass=Protocol):
             x (MPCTensor): Secret
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
+            op_str (str): Operation string.
+            kwargs_ (dict): Kwargs for some operations like conv2d
+            truncate (bool) : Applies truncation on the result if set.
 
         Returns:
             MPCTensor: Result of the operation.
@@ -129,20 +147,34 @@ class Falcon(metaclass=Protocol):
                 [
                     x.share_ptrs[index],
                     y.share_ptrs[index],
+                    op_str,
                 ]
             )
         z_shares_ptrs = parallel_execution(
             Falcon.compute_zvalue_and_add_mask, session.parties
-        )(args)
+        )(args, kwargs_)
 
         result = MPCTensor(shares=z_shares_ptrs, session=x.session)
-        result.shape = MPCTensor._get_shape("mul", x.shape, y.shape)  # for prrs
+        result.shape = MPCTensor._get_shape(op_str, x.shape, y.shape)  # for prrs
+        if truncate:
+            result = ABY3.truncate(result, session)
+        else:
+            z_shares = [share.get() for share in z_shares_ptrs]
 
+            # Convert 3-3 shares to 2-3 shares by resharing
+            reshared_shares = ReplicatedSharedTensor.distribute_shares(
+                z_shares, x.session
+            )
+            result = MPCTensor(shares=reshared_shares, session=x.session)
         return result
 
     @staticmethod
     def triple_verification(
-        z_sh: ReplicatedSharedTensor, eps: torch.Tensor, delta: torch.Tensor
+        z_sh: ReplicatedSharedTensor,
+        eps: torch.Tensor,
+        delta: torch.Tensor,
+        op_str: str,
+        **kwargs,
     ) -> ReplicatedSharedTensor:
         """Performs Beaver's triple verification check.
 
@@ -150,6 +182,8 @@ class Falcon(metaclass=Protocol):
             z_sh (ReplicatedSharedTensor) : share of multiplied value(x*y).
             eps (torch.Tensor) :masked value of x
             delta (torch.Tensor): masked value of y
+            op_str (str): Operator string.
+            kwargs: Keywords arguments for the operator.
 
         Returns:
             ReplicatedSharedTensor : Result of the verification.
@@ -160,31 +194,40 @@ class Falcon(metaclass=Protocol):
         eps_shape = tuple(eps.shape)
         delta_shape = tuple(delta.shape)
 
-        op_str = "mul"
         primitives = crypto_store.get_primitives_from_store(
             f"beaver_{op_str}", eps_shape, delta_shape
         )
 
         a_share, b_share, c_share = primitives
 
-        eps_b = b_share * eps
-        delta_a = a_share * delta
-        eps_delta = eps * delta
+        if op_str in ["conv2d", "conv_transpose2d"]:
+            op = getattr(torch, op_str)
+        else:
+            op = getattr(operator, op_str)
 
-        rst_share = z_sh - c_share - delta_a - eps_b
+        eps_b = op(b_share, eps, **kwargs)
+        delta_a = op(a_share, delta, **kwargs)
+        eps_delta = op(eps, delta, **kwargs)
+
+        rst_share = c_share + delta_a + eps_b
+        # print(rst_share.shares,"rank",session.rank)
         rst_share = rst_share + eps_delta
+        # print(rst_share.shares,"after",session.rank)
 
+        # print(rst_share.shares,session.rank)
+        # print(z_sh.shares,session.rank)
         return rst_share
 
     @staticmethod
     def falcon_mask(
-        x_sh: ReplicatedSharedTensor, y_sh: ReplicatedSharedTensor
+        x_sh: ReplicatedSharedTensor, y_sh: ReplicatedSharedTensor, op_str: str
     ) -> Tuple[ReplicatedSharedTensor, ReplicatedSharedTensor]:
         """Falcon mask.
 
         Args:
             x_sh (ReplicatedSharedTensor): X share
             y_sh (ReplicatedSharedTensor) : Y share
+            op_str (str): Operator
 
         Returns:
             Tuple[ReplicatedSharedTensor,ReplicatedSharedTensor] : Masked values.
@@ -193,7 +236,6 @@ class Falcon(metaclass=Protocol):
 
         crypto_store = session.crypto_store
 
-        op_str = "mul"
         primitives = crypto_store.get_primitives_from_store(
             f"beaver_{op_str}", x_sh.shape, y_sh.shape, remove=False
         )
@@ -203,13 +245,21 @@ class Falcon(metaclass=Protocol):
         return x_sh - a_sh, y_sh - b_sh
 
     @staticmethod
-    def mul_malicious(x: MPCTensor, y: MPCTensor, session: Session) -> MPCTensor:
+    def mul_malicious(
+        x: MPCTensor,
+        y: MPCTensor,
+        session: Session,
+        op_str: str,
+        kwargs_: Dict[Any, Any],
+    ) -> MPCTensor:
         """Falcon malicious multiplication.
 
         Args:
             x (MPCTensor): Secret
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
+            op_str (str): Operation string.
+            kwargs_ (dict): Kwargs for some operations like conv2d
 
         Returns:
             MPCTensor: Result of the operation.
@@ -220,10 +270,10 @@ class Falcon(metaclass=Protocol):
         shape_x = tuple(x.shape)
         shape_y = tuple(y.shape)
 
-        result = Falcon.mul_semi_honest(x, y, session)
-        print(result.reconstruct())
-        args = [list(sh) for sh in zip(x.share_ptrs, y.share_ptrs)]
-        op_str = "mul"
+        result = Falcon.mul_semi_honest(x, y, session, op_str, kwargs_)
+        # print("z_sh",result.reconstruct(get_shares=True))
+        # print(result.reconstruct(decode=False))
+        args = [list(sh) + [op_str] for sh in zip(x.share_ptrs, y.share_ptrs)]
         try:
             mask = parallel_execution(Falcon.falcon_mask, session.parties)(args)
         except EmptyPrimitiveStore:
@@ -235,7 +285,7 @@ class Falcon(metaclass=Protocol):
                     "a_shape": shape_x,
                     "b_shape": shape_y,
                     "nr_parties": session.nr_parties,
-                    # **kwargs_,
+                    **kwargs_,
                 },
                 p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
             )
@@ -250,15 +300,16 @@ class Falcon(metaclass=Protocol):
         delta_plaintext = delta.reconstruct(decode=False)
 
         args = [
-            list(sh) + [eps_plaintext, delta_plaintext] for sh in zip(result.share_ptrs)
+            list(sh) + [eps_plaintext, delta_plaintext, op_str]
+            for sh in zip(result.share_ptrs)
         ]
 
         triple_shares = parallel_execution(Falcon.triple_verification, session.parties)(
-            args
+            args, kwargs_
         )
 
         triple = MPCTensor(shares=triple_shares, session=x.session)
-
+        # print(triple.reconstruct())
         if triple.reconstruct(decode=False) == 0:
             return result
         else:
@@ -268,40 +319,51 @@ class Falcon(metaclass=Protocol):
     def compute_zvalue_and_add_mask(
         x: ReplicatedSharedTensor,
         y: ReplicatedSharedTensor,
+        op_str: str,
+        **kwargs,
     ) -> torch.Tensor:
         """Operation to compute local z share and add mask to it.
 
         Args:
             x (ReplicatedSharedTensor): Secret.
             y (ReplicatedSharedTensor): Another secret.
+            op_str (str): Operation string.
+            kwargs (dict): Kwargs for some operations like conv2d
 
         Returns:
             share (Torch.tensor): The masked local z share.
         """
         # Parties calculate z value locally
         session = get_session(x.session_uuid)
-        z_value = x * y
+        z_value = Falcon.multiplication_protocol(x, y, op_str, **kwargs)
         przs_mask = session.przs_generate_random_share(shape=x.shape)
         # Add PRZS Mask to z  value
-        share = z_value.get_shares()[0] + przs_mask.get_shares()[0]
+        share = z_value + przs_mask.get_shares()[0]
         return share
 
     @staticmethod
     def multiplication_protocol(
-        x: ReplicatedSharedTensor, y: ReplicatedSharedTensor
+        x: ReplicatedSharedTensor, y: ReplicatedSharedTensor, op_str: str, **kwargs
     ) -> ReplicatedSharedTensor:
         """Implementation of Falcon's multiplication with semi-honest security guarantee.
 
         Args:
             x (ReplicatedSharedTensor): Secret
             y (ReplicatedSharedTensor): Another secret
+            op_str (str): Operator string.
+            kwargs: Keywords arguments for the operator.
 
         Returns:
             shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
         """
+        if op_str in ["conv2d", "conv_transpose2d"]:
+            op = getattr(torch, op_str)
+        else:
+            op = getattr(operator, op_str)
+
         z_value = (
-            x.shares[0] * y.shares[0]
-            + x.shares[1] * y.shares[0]
-            + x.shares[0] * y.shares[1]
+            op(x.shares[0], y.shares[0], **kwargs)
+            + op(x.shares[1], y.shares[0], **kwargs)
+            + op(x.shares[0], y.shares[1], **kwargs)
         )
         return z_value
