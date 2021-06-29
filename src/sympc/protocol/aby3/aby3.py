@@ -148,7 +148,7 @@ class ABY3(metaclass=Protocol):
         return result
 
     @staticmethod
-    def get_truncation_pair(x: MPCTensor, session: Session) -> Tuple[MPCTensor]:
+    def _get_truncation_pair(x: MPCTensor, session: Session) -> Tuple[MPCTensor]:
         """Generates truncation pair for the given MPCTensor.
 
         Args:
