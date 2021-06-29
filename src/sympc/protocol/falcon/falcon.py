@@ -111,7 +111,6 @@ class Falcon(metaclass=Protocol):
                 Falcon.compute_zvalue_and_add_mask, session.parties
             )(args)
 
-            print(z_shares_ptrs)
             result = MPCTensor(shares=z_shares_ptrs, session=x.session)
             result.shape = MPCTensor._get_shape("mul", x.shape, y.shape)  # for prrs
             result = ABY3.truncate(result, session)
