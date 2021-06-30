@@ -78,9 +78,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.shares = []
 
         if shares is not None:
-            self.shares = [
-                self._encode(shares[i]).to(tensor_type) for i in range(len(shares))
-            ]
+            self.shares = [self._encode(share).to(tensor_type) for share in shares]
 
     def _encode(self, data: torch.Tensor) -> torch.Tensor:
         """Encode via FixedPointEncoder.
@@ -110,9 +108,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         shares = []
 
-        for share in self.shares:
-            shares.append(self.fp_encoder.decode(share.type(torch.LongTensor)))
-
+        shares = [
+            self.fp_encoder.decode(share.type(torch.LongTensor))
+            for share in self.shares
+        ]
         return shares
 
     def get_shares(self) -> List[torch.Tensor]:
@@ -675,7 +674,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             shares = []
 
             for share in _self.shares:
-                shares.append(getattr(share, property_name))
+                tensor = getattr(share, property_name)
+                shares.append(tensor)
 
             res = ReplicatedSharedTensor(
                 session_uuid=_self.session_uuid, config=_self.config
@@ -717,7 +717,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         ) -> Any:
             shares = []
             for share in _self.shares:
-                shares.append(getattr(share, method_name)(*args, **kwargs))
+                tensor = getattr(share, method_name)(*args, **kwargs)
+                shares.append(tensor)
 
             res = ReplicatedSharedTensor(
                 session_uuid=_self.session_uuid, config=_self.config

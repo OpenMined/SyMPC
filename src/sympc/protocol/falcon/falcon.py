@@ -98,7 +98,7 @@ class Falcon(metaclass=Protocol):
         result = None
 
         if session.protocol.security_type == "semi-honest":
-            args = [[x.share_ptrs[index], y.share_ptrs[index]] for index in range(3)]
+            args = list(zip(x.share_ptrs, y.share_ptrs))
 
             z_shares_ptrs = parallel_execution(
                 Falcon.compute_zvalue_and_add_mask, session.parties
