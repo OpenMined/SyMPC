@@ -288,7 +288,7 @@ def test_rst_resolve_pointer(get_clients) -> None:
 
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 @pytest.mark.parametrize("security", ["semi-honest"])  # malicious to be added
-def test_ops_public_mul_integer(get_clients, security, base, precision):
+def test_ops_public_mul(get_clients, security, base, precision):
 
     parties = get_clients(3)
     protocol = Falcon(security)
@@ -308,7 +308,7 @@ def test_ops_public_mul_integer(get_clients, security, base, precision):
 
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 @pytest.mark.parametrize("security", ["semi-honest"])  # malicous to be addded
-def test_ops_public_mul_integer_matrix(get_clients, security, base, precision):
+def test_ops_public_mul_matrix(get_clients, security, base, precision):
     parties = get_clients(3)
     protocol = Falcon(security)
     config = Config(encoder_base=base, encoder_precision=precision)
