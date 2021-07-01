@@ -111,14 +111,11 @@ def _get_triples(
         b_shares = [share.get_copy() for share in b.share_ptrs]
         c_shares = [share.get_copy() for share in c.share_ptrs]
 
-        # for x,y in zip(a.share_ptrs,b.share_ptrs):
-        #    print("a_shares ",x.get_copy().shares)
-        #    print("b_shares ",y.get_copy().shares)
         a_val = a.reconstruct(decode=False)
         b_val = b.reconstruct(decode=False)
         c_val = c.reconstruct(decode=False)
 
-        if c_val != (a_val * b_val):
+        if (c_val != (a_val * b_val)).all():
             raise ValueError("Computation aborted:Invalid Triples")
 
     # We are always creating an instance

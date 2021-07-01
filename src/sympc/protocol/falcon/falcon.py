@@ -201,27 +201,26 @@ class Falcon(metaclass=Protocol):
 
         a_share, b_share, c_share = primitives
 
-        if op_str in ["conv2d", "conv_transpose2d"]:
-            op = getattr(torch, op_str)
-        else:
-            op = getattr(operator, op_str)
+        op = getattr(operator, op_str)
 
-        # eps_b = op(b_share, eps, **kwargs)
-        # delta_a = op(a_share, delta, **kwargs)
         eps_delta = op(eps, delta, **kwargs)
         eps_b = b_share.clone()
         delta_a = a_share.clone()
+
+        # prevent re-encoding as the values are encoded.
+        # TODO: should be improved.
         for i in range(2):
             eps_b.shares[i] = eps_b.shares[i] * eps
             delta_a.shares[i] = delta_a.shares[i] * delta
 
         rst_share = c_share + delta_a + eps_b
+
         if session.rank == 0:
             rst_share.shares[0] = rst_share.shares[0] + eps_delta
+
         if session.rank == 2:
             rst_share.shares[1] = rst_share.shares[1] + eps_delta
 
-        print(rst_share.shares)
         return rst_share
 
     @staticmethod
@@ -277,8 +276,7 @@ class Falcon(metaclass=Protocol):
         shape_y = tuple(y.shape)
 
         result = Falcon.mul_semi_honest(x, y, session, op_str, kwargs_, truncate=False)
-        # print("z_sh",result.reconstruct(get_shares=True))
-        # print(result.reconstruct(decode=False))
+
         args = [list(sh) + [op_str] for sh in zip(x.share_ptrs, y.share_ptrs)]
         try:
             mask = parallel_execution(Falcon.falcon_mask, session.parties)(args)
@@ -315,8 +313,8 @@ class Falcon(metaclass=Protocol):
         )
 
         triple = MPCTensor(shares=triple_shares, session=x.session)
-        # print(triple.reconstruct())
-        if triple.reconstruct(decode=False) == result.reconstruct(decode=False):
+
+        if (triple.reconstruct(decode=False) == result.reconstruct(decode=False)).all():
             return result
         else:
             raise ValueError("Computation Aborted: Malicious behavior.")
@@ -362,10 +360,7 @@ class Falcon(metaclass=Protocol):
         Returns:
             shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
         """
-        if op_str in ["conv2d", "conv_transpose2d"]:
-            op = getattr(torch, op_str)
-        else:
-            op = getattr(operator, op_str)
+        op = getattr(operator, op_str)
 
         z_value = (
             op(x.shares[0], y.shares[0], **kwargs)

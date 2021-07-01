@@ -323,7 +323,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             if session.nr_parties == 3:
                 from sympc.protocol import Falcon
 
-                result = [Falcon.multiplication_protocol(self, y_tensor)]
+                result = [Falcon.multiplication_protocol(self, y_tensor, "mul")]
             else:
                 raise ValueError(
                     "Private mult between ReplicatedSharedTensors is allowed only for 3 parties"

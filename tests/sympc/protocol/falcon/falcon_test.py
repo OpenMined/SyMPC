@@ -50,10 +50,13 @@ def test_eq():
     assert falcon != aby2
 
 
-def test_mul_private(get_clients):
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_mul_private(get_clients, security, base, precision):
     parties = get_clients(3)
-    protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties)
+    protocol = Falcon(security)
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor(
@@ -69,10 +72,11 @@ def test_mul_private(get_clients):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
-def test_mul_private_matrix(get_clients, base, precision):
+def test_mul_private_matrix(get_clients, security, base, precision):
     parties = get_clients(3)
-    protocol = Falcon("semi-honest")
+    protocol = Falcon(security)
     config = Config(encoder_base=base, encoder_precision=precision)
     session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
