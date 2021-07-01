@@ -137,7 +137,6 @@ class ABY3(metaclass=Protocol):
         """
         r, rPrime = ABY3.get_truncation_pair(x, session)
         scale = session.config.encoder_base ** session.config.encoder_precision
-        # op = getattr(operator,"sub")
         x_rp = x - rPrime
         x_rp = x_rp.reconstruct(decode=False) // scale
         zero = torch.tensor([0])

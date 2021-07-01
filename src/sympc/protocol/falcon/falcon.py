@@ -178,7 +178,7 @@ class Falcon(metaclass=Protocol):
         **kwargs,
     ) -> ReplicatedSharedTensor:
         """Performs Beaver's triple verification check.
-
+        
         Args:
             z_sh (ReplicatedSharedTensor) : share of multiplied value(x*y).
             eps (torch.Tensor) :masked value of x
