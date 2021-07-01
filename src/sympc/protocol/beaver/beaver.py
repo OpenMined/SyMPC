@@ -111,9 +111,9 @@ def _get_triples(
         b_shares = [share.get_copy() for share in b.share_ptrs]
         c_shares = [share.get_copy() for share in c.share_ptrs]
 
-        a_val = a.reconstruct(decode=False)
-        b_val = b.reconstruct(decode=False)
-        c_val = c.reconstruct(decode=False)
+        a_val = sum([a_shares[0].shares[0]] + a_shares[1].shares)
+        b_val = sum([b_shares[0].shares[0]] + b_shares[1].shares)
+        c_val = sum([c_shares[0].shares[0]] + c_shares[1].shares)
 
         if (c_val != (a_val * b_val)).all():
             raise ValueError("Computation aborted:Invalid Triples")
