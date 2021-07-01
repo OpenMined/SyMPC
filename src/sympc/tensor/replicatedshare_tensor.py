@@ -338,16 +338,45 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return tensor
 
-    def truediv(self, y):
+    def truediv(self, y: Union[int, torch.Tensor]) -> "ReplicatedSharedTensor":
         """Apply the "div" operation between "self" and "y".
 
         Args:
-            y: self/y
+            y (Union[int , torch.Tensor]): Denominator.
+
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
 
         Raises:
-            NotImplementedError: Raised when implementation not present
+            ValueError: If y is not an integer or LongTensor.
         """
-        raise NotImplementedError
+        if not isinstance(y, (int, torch.LongTensor)):
+            raise ValueError(
+                "Div works (for the moment) only with integers and LongTensor!"
+            )
+
+        res = ReplicatedSharedTensor(session_uuid=self.session_uuid, config=self.config)
+        res.shares = [share // y for share in self.shares]
+        return res
+
+    def rshift(self, y: int) -> "ReplicatedSharedTensor":
+        """Apply the "rshift" operation to "self".
+
+        Args:
+            y (int): shift value
+
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
+
+        Raises:
+            ValueError: If y is not an integer.
+        """
+        if not isinstance(y, int):
+            raise ValueError("Right Shift works only with integers!")
+
+        res = ReplicatedSharedTensor(session_uuid=self.session_uuid, config=self.config)
+        res.shares = [share >> y for share in self.shares]
+        return res
 
     def matmul(self, y):
         """Apply the "matmul" operation between "self" and "y".
@@ -728,5 +757,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     __matmul__ = matmul
     __rmatmul__ = rmatmul
     __truediv__ = truediv
+    __floordiv__ = truediv
     __xor__ = xor
     __eq__ = eq
+    __rshift__ = rshift

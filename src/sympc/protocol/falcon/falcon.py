@@ -11,6 +11,7 @@ from typing import List
 # third party
 import torch
 
+from sympc.protocol import ABY3
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.session import get_session
@@ -63,10 +64,10 @@ class Falcon(metaclass=Protocol):
         Returns:
             bool: True if equal False if not.
         """
-        if not self.security_type == other.security_type:
+        if self.security_type != other.security_type:
             return False
 
-        if not type(self).__name__ == type(other).__name__:
+        if type(self) != type(other):
             return False
 
         return True
@@ -110,13 +111,9 @@ class Falcon(metaclass=Protocol):
                 Falcon.compute_zvalue_and_add_mask, session.parties
             )(args)
 
-            z_shares = [share.get() for share in z_shares_ptrs]
-
-            # Convert 3-3 shares to 2-3 shares by resharing
-            reshared_shares = ReplicatedSharedTensor.distribute_shares(
-                z_shares, x.session
-            )
-            result = MPCTensor(shares=reshared_shares, session=x.session)
+            result = MPCTensor(shares=z_shares_ptrs, session=x.session)
+            result.shape = MPCTensor._get_shape("mul", x.shape, y.shape)  # for prrs
+            result = ABY3.truncate(result, session)
 
         else:
             raise NotImplementedError(
