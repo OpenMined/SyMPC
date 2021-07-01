@@ -278,7 +278,7 @@ class Session:
             share = ReplicatedSharedTensor(
                 shares=[share1, share2],
                 session_uuid=self.uuid,
-                config=Config(encoder_precision=0),
+                # config=Config(encoder_precision=0),
             )
         return share
 
