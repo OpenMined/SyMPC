@@ -210,8 +210,8 @@ class Falcon(metaclass=Protocol):
         # prevent re-encoding as the values are encoded.
         # TODO: should be improved.
         for i in range(2):
-            eps_b.shares[i] = eps_b.shares[i] * eps
-            delta_a.shares[i] = delta_a.shares[i] * delta
+            eps_b.shares[i] = op(eps, eps_b.shares[i])
+            delta_a.shares[i] = op(delta_a.shares[i], delta)
 
         rst_share = c_share + delta_a + eps_b
 
@@ -340,7 +340,8 @@ class Falcon(metaclass=Protocol):
         # Parties calculate z value locally
         session = get_session(x.session_uuid)
         z_value = Falcon.multiplication_protocol(x, y, op_str, **kwargs)
-        przs_mask = session.przs_generate_random_share(shape=x.shape)
+        shape = MPCTensor._get_shape(op_str, x.shape, y.shape)
+        przs_mask = session.przs_generate_random_share(shape=shape)
         # Add PRZS Mask to z  value
         share = z_value + przs_mask.get_shares()[0]
         return share

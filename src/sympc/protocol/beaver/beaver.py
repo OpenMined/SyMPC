@@ -115,7 +115,7 @@ def _get_triples(
         b_val = sum([b_shares[0].shares[0]] + b_shares[1].shares)
         c_val = sum([c_shares[0].shares[0]] + c_shares[1].shares)
 
-        if (c_val != (a_val * b_val)).all():
+        if (c_val != cmd(a_val, b_val)).all():
             raise ValueError("Computation aborted:Invalid Triples")
 
     # We are always creating an instance
