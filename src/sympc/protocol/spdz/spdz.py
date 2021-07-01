@@ -66,6 +66,7 @@ def mul_master(
             f"beaver_{op_str}",
             session=session,
             g_kwargs={
+                "session": session,
                 "a_shape": shape_x,
                 "b_shape": shape_y,
                 "nr_parties": session.nr_parties,
@@ -198,7 +199,11 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
     primitives = CryptoPrimitiveProvider.generate_primitives(
         "beaver_wraps",
         session=session,
-        g_kwargs={"nr_parties": session.nr_parties, "shape": res_shape},
+        g_kwargs={
+            "session": session,
+            "nr_parties": session.nr_parties,
+            "shape": res_shape,
+        },
         p_kwargs=None,
     )
 
