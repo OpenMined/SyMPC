@@ -86,7 +86,7 @@ def mul_master(
 
     # Specific arguments to each party
     args = [
-        [remote_session_uuid, eps_plaintext, delta_plaintext, op_str]
+        [str(remote_session_uuid), eps_plaintext, delta_plaintext, op_str]
         for remote_session_uuid in session.rank_to_uuid.values()
     ]
 
@@ -124,12 +124,12 @@ def spdz_mask(
 
 
 def mul_parties(
-    session_uuid: UUID, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
+    session_uuid_str: str, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
 ) -> ShareTensor:
     """SPDZ Multiplication.
 
     Args:
-        session_uuid (UUID): UUID to identify the session on each party side.
+        session_uuid_str (str): UUID to identify the session on each party side.
         eps (torch:tensor): Epsilon value of the protocol.
         delta (torch.Tensor): Delta value of the protocol.
         op_str (str): Operator string.
@@ -138,7 +138,7 @@ def mul_parties(
     Returns:
         ShareTensor: Shared result of the division.
     """
-    session = get_session(session_uuid)
+    session = get_session(session_uuid_str)
 
     crypto_store = session.crypto_store
     eps_shape = tuple(eps.shape)
@@ -166,7 +166,7 @@ def mul_parties(
     # Convert to our tensor type
     share_tensor = share_tensor.type(session.tensor_type)
 
-    share = ShareTensor(session_uuid=session_uuid, config=session.config)
+    share = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
     share.tensor = share_tensor
 
     # Ideally this should stay in the MPCTensor
@@ -200,7 +200,6 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
         "beaver_wraps",
         session=session,
         g_kwargs={
-            "session": session,
             "nr_parties": session.nr_parties,
             "shape": res_shape,
         },
