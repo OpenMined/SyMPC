@@ -112,6 +112,8 @@ class Falcon(metaclass=Protocol):
         else:
             raise ValueError("Invalid security_type for Falcon multiplication")
 
+        result = ABY3.truncate(result, session)
+
         return result
 
     @staticmethod
@@ -155,10 +157,8 @@ class Falcon(metaclass=Protocol):
         )(args, kwargs_)
 
         result = MPCTensor(shares=z_shares_ptrs, session=x.session)
-        result.shape = MPCTensor._get_shape(op_str, x.shape, y.shape)  # for prrs
-        if truncate:
-            result = ABY3.truncate(result, session)
-        else:
+
+        if not truncate:
             z_shares = [share.get() for share in z_shares_ptrs]
 
             # Convert 3-3 shares to 2-3 shares by resharing
@@ -166,6 +166,7 @@ class Falcon(metaclass=Protocol):
                 z_shares, x.session
             )
             result = MPCTensor(shares=reshared_shares, session=x.session)
+        result.shape = MPCTensor._get_shape(op_str, x.shape, y.shape)  # for prrs
         return result
 
     @staticmethod
@@ -315,7 +316,7 @@ class Falcon(metaclass=Protocol):
 
         triple = MPCTensor(shares=triple_shares, session=x.session)
         # print(triple.reconstruct())
-        if triple.reconstruct(decode=False) == 0:
+        if triple.reconstruct(decode=False) == result.reconstruct(decode=False):
             return result
         else:
             raise ValueError("Computation Aborted: Malicious behavior.")
