@@ -106,19 +106,3 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
 
     with pytest.raises(ValueError):
         tensor1 * tensor2
-
-
-def test_mul_private_exception_malicious(get_clients):
-    parties = get_clients(3)
-    protocol = Falcon("malicious")
-    session = Session(protocol=protocol, parties=parties)
-    SessionManager.setup_mpc(session)
-
-    secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-    secret2 = 8
-
-    tensor1 = MPCTensor(secret=secret1, session=session)
-    tensor2 = MPCTensor(secret=secret2, session=session)
-
-    with pytest.raises(NotImplementedError):
-        tensor1 * tensor2
