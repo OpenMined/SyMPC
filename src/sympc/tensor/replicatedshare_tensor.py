@@ -303,7 +303,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self.__apply_op(y, "sub")
 
-    def mul(self, y: Union[int, float, torch.Tensor]) -> "ReplicatedSharedTensor":
+    def mul(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
         """Apply the "mul" operation between "self" and "y".
 
         Args:
@@ -319,17 +321,58 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         y_tensor, session = self.sanity_checks(self, y)
         is_private = isinstance(y, ReplicatedSharedTensor)
 
+        op_str = "mul"
+        op = getattr(operator, op_str)
         if is_private:
             if session.nr_parties == 3:
                 from sympc.protocol import Falcon
 
-                result = [Falcon.multiplication_protocol(self, y_tensor, "mul")]
+                result = [Falcon.multiplication_protocol(self, y_tensor, op_str)]
             else:
                 raise ValueError(
                     "Private mult between ReplicatedSharedTensors is allowed only for 3 parties"
                 )
         else:
-            result = [share * y_tensor.shares[0] for share in self.shares]
+            result = [op(share, y_tensor.shares[0]) for share in self.shares]
+
+        tensor = ReplicatedSharedTensor(
+            ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
+        )
+        tensor.shares = result
+
+        return tensor
+
+    def matmul(
+        self, y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
+        """Apply the "matmul" operation between "self" and "y".
+
+        Args:
+            y: self@y
+
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
+
+        Raises:
+            ValueError: Raised when private matmul is performed parties!=3.
+
+        """
+        y_tensor, session = self.sanity_checks(self, y)
+        is_private = isinstance(y, ReplicatedSharedTensor)
+
+        op_str = "matmul"
+        op = getattr(operator, op_str)
+        if is_private:
+            if session.nr_parties == 3:
+                from sympc.protocol import Falcon
+
+                result = [Falcon.multiplication_protocol(self, y_tensor, op_str)]
+            else:
+                raise ValueError(
+                    "Private matmul between ReplicatedSharedTensors is allowed only for 3 parties"
+                )
+        else:
+            result = [op(share, y_tensor.shares[0]) for share in self.shares]
 
         tensor = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
@@ -377,17 +420,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         res = ReplicatedSharedTensor(session_uuid=self.session_uuid, config=self.config)
         res.shares = [share >> y for share in self.shares]
         return res
-
-    def matmul(self, y):
-        """Apply the "matmul" operation between "self" and "y".
-
-        Args:
-            y: self@y
-
-        Raises:
-            NotImplementedError: Raised when implementation not present
-        """
-        raise NotImplementedError
 
     def rmatmul(self, y):
         """Apply the "rmatmul" operation between "y" and "self".

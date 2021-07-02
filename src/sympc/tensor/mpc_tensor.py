@@ -674,7 +674,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
 
             elif self.session.protocol.share_class == ReplicatedSharedTensor:
-                if op_str == "mul":
+                if op_str in {"mul", "matmul"}:
                     result = Falcon.mul_master(self, y, self.session, op_str, kwargs_)
                     result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
                 else:
