@@ -272,7 +272,6 @@ def test_ops_public_tensor_rst(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
-@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["mul"])  # matmul to be added
 def test_ops_mpc_private_rst_mul(get_clients, op_str) -> None:
     clients = get_clients(3)
