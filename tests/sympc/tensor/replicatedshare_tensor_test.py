@@ -286,7 +286,6 @@ def test_rst_resolve_pointer(get_clients) -> None:
     assert share_pt_name == "ReplicatedSharedTensorPointer"
 
 
-
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 @pytest.mark.parametrize("security", ["semi-honest"])  # malicious to be added
 def test_ops_public_mul(get_clients, security, base, precision):
@@ -327,7 +326,7 @@ def test_ops_public_mul_matrix(get_clients, security, base, precision):
 @pytest.mark.parametrize("parties", [2, 3, 5])
 @pytest.mark.parametrize("security", ["semi-honest"])
 def test_ops_public_mul_integer_parties(get_clients, parties, security):
-  
+
     config = Config(encoder_base=1, encoder_precision=0)
 
     parties = get_clients(parties)
