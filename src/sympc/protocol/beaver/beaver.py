@@ -61,6 +61,7 @@ def _get_triples(
 
     Raises:
         ValueError: If the triples are not consistent.
+        ValueError: If the share class is invalid.
     """
     from sympc.protocol import Falcon
 
@@ -117,6 +118,8 @@ def _get_triples(
 
         if (c_val != cmd(a_val, b_val)).all():
             raise ValueError("Computation aborted:Invalid Triples")
+    else:
+        raise ValueError("Invalid share class.")
 
     # We are always creating an instance
     triple_sequential = [(a_shares, b_shares, c_shares)]

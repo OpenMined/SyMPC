@@ -94,7 +94,7 @@ class Falcon(metaclass=Protocol):
             kwargs_ (dict): Kwargs for some operations like conv2d
 
         Returns:
-            MPCTensor: Result of the operation.
+            result(MPCTensor): Result of the operation.
 
         Raises:
             ValueError: Raised when number of parties are not three.
@@ -127,9 +127,7 @@ class Falcon(metaclass=Protocol):
     ) -> MPCTensor:
         """Falcon semihonest multiplication.
 
-        Performs Falcon's mul implementation, gets and reshares mul results and distributes shares.
-        This needs to be improved in future, it relies on orchestrator being a trusted third party.
-        Falcon, requires parties to be able to communication between each other.
+        Performs Falcon's mul implementation, add masks and performs resharing.
 
         Args:
             x (MPCTensor): Secret
@@ -267,7 +265,7 @@ class Falcon(metaclass=Protocol):
             kwargs_ (dict): Kwargs for some operations like conv2d
 
         Returns:
-            MPCTensor: Result of the operation.
+            result(MPCTensor): Result of the operation.
 
         Raises:
             ValueError : If the shares are not valid.
