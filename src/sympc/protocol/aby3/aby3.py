@@ -14,9 +14,11 @@ import torchcsprng as csprng
 
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
+from sympc.session import get_session
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
 
@@ -169,3 +171,59 @@ class ABY3(metaclass=Protocol):
         r_mpc = MPCTensor(shares=r, session=session, shape=x.shape)
         rPrime_mpc = MPCTensor(shares=rPrime, session=session, shape=x.shape)
         return r_mpc, rPrime_mpc
+
+    @staticmethod
+    def local_decomposition(x: ReplicatedSharedTensor) -> List[ReplicatedSharedTensor]:
+        """Performs local decomposition to generate shares of shares.
+
+        Args:
+            x (ReplicatedSharedTensor) : input tensor.
+
+        Returns:
+            rst_shares(List[ReplicatedSharedTensor]): decomposed shares.
+        """
+        session = get_session(x.session_uuid)
+        rank = session.rank
+        nr_parties = session.nr_parties
+        rst_shares = [x.clone() for i in range(session.nr_parties)]
+
+        zero = torch.tensor([0])
+
+        for idx, share in enumerate(rst_shares):
+            share_num1 = rank
+            share_num2 = (rank + 1) % nr_parties
+
+            if share_num1 != idx:
+                share.shares[0] = zero
+            if share_num2 != idx:
+                share.shares[1] = zero
+
+        return rst_shares
+
+    @staticmethod
+    def bit_injection(x: MPCTensor, session: Session) -> MPCTensor:
+        """Perfom ABY3 bit injection for conversion of binary share to arithmetic share.
+
+        Args:
+            x (MPCTensor) : MPCTensor with shares of a bit.
+            session(Session) :session the shares belong to.
+
+        Returns:
+            arith_share(MPCTensor) : Arithmetic shares of the bit.
+        """
+        args = [[share] for share in x.share_ptrs]
+
+        decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+
+        x1_sh, x2_sh, x3_sh = zip(*decompose)
+
+        x1 = MPCTensor(shares=x1_sh, shape=x.shape, session=session)
+        x2 = MPCTensor(shares=x2_sh, shape=x.shape, session=session)
+        x3 = MPCTensor(shares=x3_sh, shape=x.shape, session=session)
+
+        # TODO : to be modified to use xor function,when it is finished
+        d = x1 + x2 - 2 * x1 * x2
+
+        arith_share = d + x3 - 2 * x3 * d
+
+        return arith_share
