@@ -273,6 +273,25 @@ def test_ops_public_tensor_rst(get_clients, nr_clients, op_str) -> None:
 
 
 @pytest.mark.parametrize("nr_clients", [2, 3, 5])
+@pytest.mark.parametrize("op_str", ["mul"])  # matmul to be added
+def test_ops_mpc_private_rst_mul(get_clients, op_str) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+    result = op(x, y).reconstruct()
+    expected_result = op(x_secret, y_secret)
+
+    assert np.allclose(result, expected_result, rtol=10e-3)
+
+
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "truediv"])
 def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
@@ -624,3 +643,8 @@ def test_ops_different_share_class(get_clients) -> None:
     x_rst = MPCTensor(secret=x, session=session2)
     with pytest.raises(TypeError):
         x_share + x_rst
+
+
+def test_get_shape_none() -> None:
+    with pytest.raises(ValueError):
+        MPCTensor._get_shape("mul", None, None)

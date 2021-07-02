@@ -40,6 +40,7 @@ METHODS_FORWARD_ALL_SHARES = {
     "dim",
     "transpose",
 }
+TRUNCATED_OPS = {"mul", "matmul", "conv2d", "conv_transpose2d"}
 
 
 def wrapper_getattribute(func: Callable[..., Any]) -> Callable[..., Any]:
@@ -663,7 +664,7 @@ class MPCTensor(metaclass=SyMPCTensor):
                 f"Need same session {self.session.uuid} and {y.session.uuid}"
             )
 
-        if op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}:
+        if op_str in TRUNCATED_OPS:
             from sympc.protocol import Falcon
             from sympc.protocol.spdz import spdz
             from sympc.tensor import ReplicatedSharedTensor
@@ -768,9 +769,12 @@ class MPCTensor(metaclass=SyMPCTensor):
         Returns:
             result (MPCTensor): Truncated result
         """
-        # Truncation should be added for RSTensor
+        from sympc.protocol import ABY3
+        from sympc.tensor import ReplicatedSharedTensor
+
+        result = None
         if (
-            op_str in {"mul", "matmul", "conv2d", "conv_transpose2d"}
+            op_str in TRUNCATED_OPS
             and (not is_private or self.session.nr_parties > 2)
             and self.session.protocol.share_class == ShareTensor
         ):
@@ -780,6 +784,12 @@ class MPCTensor(metaclass=SyMPCTensor):
                 ** self.session.config.encoder_precision
             )
             result = input_tensor.truediv(scale)
+        elif (
+            op_str in TRUNCATED_OPS
+            and (not is_private)
+            and self.session.protocol.share_class == ReplicatedSharedTensor
+        ):
+            result = ABY3.truncate(input_tensor, self.session)
         else:
             result = input_tensor
 

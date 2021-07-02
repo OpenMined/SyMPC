@@ -286,10 +286,48 @@ def test_rst_resolve_pointer(get_clients) -> None:
     assert share_pt_name == "ReplicatedSharedTensorPointer"
 
 
-@pytest.mark.parametrize("parties", [3, 5])
-@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_public_mul_integer(get_clients, parties, security):
-    # Not encoding because truncation hasn't been implemented yet for Falcon
+
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+@pytest.mark.parametrize("security", ["semi-honest"])  # malicious to be added
+def test_ops_public_mul(get_clients, security, base, precision):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([[0.125, 1001, -1.25, 4.82], [-4.25, 0.217, 3301, 4]])
+    value = 8
+
+    tensor = MPCTensor(secret=secret, session=session)
+    result = tensor * value
+    expected_res = secret * value
+
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
+
+
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+@pytest.mark.parametrize("security", ["semi-honest"])  # malicous to be addded
+def test_ops_public_mul_matrix(get_clients, security, base, precision):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(protocol=protocol, parties=parties, config=config)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([[0.125, 1001, 4.82, -1.25], [-4.25, 0.217, 3301, 4]])
+    value = torch.Tensor([[4.5, 9.25, 3.47, -2.5], [50, 3.17, 5.82, 2.25]])
+
+    tensor = MPCTensor(secret=secret, session=session)
+    result = tensor * value
+    expected_res = secret * value
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
+
+
+@pytest.mark.parametrize("parties", [2, 3, 5])
+@pytest.mark.parametrize("security", ["semi-honest"])
+def test_ops_public_mul_integer_parties(get_clients, parties, security):
+  
     config = Config(encoder_base=1, encoder_precision=0)
 
     parties = get_clients(parties)
@@ -300,27 +338,37 @@ def test_ops_public_mul_integer(get_clients, parties, security):
     secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
     value = 8
 
+    op = getattr(operator, "mul")
     tensor = MPCTensor(secret=secret, session=session)
-    result = tensor * value
+    shares = [op(share, value) for share in tensor.share_ptrs]
+    result = MPCTensor(shares=shares, session=session)
 
     assert (result.reconstruct() == (secret * value)).all()
 
 
-@pytest.mark.parametrize("parties", [3, 5])
-@pytest.mark.parametrize("security", ["malicious", "semi-honest"])
-def test_ops_public_mul_integer_matrix(get_clients, parties, security):
-    # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_base=1, encoder_precision=0)
+def test_truediv_exception() -> None:
+    rst = ReplicatedSharedTensor(shares=[1])
+    with pytest.raises(ValueError):
+        rst / 1.55
 
-    parties = get_clients(parties)
-    protocol = Falcon(security)
-    session = Session(protocol=protocol, parties=parties, config=config)
-    SessionManager.setup_mpc(session)
 
-    secret = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-    value = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
+def test_truediv() -> None:
+    secret = 10.25
+    rst = ReplicatedSharedTensor(shares=[secret])
+    rst = rst / 2
+    expected_res = rst.fp_encoder.encode(secret) // 2
+    assert rst.shares[0] == expected_res
 
-    tensor = MPCTensor(secret=secret, session=session)
-    result = tensor * value
 
-    assert (result.reconstruct() == (secret * value)).all()
+def test_rshift_exception() -> None:
+    rst = ReplicatedSharedTensor(shares=[1])
+    with pytest.raises(ValueError):
+        rst >> 1.55
+
+
+def test_rshift() -> None:
+    secret = 10.25
+    rst = ReplicatedSharedTensor(shares=[secret])
+    rst = rst >> 2
+    expected_res = rst.fp_encoder.encode(secret) >> 2
+    assert rst.shares[0] == expected_res

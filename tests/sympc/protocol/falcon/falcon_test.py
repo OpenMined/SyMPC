@@ -1,8 +1,10 @@
 # third party
+import numpy as np
 import pytest
 import torch
 
 from sympc.config import Config
+from sympc.protocol import ABY3
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
@@ -32,55 +34,68 @@ def test_invalid_security_type():
         Falcon(security_type="covert")
 
 
-def test_mul_private_integer(get_clients):
-    # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_base=1, encoder_precision=0)
+def test_eq():
+    falcon = Falcon()
+    aby1 = ABY3(security_type="malicious")
+    aby2 = ABY3()
+    other2 = falcon
 
+    # Test equal protocol:
+    assert falcon == other2
+
+    # Test different protocol security type
+    assert falcon != aby1
+
+    # Test different protocol objects
+    assert falcon != aby2
+
+
+def test_mul_private(get_clients):
     parties = get_clients(3)
     protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties, config=config)
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
-    secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    secret1 = torch.tensor(
+        [[-100.25, 0.29, 30.45], [-90.82, 1000, 0.18], [1032.45, -323.18, 15.15]]
+    )
     secret2 = 8
 
     tensor1 = MPCTensor(secret=secret1, session=session)
     tensor2 = MPCTensor(secret=secret2, session=session)
 
     result = tensor1 * tensor2
+    expected_res = secret1 * secret2
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
-    assert (result.reconstruct() == (secret1 * secret2)).all()
 
-
-def test_mul_private_integer_matrix(get_clients):
-    # Not encoding because truncation hasn't been implemented yet for Falcon
-    config = Config(encoder_base=1, encoder_precision=0)
-
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_mul_private_matrix(get_clients, base, precision):
     parties = get_clients(3)
     protocol = Falcon("semi-honest")
+    config = Config(encoder_base=base, encoder_precision=precision)
     session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
 
-    secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
+    secret1 = torch.tensor(
+        [[-100.25, 20.3, 30.12], [-50.1, 100.217, 1.2], [1032.15, -323.56, 15.15]]
+    )
 
-    secret2 = torch.tensor([[-1, 2, 3], [-9, 10, 1], [32, -23, 5]])
+    secret2 = torch.tensor([[-1, 0.28, 3], [-9, 10.18, 1], [32, -23, 5]])
 
     tensor1 = MPCTensor(secret=secret1, session=session)
     tensor2 = MPCTensor(secret=secret2, session=session)
 
     result = tensor1 * tensor2
-
-    assert (result.reconstruct() == (secret1 * secret2)).all()
+    expected_res = secret1 * secret2
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
 @pytest.mark.parametrize("parties", [2, 4])
 def test_mul_private_exception_nothreeparties(get_clients, parties):
-    # Not encoding because truncation hasn't been implemented yet
-    config = Config(encoder_base=1, encoder_precision=0)
-
     parties = get_clients(parties)
     protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties, config=config)
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
@@ -94,12 +109,9 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
 
 
 def test_mul_private_exception_malicious(get_clients):
-    # Not encoding because truncation hasn't been implemented yet
-    config = Config(encoder_base=1, encoder_precision=0)
-
     parties = get_clients(3)
     protocol = Falcon("malicious")
-    session = Session(protocol=protocol, parties=parties, config=config)
+    session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
