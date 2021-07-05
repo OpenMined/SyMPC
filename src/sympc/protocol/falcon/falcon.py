@@ -233,7 +233,7 @@ class Falcon(metaclass=Protocol):
             op_str (str): Operator
 
         Returns:
-            Tuple[ReplicatedSharedTensor,ReplicatedSharedTensor] : Masked values.
+            values(Tuple[ReplicatedSharedTensor,ReplicatedSharedTensor]) : masked_values.
         """
         session = get_session(x_sh.session_uuid)
 
