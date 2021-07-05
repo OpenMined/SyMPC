@@ -91,7 +91,7 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            kwargs_ (dict): Kwargs for some operations like conv2d
+            kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
             result(MPCTensor): Result of the operation.
@@ -106,9 +106,9 @@ class Falcon(metaclass=Protocol):
         result = None
 
         if session.protocol.security_type == "semi-honest":
-            result = Falcon.mul_semi_honest(x, y, session, op_str, kwargs_)
+            result = Falcon.mul_semi_honest(x, y, session, op_str, **kwargs_)
         elif session.protocol.security_type == "malicious":
-            result = Falcon.mul_malicious(x, y, session, op_str, kwargs_)
+            result = Falcon.mul_malicious(x, y, session, op_str, **kwargs_)
         else:
             raise ValueError("Invalid security_type for Falcon multiplication")
 
@@ -122,8 +122,8 @@ class Falcon(metaclass=Protocol):
         y: MPCTensor,
         session: Session,
         op_str: str,
-        kwargs_: Dict[Any, Any],
         truncate: bool = True,
+        **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
         """Falcon semihonest multiplication.
 
@@ -134,8 +134,8 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            kwargs_ (dict): Kwargs for some operations like conv2d
             truncate (bool) : Applies truncation on the result if set.
+            kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
             MPCTensor: Result of the operation.
@@ -173,7 +173,7 @@ class Falcon(metaclass=Protocol):
         eps: torch.Tensor,
         delta: torch.Tensor,
         op_str: str,
-        **kwargs,
+        **kwargs: Dict[Any, Any],
     ) -> ReplicatedSharedTensor:
         """Performs Beaver's triple verification check.
 
@@ -182,7 +182,7 @@ class Falcon(metaclass=Protocol):
             eps (torch.Tensor) :masked value of x
             delta (torch.Tensor): masked value of y
             op_str (str): Operator string.
-            kwargs: Keywords arguments for the operator.
+            kwargs(Dict[Any, Any]): Keywords arguments for the operator.
 
         Returns:
             ReplicatedSharedTensor : Result of the verification.
@@ -253,7 +253,7 @@ class Falcon(metaclass=Protocol):
         y: MPCTensor,
         session: Session,
         op_str: str,
-        kwargs_: Dict[Any, Any],
+        **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
         """Falcon malicious multiplication.
 
@@ -262,7 +262,7 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            kwargs_ (dict): Kwargs for some operations like conv2d
+            kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
             result(MPCTensor): Result of the operation.
@@ -322,7 +322,7 @@ class Falcon(metaclass=Protocol):
         x: ReplicatedSharedTensor,
         y: ReplicatedSharedTensor,
         op_str: str,
-        **kwargs,
+        **kwargs: Dict[Any, Any],
     ) -> torch.Tensor:
         """Operation to compute local z share and add mask to it.
 
@@ -330,7 +330,7 @@ class Falcon(metaclass=Protocol):
             x (ReplicatedSharedTensor): Secret.
             y (ReplicatedSharedTensor): Another secret.
             op_str (str): Operation string.
-            kwargs (dict): Kwargs for some operations like conv2d
+            kwargs (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
             share (Torch.tensor): The masked local z share.
@@ -346,7 +346,10 @@ class Falcon(metaclass=Protocol):
 
     @staticmethod
     def multiplication_protocol(
-        x: ReplicatedSharedTensor, y: ReplicatedSharedTensor, op_str: str, **kwargs
+        x: ReplicatedSharedTensor,
+        y: ReplicatedSharedTensor,
+        op_str: str,
+        **kwargs: Dict[Any, Any],
     ) -> ReplicatedSharedTensor:
         """Implementation of Falcon's multiplication with semi-honest security guarantee.
 
@@ -354,7 +357,7 @@ class Falcon(metaclass=Protocol):
             x (ReplicatedSharedTensor): Secret
             y (ReplicatedSharedTensor): Another secret
             op_str (str): Operator string.
-            kwargs: Keywords arguments for the operator.
+            kwargs(Dict[Any, Any]): Keywords arguments for the operator.
 
         Returns:
             shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
