@@ -273,7 +273,9 @@ class Falcon(metaclass=Protocol):
         shape_x = tuple(x.shape)
         shape_y = tuple(y.shape)
 
-        result = Falcon.mul_semi_honest(x, y, session, op_str, kwargs_, truncate=False)
+        result = Falcon.mul_semi_honest(
+            x, y, session, op_str, truncate=False, **kwargs_
+        )
 
         args = [list(sh) + [op_str] for sh in zip(x.share_ptrs, y.share_ptrs)]
         try:
