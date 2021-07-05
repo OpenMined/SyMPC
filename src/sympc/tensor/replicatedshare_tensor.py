@@ -19,6 +19,7 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
+from sympc.utils import get_ring_size_from_type
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
 from sympc.utils import parallel_execution
@@ -634,6 +635,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             return ValueError(
                 "Number of shares to be distributed should be same as number of parties"
             )
+        ring_size = None
+        if isinstance(shares[0], ShareTensor):
+            ring_size = shares[0].ring_size
+        elif isinstance(shares[0], torch.Tensor):
+            ring_size = get_ring_size_from_type(shares[0].dtype)
 
         parties = session.parties
         nshares = len(parties) - 1
@@ -656,6 +662,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 party_shares,
                 config=Config(encoder_base=1, encoder_precision=0),
                 session_uuid=session.rank_to_uuid[i],
+                ring_size=ring_size,
             ).send(parties[i])
             ptr_list.append(tensor)
 

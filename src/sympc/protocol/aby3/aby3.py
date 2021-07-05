@@ -18,6 +18,7 @@ from sympc.session import get_session
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
@@ -84,8 +85,8 @@ class ABY3(metaclass=Protocol):
         x1, x2, x3 = ptr_list
         x1_trunc = x1 >> precision if base == 2 else x1 // scale
         x_trunc = (x2 + x3) >> precision if base == 2 else (x2 + x3) // scale
-        shares = [x1_trunc, x_trunc - rand_value, rand_value]
-        ptr_list = ReplicatedSharedTensor.distribute_shares(shares, session)
+        [x1_trunc, x_trunc - rand_value, rand_value]
+        ptr_list = ReplicatedSharedTensor.distribute_shares(ptr_list, session)
         return ptr_list
 
     @staticmethod
@@ -117,7 +118,7 @@ class ABY3(metaclass=Protocol):
         elif ptr_name == "TensorPointer":
             ptr_list = [share.get_copy() for share in x.share_ptrs]
         else:
-            raise ValueError("{ptr_name} not supported.")
+            raise ValueError(f"{ptr_name} not supported.")
 
         share_ptrs = ABY3.truncation_algorithm1(ptr_list, x.shape, session)
         result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
@@ -184,10 +185,12 @@ class ABY3(metaclass=Protocol):
         """
         session = get_session(x.session_uuid)
         rank = session.rank
+        tensor_type = get_type_from_ring(session.ring_size)
+
         nr_parties = session.nr_parties
         rst_shares = [x.clone() for i in range(session.nr_parties)]
 
-        zero = torch.tensor([0])
+        zero = torch.zeros(x.shares[0].shape, dtype=tensor_type)
 
         for idx, share in enumerate(rst_shares):
             share_num1 = rank
@@ -197,6 +200,8 @@ class ABY3(metaclass=Protocol):
                 share.shares[0] = zero
             if share_num2 != idx:
                 share.shares[1] = zero
+
+            share.shares = [sh.to(tensor_type) for sh in share.shares]
 
         return rst_shares
 
@@ -215,15 +220,27 @@ class ABY3(metaclass=Protocol):
 
         decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
 
-        x1_sh, x2_sh, x3_sh = zip(*decompose)
+        x1_sh, x2_sh, x3_sh = list(
+            map(
+                lambda x: list(map(lambda y: y.resolve_pointer_type(), x)),
+                zip(*decompose),
+            )
+        )
 
         x1 = MPCTensor(shares=x1_sh, shape=x.shape, session=session)
         x2 = MPCTensor(shares=x2_sh, shape=x.shape, session=session)
         x3 = MPCTensor(shares=x3_sh, shape=x.shape, session=session)
 
+        print(x1.reconstruct(get_shares=True))
+        print(x2.reconstruct(get_shares=True))
+        print(x3.reconstruct(get_shares=True))
+
         # TODO : to be modified to use xor function,when it is finished
         d = x1 + x2 - 2 * x1 * x2
-
+        print(d.reconstruct(get_shares=True))
+        print(d.reconstruct(decode=False))
         arith_share = d + x3 - 2 * x3 * d
+        print(arith_share.reconstruct(get_shares=True))
+        print(arith_share.reconstruct(decode=False))
 
-        return arith_share
+        return x1, x2, x3
