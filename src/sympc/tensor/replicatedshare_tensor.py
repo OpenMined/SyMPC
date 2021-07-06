@@ -213,6 +213,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: if both values are shares and they have different uuids
             ValueError: if both values have different number of shares.
+            ValueError: if both RSTensor have different ring_sizes
         """
         if not isinstance(y, ReplicatedSharedTensor):
 
@@ -226,6 +227,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             )
         elif len(x.shares) != len(y.shares):
             raise ValueError("Both RSTensors should have equal number of shares.")
+        elif x.ring_size != y.ring_size:
+            raise ValueError("Both RSTensors should have same ring_size")
 
         session_uuid = x.session_uuid
 
@@ -742,16 +745,19 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
     @staticmethod
     def distribute_shares(
-        shares: List[Union[ShareTensor, torch.Tensor]], session: Session
-    ) -> List:
+        shares: List[Union[ShareTensor, torch.Tensor]],
+        session: Session,
+        ring_size: int = None,
+    ) -> List["ReplicatedSharedTensor"]:
         """Distribute a list of shares.
 
         Args:
             shares (List[ShareTensor): list of shares to distribute.
             session (Session): Session.
+            ring_size(int): ring_size the shares belong to.
 
         Returns:
-            List of ShareTensor.
+            List of ReplicatedSharedTensor.
 
         Raises:
             TypeError: when Datatype of shares is invalid.
@@ -764,6 +770,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             return ValueError(
                 "Number of shares to be distributed should be same as number of parties"
             )
+        if ring_size is None:
+            ring_size = session.ring_size
 
         parties = session.parties
         nshares = len(parties) - 1
@@ -783,11 +791,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                     party_shares.append(tensor)
 
             tensor = ReplicatedSharedTensor(
-                party_shares,
-                config=Config(encoder_base=1, encoder_precision=0),
+                config=session.config,
                 session_uuid=session.rank_to_uuid[i],
-            ).send(parties[i])
-            ptr_list.append(tensor)
+                ring_size=ring_size,
+            )
+            tensor.shares = party_shares
+            ptr_list.append(tensor.send(parties[i]))
 
         return ptr_list
 

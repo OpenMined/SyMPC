@@ -341,7 +341,9 @@ class Falcon(metaclass=Protocol):
         session = get_session(x.session_uuid)
         z_value = Falcon.multiplication_protocol(x, y, op_str, **kwargs)
         shape = MPCTensor._get_shape(op_str, x.shape, y.shape)
-        przs_mask = session.przs_generate_random_share(shape=shape)
+        przs_mask = session.przs_generate_random_share(
+            shape=shape, ring_size=x.ring_size
+        )
         # Add PRZS Mask to z  value
         share = z_value + przs_mask.get_shares()[0]
         return share
