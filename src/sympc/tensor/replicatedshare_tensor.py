@@ -78,8 +78,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.shares = []
 
         if shares is not None:
-            for i in range(len(shares)):
-                self.shares.append(self._encode(shares[i]).to(tensor_type))
+            self.shares = [self._encode(share).to(tensor_type) for share in shares]
 
     def _encode(self, data: torch.Tensor) -> torch.Tensor:
         """Encode via FixedPointEncoder.
@@ -109,10 +108,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         shares = []
 
-        for i in range(len(self.shares)):
-            tensor = self.fp_encoder.decode(self.shares[i].type(torch.LongTensor))
-            shares.append(tensor)
-
+        shares = [
+            self.fp_encoder.decode(share.type(torch.LongTensor))
+            for share in self.shares
+        ]
         return shares
 
     def get_shares(self) -> List[torch.Tensor]:
@@ -611,9 +610,52 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         raise ValueError("Invalid security Type")
 
     @staticmethod
+    def distribute_shares_to_party(
+        shares: List[Union[ShareTensor, torch.Tensor]],
+        party_rank: int,
+        session: Session,
+    ) -> "ReplicatedSharedTensor":
+        """Distributes shares to party.
+
+        Args:
+            shares (List[Union[ShareTensor,torch.Tensor]]): Shares to be distributed.
+            party_rank (int): Rank of party.
+            session (Session): Current session
+
+        Returns:
+            tensor (ReplicatedSharedTensor): Tensor with shares
+
+        Raises:
+            TypeError: Invalid share class.
+        """
+        party = session.parties[party_rank]
+        nshares = session.nr_parties - 1
+        party_shares = []
+
+        for share_index in range(party_rank, party_rank + nshares):
+            share = shares[share_index % (nshares + 1)]
+
+            if isinstance(share, torch.Tensor):
+                party_shares.append(share)
+
+            elif isinstance(share, ShareTensor):
+                party_shares.append(share.tensor)
+
+            else:
+                raise TypeError(f"{type(share)} is an invalid share class")
+
+        tensor = ReplicatedSharedTensor(
+            party_shares,
+            config=Config(encoder_base=1, encoder_precision=0),
+            session_uuid=session.rank_to_uuid[party_rank],
+        ).send(party)
+
+        return tensor
+
+    @staticmethod
     def distribute_shares(
         shares: List[Union[ShareTensor, torch.Tensor]], session: Session
-    ) -> List:
+    ) -> List["ReplicatedSharedTensor"]:
         """Distribute a list of shares.
 
         Args:
@@ -621,7 +663,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             session (Session): Session.
 
         Returns:
-            List of ShareTensor.
+            List of ReplicatedShareTensors.
 
         Raises:
             TypeError: when Datatype of shares is invalid.
@@ -634,32 +676,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             return ValueError(
                 "Number of shares to be distributed should be same as number of parties"
             )
+        args = [
+            [shares, party_rank, session] for party_rank in range(session.nr_parties)
+        ]
 
-        parties = session.parties
-        nshares = len(parties) - 1
-
-        ptr_list = []
-        for i in range(len(parties)):
-            party_shares = []
-
-            for j in range(i, i + nshares):
-                share = shares[j % (nshares + 1)]
-
-                if isinstance(share, torch.Tensor):
-                    party_shares.append(share)
-
-                elif isinstance(share, ShareTensor):
-                    tensor = share.tensor
-                    party_shares.append(tensor)
-
-            tensor = ReplicatedSharedTensor(
-                party_shares,
-                config=Config(encoder_base=1, encoder_precision=0),
-                session_uuid=session.rank_to_uuid[i],
-            ).send(parties[i])
-            ptr_list.append(tensor)
-
-        return ptr_list
+        return [ReplicatedSharedTensor.distribute_shares_to_party(*arg) for arg in args]
 
     @staticmethod
     def hook_property(property_name: str) -> Any:
@@ -681,8 +702,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         def property_new_rs_tensor_getter(_self: "ReplicatedSharedTensor") -> Any:
             shares = []
 
-            for i in range(len(_self.shares)):
-                tensor = getattr(_self.shares[i], property_name)
+            for share in _self.shares:
+                tensor = getattr(share, property_name)
                 shares.append(tensor)
 
             res = ReplicatedSharedTensor(
@@ -724,8 +745,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             _self: "ReplicatedSharedTensor", *args: List[Any], **kwargs: Dict[Any, Any]
         ) -> Any:
             shares = []
-            for i in range(len(_self.shares)):
-                tensor = getattr(_self.shares[i], method_name)(*args, **kwargs)
+            for share in _self.shares:
+                tensor = getattr(share, method_name)(*args, **kwargs)
                 shares.append(tensor)
 
             res = ReplicatedSharedTensor(

@@ -148,7 +148,7 @@ def test_hook_property(get_clients) -> None:
     assert (rst.T.shares[1] == y.T).all()
 
 
-@pytest.mark.parametrize("parties", [3, 5, 11])
+@pytest.mark.parametrize("parties", [3, 5])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_rst_distribute_reconstruct_float_secret(
     get_clients, parties, security
@@ -163,7 +163,7 @@ def test_rst_distribute_reconstruct_float_secret(
     assert np.allclose(secret, a.reconstruct(), atol=1e-3)
 
 
-@pytest.mark.parametrize("parties", [3, 5, 11])
+@pytest.mark.parametrize("parties", [3, 5])
 @pytest.mark.parametrize("security", ["malicious", "semi-honest"])
 def test_rst_distribute_reconstruct_tensor_secret(
     get_clients, parties, security
@@ -198,7 +198,7 @@ def test_rst_reconstruct_zero_share_ptrs(get_clients, security) -> None:
         a.reconstruct()
 
 
-@pytest.mark.parametrize("parties", [2, 5, 11])
+@pytest.mark.parametrize("parties", [2, 5])
 def test_share_distribution_number_shares(get_clients, parties):
     parties = get_clients(parties)
     protocol = Falcon("semi-honest")
@@ -289,7 +289,6 @@ def test_rst_resolve_pointer(get_clients) -> None:
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 @pytest.mark.parametrize("security", ["semi-honest"])  # malicious to be added
 def test_ops_public_mul(get_clients, security, base, precision):
-
     parties = get_clients(3)
     protocol = Falcon(security)
     config = Config(encoder_base=base, encoder_precision=precision)
