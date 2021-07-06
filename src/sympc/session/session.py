@@ -203,25 +203,23 @@ class Session:
         gen1, gen2 = self.przs_generators
         tensor_type = get_type_from_ring(ring_size)
 
-        tensor_share1 = (
-            generate_random_element(
-                tensor_type=tensor_type,
-                generator=gen1,
-                shape=shape,
-            )
-            % ring_size
+        tensor_share1 = generate_random_element(
+            tensor_type=tensor_type,
+            generator=gen1,
+            shape=shape,
         )
 
-        tensor_share2 = (
-            generate_random_element(
-                tensor_type=tensor_type,
-                generator=gen2,
-                shape=shape,
-            )
-            % ring_size
+        tensor_share2 = generate_random_element(
+            tensor_type=tensor_type,
+            generator=gen2,
+            shape=shape,
         )
 
-        return [tensor_share1, tensor_share2]
+        # PRIME_NUMBER should be moved to global scope:
+        if ring_size == 67:
+            return [tensor_share1 % ring_size, tensor_share2 % ring_size]
+        else:
+            return [tensor_share1, tensor_share2]
 
     def przs_generate_random_share(
         self,
