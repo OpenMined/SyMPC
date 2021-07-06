@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1625129909205,
+  "lastUpdate": 1625588139107,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1240,6 +1240,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.035816102371418225",
             "extra": "mean: 1.999158491599991 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "938c1f29a4333374de24aea6344620a53b609b8c",
+          "message": "Refactoring RSTensor Share Distribution and Optimised unit tests  (#255)\n\n* Parallelized RSTensor Share Distribution\r\n\r\n* Removed 7 & 11 party tests\r\n\r\n* Removed several parties tests to optimize CI compute and time\r\n\r\n* CChanged 3 to 2 parties\r\n\r\n* CChanged 3 to 2 parties\r\n\r\n* Removed parallel execution for share distribution and small changes\r\n\r\n* Modify number of parties\r\n\r\n* Small refractoring\r\n\r\n* Precommit hook\r\n\r\n* Modify test",
+          "timestamp": "2021-07-06T17:13:00+01:00",
+          "tree_id": "ab070c006ee856bda519437ac0550b399c4dfd6d",
+          "url": "https://github.com/OpenMined/SyMPC/commit/938c1f29a4333374de24aea6344620a53b609b8c"
+        },
+        "date": 1625588138051,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.5006510688788784,
+            "unit": "iter/sec",
+            "range": "stddev: 0.03321223089184483",
+            "extra": "mean: 1.9973991111999965 sec\nrounds: 5"
           }
         ]
       }
