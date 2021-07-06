@@ -364,7 +364,7 @@ class Falcon(metaclass=Protocol):
         Returns:
             shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
         """
-        op = getattr(operator, op_str)
+        op = ReplicatedSharedTensor.get_op(x.ring_size, op_str)
 
         z_value = (
             op(x.shares[0], y.shares[0], **kwargs)

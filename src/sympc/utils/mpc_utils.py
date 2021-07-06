@@ -13,6 +13,7 @@ import torchcsprng as csprng  # type: ignore
 RING_SIZE_TO_TYPE = {
     2 ** 1: torch.bool,
     2 ** 8: torch.int8,
+    67: torch.uint8,
     2 ** 16: torch.int16,
     2 ** 32: torch.int32,
     2 ** 64: torch.int64,

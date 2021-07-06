@@ -1,6 +1,7 @@
 """Used to abstract multiple shared values held by parties."""
 
 # stdlib
+from functools import reduce
 import operator
 from typing import Any
 from typing import Callable
@@ -27,6 +28,9 @@ from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
 METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
+BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
+
+PRIME_NUMBER = 67
 
 
 class ReplicatedSharedTensor(metaclass=SyMPCTensor):
@@ -67,10 +71,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.session_uuid = session_uuid
         self.ring_size = ring_size
 
-        self.config = config
+        if ring_size in {2, PRIME_NUMBER}:
+            self.config = Config(encoder_base=1, encoder_precision=0)
+        else:
+            self.config = config
 
         self.fp_encoder = FixedPointEncoder(
-            base=config.encoder_base, precision=config.encoder_precision
+            base=self.config.encoder_base, precision=self.config.encoder_precision
         )
 
         tensor_type = get_type_from_ring(ring_size)
@@ -124,6 +131,72 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return self.shares
 
     @staticmethod
+    def addmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Computes addition(x+y) modulo PRIME_NUMBER constant.
+
+        Args:
+            x(torch.Tensor): input tensor
+            y(torch.tensor): input tensor
+
+        Returns:
+            value(torch.Tensor): Result of the operation.
+        """
+        return (x + y) % PRIME_NUMBER
+
+    @staticmethod
+    def submodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Computes subtraction(x-y) modulo PRIME_NUMBER constant.
+
+        Args:
+            x(torch.Tensor): input tensor
+            y(torch.tensor): input tensor
+
+        Returns:
+            value(torch.Tensor): Result of the operation.
+        """
+        return (x - y) % PRIME_NUMBER
+
+    @staticmethod
+    def mulmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+        """Computes multiplication(x*y) modulo PRIME_NUMBER constant.
+
+        Args:
+            x(torch.Tensor): input tensor
+            y(torch.tensor): input tensor
+
+        Returns:
+            value(torch.Tensor): Result of the operation.
+        """
+        # We typecast as multiplication result in 2n bits ,which causes overflow.
+        x = x.to(torch.int16)
+        y = y.to(torch.int16)
+
+        result = (x * y) % PRIME_NUMBER
+
+        return result.to(torch.uint8)
+
+    @staticmethod
+    def get_op(ring_size: int, op_str: str) -> Any:
+        """Returns method attribute based on ring_size and op_str.
+
+        Args:
+            ring_size(int): Ring size
+            op_str(str): Operation string.
+
+        Returns:
+            op(Any): The operation method for the op_str.
+        """
+        op = None
+        if ring_size == 2:
+            op = getattr(operator, BINARY_MAP[op_str])
+        elif ring_size == PRIME_NUMBER:
+            op = getattr(ReplicatedSharedTensor, op_str + "modprime")
+        else:
+            op = getattr(operator, op_str)
+
+        return op
+
+    @staticmethod
     def sanity_checks(
         x: "ReplicatedSharedTensor",
         y: Union[int, float, torch.Tensor, "ReplicatedSharedTensor"],
@@ -142,15 +215,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: if both values have different number of shares.
         """
         if not isinstance(y, ReplicatedSharedTensor):
-            if x.session_uuid is not None:
-                session = sympc.session.get_session(str(x.session_uuid))
-                ring_size = session.ring_size
-                config = session.config
-            else:
-                ring_size = x.ring_size
-                config = x.config
 
-            y = ReplicatedSharedTensor(shares=[y], ring_size=ring_size, config=config)
+            y = ReplicatedSharedTensor(
+                shares=[y], ring_size=x.ring_size, config=x.config
+            )
 
         elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
             raise ValueError(
@@ -164,9 +232,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if session_uuid is not None:
             session = sympc.session.get_session(str(x.session_uuid))
         else:
-            ring_size = x.ring_size
-            config = x.config
-            session = Session(config=config, ring_size=ring_size)
+            session = Session(config=x.config, ring_size=x.ring_size)
             session.nr_parties = 1
 
         return y, session
@@ -187,10 +253,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: If "op_str" is not supported.
         """
         y, session = ReplicatedSharedTensor.sanity_checks(self, y)
-        session_uuid = self.session_uuid
 
-        op = getattr(operator, op_str)
-        shares = self.shares
+        op = ReplicatedSharedTensor.get_op(self.ring_size, op_str)
+
+        shares = self.shares.copy()
         if op_str in {"add", "sub"}:
             if session.rank != 1:
                 idx = (session.nr_parties - session.rank) % session.nr_parties
@@ -199,9 +265,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             raise ValueError(f"{op_str} not supported")
 
         result = ReplicatedSharedTensor(
-            ring_size=session.ring_size,
-            session_uuid=session_uuid,
-            config=session.config,
+            ring_size=self.ring_size,
+            session_uuid=self.session_uuid,
+            config=self.config,
         )
         result.shares = shares
         return result
@@ -223,7 +289,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         y, session = ReplicatedSharedTensor.sanity_checks(self, y)
 
-        op = getattr(operator, op_str)
+        op = ReplicatedSharedTensor.get_op(self.ring_size, op_str)
+
         shares = []
         if op_str in {"add", "sub"}:
             for x_share, y_share in zip(self.shares, y.shares):
@@ -232,9 +299,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             raise ValueError(f"{op_str} not supported")
 
         result = ReplicatedSharedTensor(
-            ring_size=session.ring_size,
+            ring_size=self.ring_size,
             session_uuid=self.session_uuid,
-            config=session.config,
+            config=self.config,
         )
         result.shares = shares
         return result
@@ -321,8 +388,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         y_tensor, session = self.sanity_checks(self, y)
         is_private = isinstance(y, ReplicatedSharedTensor)
 
+        ring_size = self.ring_size
         op_str = "mul"
-        op = getattr(operator, op_str)
+        op = ReplicatedSharedTensor.get_op(ring_size, op_str)
         if is_private:
             if session.nr_parties == 3:
                 from sympc.protocol import Falcon
@@ -398,7 +466,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 "Div works (for the moment) only with integers and LongTensor!"
             )
 
-        res = ReplicatedSharedTensor(session_uuid=self.session_uuid, config=self.config)
+        res = ReplicatedSharedTensor(
+            session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
+        )
         res.shares = [share // y for share in self.shares]
         return res
 
@@ -417,7 +487,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if not isinstance(y, int):
             raise ValueError("Right Shift works only with integers!")
 
-        res = ReplicatedSharedTensor(session_uuid=self.session_uuid, config=self.config)
+        res = ReplicatedSharedTensor(
+            session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
+        )
         res.shares = [share >> y for share in self.shares]
         return res
 
@@ -479,10 +551,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if not (torch.cat(self.shares) == torch.cat(y.shares)).all():
             return False
 
-        if not self.config == y.config:
+        if self.config != y.config:
             return False
 
         if self.session_uuid and y.session_uuid and self.session_uuid != y.session_uuid:
+            return False
+
+        if self.ring_size != y.ring_size:
             return False
 
         return True
@@ -518,6 +593,24 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             NotImplementedError: Raised when implementation not present
         """
         raise NotImplementedError
+
+    @staticmethod
+    def shares_sum(shares: List[torch.Tensor], ring_size: int) -> torch.Tensor:
+        """Returns sum of tensors based on ring_size.
+
+        Args:
+            shares(List[torch.Tensor]) : List of tensors.
+            ring_size(int): Ring size of share associated with the tensor.
+
+        Returns:
+            value(torch.Tensor): sum of the tensors.
+        """
+        if ring_size == 2:
+            return reduce(lambda x, y: x ^ y, shares)
+        elif ring_size == PRIME_NUMBER:
+            return reduce(ReplicatedSharedTensor.addmodprime, shares)
+        else:
+            return sum(shares)
 
     @staticmethod
     def _request_and_get(
@@ -561,7 +654,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if get_shares:
             return shares
 
-        return sum(shares)
+        ring_size = local_shares[0].ring_size
+
+        return ReplicatedSharedTensor.shares_sum(shares, ring_size)
 
     @staticmethod
     def __reconstruct_malicious(
@@ -587,18 +682,21 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         request_wrap = parallel_execution(request)
         args = [[share] for share in share_ptrs]
         local_shares = request_wrap(args)
+        ring_size = local_shares[0].ring_size
+        shares_sum = ReplicatedSharedTensor.shares_sum
 
         all_shares = [rst.shares for rst in local_shares]
         # reconstruct shares from all parties and verify
         value = None
         for party_rank in range(nparties):
-            share_sum = all_shares[party_rank][0] + sum(
-                all_shares[(party_rank + 1) % (nparties)]
+            tensor = shares_sum(
+                [all_shares[party_rank][0]] + all_shares[(party_rank + 1) % (nparties)],
+                ring_size,
             )
 
             if value is None:
-                value = share_sum
-            elif (share_sum != value).any():
+                value = tensor
+            elif (tensor != value).any():
                 raise ValueError(
                     "Reconstruction values from all parties are not equal."
                 )
@@ -718,7 +816,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 shares.append(tensor)
 
             res = ReplicatedSharedTensor(
-                session_uuid=_self.session_uuid, config=_self.config
+                session_uuid=_self.session_uuid,
+                config=_self.config,
+                ring_size=_self.ring_size,
             )
             res.shares = shares
             return res
@@ -761,7 +861,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 shares.append(tensor)
 
             res = ReplicatedSharedTensor(
-                session_uuid=_self.session_uuid, config=_self.config
+                session_uuid=_self.session_uuid,
+                config=_self.config,
+                ring_size=_self.ring_size,
             )
             res.shares = shares
             return res
