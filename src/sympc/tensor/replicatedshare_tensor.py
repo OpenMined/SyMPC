@@ -321,7 +321,6 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         is_private = isinstance(y, ReplicatedSharedTensor)
 
         op_str = "mul"
-        op = getattr(operator, op_str)
         if is_private:
             if session.nr_parties == 3:
                 from sympc.protocol import Falcon
@@ -332,7 +331,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                     "Private mult between ReplicatedSharedTensors is allowed only for 3 parties"
                 )
         else:
-            result = [op(share, y_tensor.shares[0]) for share in self.shares]
+            result = [operator.mul(share, y_tensor.shares[0]) for share in self.shares]
 
         tensor = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
@@ -360,7 +359,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         is_private = isinstance(y, ReplicatedSharedTensor)
 
         op_str = "matmul"
-        op = getattr(operator, op_str)
+
         if is_private:
             if session.nr_parties == 3:
                 from sympc.protocol import Falcon
@@ -371,7 +370,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                     "Private matmul between ReplicatedSharedTensors is allowed only for 3 parties"
                 )
         else:
-            result = [op(share, y_tensor.shares[0]) for share in self.shares]
+            result = [
+                operator.matmul(share, y_tensor.shares[0]) for share in self.shares
+            ]
 
         tensor = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config

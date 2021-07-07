@@ -140,8 +140,6 @@ class Falcon(metaclass=Protocol):
         Returns:
             MPCTensor: Result of the operation.
         """
-        result = None
-
         args = [
             [x_share, y_share, op_str]
             for x_share, y_share in zip(x.share_ptrs, y.share_ptrs)
