@@ -5,6 +5,7 @@ import secrets
 
 # third party
 import pytest
+import torch
 
 from sympc.config import Config
 from sympc.protocol import Falcon
@@ -166,8 +167,8 @@ def test_prrs_rs_tensor() -> None:
     gen2 = get_new_generator(seed2)
     session.przs_generators = [gen1, gen2]
     shape = (2, 1)
-    result = session.prrs_generate_random_share(shape=shape)
-    assert isinstance(result, ReplicatedSharedTensor)
+    share = session.prrs_generate_random_share(shape=shape)
+    assert isinstance(share, ReplicatedSharedTensor)
 
     new_gen1 = get_new_generator(seed1)
     new_gen2 = get_new_generator(seed2)
@@ -177,8 +178,8 @@ def test_prrs_rs_tensor() -> None:
     share2 = generate_random_element(
         generator=new_gen2, shape=shape, tensor_type=session.tensor_type
     )
-    expected_res = ReplicatedSharedTensor(shares=[share1, share2])
-    assert expected_res == result
+    target_tensor = [share1, share2]
+    assert (torch.cat(share.shares) == torch.cat(target_tensor)).all()
 
 
 def test_prrs_share_tensor_pointer(get_clients) -> None:
