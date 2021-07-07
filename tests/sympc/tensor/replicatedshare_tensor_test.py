@@ -371,3 +371,127 @@ def test_rshift() -> None:
     rst = rst >> 2
     expected_res = rst.fp_encoder.encode(secret) >> 2
     assert rst.shares[0] == expected_res
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_bin_share_private(op_str) -> None:
+    op = getattr(operator, op_str)
+    ring_size = 2
+    bin_op = ReplicatedSharedTensor.get_op(ring_size, op_str)
+    x = torch.tensor([[0, 1], [1, 1]], dtype=torch.bool)
+    y = torch.tensor([[1, 0], [1, 1]], dtype=torch.bool)
+
+    x_share = ReplicatedSharedTensor(shares=[x], ring_size=ring_size)
+    y_share = ReplicatedSharedTensor(shares=[y], ring_size=ring_size)
+
+    expected_res = bin_op(x, y)
+    result = op(x_share, y_share)
+    result = result.shares[0]
+
+    assert (result == expected_res).all()
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_bin_share_public(op_str) -> None:
+    op = getattr(operator, op_str)
+    ring_size = 2
+    bin_op = ReplicatedSharedTensor.get_op(ring_size, op_str)
+    x = torch.tensor([[0, 1], [1, 1]], dtype=torch.bool)
+    y = torch.tensor([[1, 0], [1, 1]], dtype=torch.bool)
+
+    x_share = ReplicatedSharedTensor(shares=[x], ring_size=ring_size)
+
+    expected_res = bin_op(x, y)
+    result = op(x_share, y)
+    result = result.shares[0]
+
+    assert (result == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_ops_bin_public_mul(get_clients, security):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = 2
+    bin_op = ReplicatedSharedTensor.get_op(ring_size, "mul")
+
+    sh = torch.tensor([[0, 1, 0], [1, 0, 1]], dtype=torch.bool)
+    shares = [sh, sh, sh]
+    rst_list = ReplicatedSharedTensor.distribute_shares(
+        shares=shares, session=session, ring_size=ring_size
+    )
+    tensor = MPCTensor(shares=rst_list, session=session)
+    tensor.shape = sh.shape
+
+    secret = ReplicatedSharedTensor.shares_sum(shares, ring_size)
+
+    value = torch.tensor([1], dtype=torch.bool)
+
+    result = operator.mul(tensor, value)
+    expected_res = bin_op(secret, value)
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_prime_share_private(op_str) -> None:
+    op = getattr(operator, op_str)
+    ring_size = 67
+    prime_op = ReplicatedSharedTensor.get_op(ring_size, op_str)
+    x = torch.tensor([[24, 34], [66, 1]], dtype=torch.uint8)
+    y = torch.tensor([[34, 47], [45, 32]], dtype=torch.uint8)
+
+    x_share = ReplicatedSharedTensor(shares=[x], ring_size=ring_size)
+    y_share = ReplicatedSharedTensor(shares=[y], ring_size=ring_size)
+
+    expected_res = prime_op(x, y)
+    result = op(x_share, y_share)
+    result = result.shares[0]
+
+    assert (result == expected_res).all()
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub"])
+def test_ops_prime_share_public(op_str) -> None:
+    op = getattr(operator, op_str)
+    ring_size = 67
+    prime_op = ReplicatedSharedTensor.get_op(ring_size, op_str)
+    x = torch.tensor([[24, 34], [66, 1]], dtype=torch.uint8)
+    y = torch.tensor([[34, 47], [45, 32]], dtype=torch.uint8)
+
+    x_share = ReplicatedSharedTensor(shares=[x], ring_size=ring_size)
+
+    expected_res = prime_op(x, y)
+    result = op(x_share, y)
+    result = result.shares[0]
+
+    assert (result == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_ops_prime_public_mul(get_clients, security):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = 67
+    bin_op = ReplicatedSharedTensor.get_op(ring_size, "mul")
+
+    sh = torch.tensor([[33, 45, 0], [52, 41, 22]], dtype=torch.uint8)
+    shares = [sh, sh, sh]
+    rst_list = ReplicatedSharedTensor.distribute_shares(
+        shares=shares, session=session, ring_size=ring_size
+    )
+    tensor = MPCTensor(shares=rst_list, session=session)
+    tensor.shape = sh.shape
+
+    secret = ReplicatedSharedTensor.shares_sum(shares, ring_size)
+
+    value = torch.tensor([66], dtype=torch.uint8)
+
+    result = operator.mul(tensor, value)
+    expected_res = bin_op(secret, value)
+
+    assert (result.reconstruct(decode=False) == expected_res).all()

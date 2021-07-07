@@ -1,3 +1,7 @@
+# stdlib
+# stdlib
+import operator
+
 # third party
 import numpy as np
 import pytest
@@ -171,3 +175,69 @@ def test_exception_mul_malicious(get_clients):
 
     with pytest.raises(ValueError):
         x * y
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_bin_mul_private(get_clients, security):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = 2
+    bin_op = ReplicatedSharedTensor.get_op(ring_size, "mul")
+
+    sh1 = torch.tensor([[0, 1, 0], [1, 0, 1]], dtype=torch.bool)
+    sh2 = torch.tensor([[1, 1, 0], [0, 1, 1]], dtype=torch.bool)
+    shares1 = [sh1, sh1, sh1]
+    shares2 = [sh2, sh2, sh2]
+    rst_list1 = ReplicatedSharedTensor.distribute_shares(
+        shares=shares1, session=session, ring_size=ring_size
+    )
+    rst_list2 = ReplicatedSharedTensor.distribute_shares(
+        shares=shares2, session=session, ring_size=ring_size
+    )
+    tensor1 = MPCTensor(shares=rst_list1, session=session)
+    tensor1.shape = sh1.shape
+    tensor2 = MPCTensor(shares=rst_list2, session=session)
+    tensor2.shape = sh2.shape
+
+    secret1 = ReplicatedSharedTensor.shares_sum(shares1, ring_size)
+    secret2 = ReplicatedSharedTensor.shares_sum(shares2, ring_size)
+
+    result = operator.mul(tensor1, tensor2)
+    expected_res = bin_op(secret1, secret2)
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_prime_mul_private(get_clients, security):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = 67
+    prime_op = ReplicatedSharedTensor.get_op(ring_size, "mul")
+
+    sh1 = torch.tensor([[32, 12, 23], [17, 35, 7]], dtype=torch.uint8)
+    sh2 = torch.tensor([[45, 66, 47], [19, 57, 2]], dtype=torch.uint8)
+    shares1 = [sh1, sh1, sh1]
+    shares2 = [sh2, sh2, sh2]
+    rst_list1 = ReplicatedSharedTensor.distribute_shares(
+        shares=shares1, session=session, ring_size=ring_size
+    )
+    rst_list2 = ReplicatedSharedTensor.distribute_shares(
+        shares=shares2, session=session, ring_size=ring_size
+    )
+    tensor1 = MPCTensor(shares=rst_list1, session=session)
+    tensor1.shape = sh1.shape
+    tensor2 = MPCTensor(shares=rst_list2, session=session)
+    tensor2.shape = sh2.shape
+
+    secret1 = ReplicatedSharedTensor.shares_sum(shares1, ring_size)
+    secret2 = ReplicatedSharedTensor.shares_sum(shares2, ring_size)
+
+    result = operator.mul(tensor1, tensor2)
+    expected_res = prime_op(secret1, secret2)
+
+    assert (result.reconstruct(decode=False) == expected_res).all()

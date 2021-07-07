@@ -45,6 +45,18 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
        shares: The shares held by the party
     """
 
+    __slots__ = {
+        # Populated in Syft
+        "id",
+        "tags",
+        "description",
+        "shares",
+        "session_uuid",
+        "config",
+        "fp_encoder",
+        "ring_size",
+    }
+
     # Used by the SyMPCTensor metaclass
     METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
     PROPERTIES_FORWARD = {"T", "shape"}
@@ -129,6 +141,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return self.shares
 
+    def get_ring_size(self) -> str:
+        """Ring_size of tensor.
+
+        Returns:
+            ring_size(str): Returns ring_size of tensor in string.
+
+        It is typecasted to string as we cannot serialize 2**64
+        """
+        return str(self.ring_size)
+
     @staticmethod
     def addmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         """Computes addition(x+y) modulo PRIME_NUMBER constant.
@@ -153,7 +175,12 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             value(torch.Tensor): Result of the operation.
         """
-        return (x - y) % PRIME_NUMBER
+        x = x.to(torch.int8)
+        y = y.to(torch.int8)
+
+        result = (x - y) % PRIME_NUMBER
+
+        return result.to(torch.uint8)
 
     @staticmethod
     def mulmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -391,7 +418,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         is_private = isinstance(y, ReplicatedSharedTensor)
 
         op_str = "mul"
-
+        op = ReplicatedSharedTensor.get_op(self.ring_size, op_str)
         if is_private:
             if session.nr_parties == 3:
                 from sympc.protocol import Falcon
@@ -402,7 +429,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                     "Private mult between ReplicatedSharedTensors is allowed only for 3 parties"
                 )
         else:
-            result = [operator.mul(share, y_tensor.shares[0]) for share in self.shares]
+            result = [op(share, y_tensor.shares[0]) for share in self.shares]
 
         tensor = ReplicatedSharedTensor(
             ring_size=self.ring_size, session_uuid=self.session_uuid, config=self.config
