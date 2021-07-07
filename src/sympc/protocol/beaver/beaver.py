@@ -106,8 +106,12 @@ def _get_triples(
         a_ptrs: List = []
         b_ptrs: List = []
         for session_ptr in session.session_ptrs:
-            a_ptrs.append(session_ptr.prrs_generate_random_share(a_shape, ring_size))
-            b_ptrs.append(session_ptr.prrs_generate_random_share(b_shape, ring_size))
+            a_ptrs.append(
+                session_ptr.prrs_generate_random_share(a_shape, str(ring_size))
+            )
+            b_ptrs.append(
+                session_ptr.prrs_generate_random_share(b_shape, str(ring_size))
+            )
 
         a = MPCTensor(shares=a_ptrs, session=session, shape=a_shape)
         b = MPCTensor(shares=b_ptrs, session=session, shape=b_shape)

@@ -772,8 +772,6 @@ class MPCTensor(metaclass=SyMPCTensor):
         from sympc.protocol import ABY3
         from sympc.tensor import ReplicatedSharedTensor
 
-        ring_size = int(self.share_ptrs[0].get_ring_size().get_copy())
-
         result = None
         if (
             op_str in TRUNCATED_OPS
@@ -790,9 +788,12 @@ class MPCTensor(metaclass=SyMPCTensor):
             op_str in TRUNCATED_OPS
             and (not is_private)
             and self.session.protocol.share_class == ReplicatedSharedTensor
-            and ring_size not in {2, 67}
         ):
-            result = ABY3.truncate(input_tensor, self.session)
+            ring_size = int(self.share_ptrs[0].get_ring_size().get_copy())
+            if ring_size not in {2, 67}:
+                result = ABY3.truncate(input_tensor, self.session)
+            else:
+                result = input_tensor
         else:
             result = input_tensor
 

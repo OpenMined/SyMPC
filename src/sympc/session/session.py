@@ -224,13 +224,13 @@ class Session:
     def przs_generate_random_share(
         self,
         shape: Union[tuple, torch.Size],
-        ring_size: int = None,
+        ring_size: str = None,
     ) -> Any:
         """Generates a random zero share using the two generators held by a party.
 
         Args:
             shape (Union[tuple, torch.Size]): Shape for the share.
-            ring_size(int): ring size to generate share.
+            ring_size(str): ring size to generate share.
 
         Returns:
             Any: ShareTensor or ReplicatedSharedTensor
@@ -241,6 +241,8 @@ class Session:
 
         if ring_size is None:
             ring_size = self.ring_size
+        else:
+            ring_size = int(ring_size)  # 2**64 cannot be serialized.
 
         current_share, next_share = self._generate_random_share(shape, ring_size)
 
@@ -265,13 +267,13 @@ class Session:
     def prrs_generate_random_share(
         self,
         shape: Union[tuple, torch.Size],
-        ring_size: int = None,
+        ring_size: str = None,
     ) -> Any:
         """Generates a random share using the generators held by a party.
 
         Args:
             shape (Union[tuple, torch.Size]): Shape for the share.
-            ring_size(int): ring size to generate share.
+            ring_size(str): ring size to generate share.
 
         Returns:
             Any: ShareTensor or ReplicatedSharedTensor
@@ -282,6 +284,8 @@ class Session:
 
         if ring_size is None:
             ring_size = self.ring_size
+        else:
+            ring_size = int(ring_size)  # 2**64 cannot be serialized.
 
         share1, share2 = self._generate_random_share(shape, ring_size)
 

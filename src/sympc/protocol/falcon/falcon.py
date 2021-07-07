@@ -351,7 +351,7 @@ class Falcon(metaclass=Protocol):
         z_value = Falcon.multiplication_protocol(x, y, op_str, **kwargs)
         shape = MPCTensor._get_shape(op_str, x.shape, y.shape)
         przs_mask = session.przs_generate_random_share(
-            shape=shape, ring_size=x.ring_size
+            shape=shape, ring_size=str(x.ring_size)
         )
         # Add PRZS Mask to z  value
         op = ReplicatedSharedTensor.get_op(x.ring_size, "add")
