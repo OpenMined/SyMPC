@@ -140,16 +140,11 @@ class Falcon(metaclass=Protocol):
         Returns:
             MPCTensor: Result of the operation.
         """
-        result = None
-        args = []
-        for index in range(0, 3):
-            args.append(
-                [
-                    x.share_ptrs[index],
-                    y.share_ptrs[index],
-                    op_str,
-                ]
-            )
+        args = [
+            [x_share, y_share, op_str]
+            for x_share, y_share in zip(x.share_ptrs, y.share_ptrs)
+        ]
+
         z_shares_ptrs = parallel_execution(
             Falcon.compute_zvalue_and_add_mask, session.parties
         )(args, kwargs_)
