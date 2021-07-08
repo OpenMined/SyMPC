@@ -17,13 +17,6 @@ RING_SIZE_TO_TYPE = {
     2 ** 32: torch.int32,
     2 ** 64: torch.int64,
 }
-TYPE_TO_RING_SIZE = {
-    torch.bool: 2 ** 1,
-    torch.int8: 2 ** 8,
-    torch.int16: 2 ** 16,
-    torch.int32: 2 ** 32,
-    torch.int64: 2 ** 64,
-}
 
 
 def count_wraps(share_list: List[torch.tensor]) -> torch.Tensor:
@@ -72,25 +65,6 @@ def get_type_from_ring(ring_size: int) -> torch.dtype:
         raise ValueError(f"Ring size should be in {RING_SIZE_TO_TYPE.keys()}")
 
     return RING_SIZE_TO_TYPE[ring_size]
-
-
-@lru_cache(maxsize=len(TYPE_TO_RING_SIZE))
-def get_ring_size_from_type(dtype: torch.dtype) -> int:
-    """Ring size of tensor given dtype.
-
-    Args:
-        dtype (torch.dtype): Torch data
-
-    Returns:
-        int: Ring size of type
-
-    Raises:
-        ValueError: If Torch size not in `TYPE_TO_RING_SIZE.keys()`.
-    """
-    if dtype not in TYPE_TO_RING_SIZE:
-        raise ValueError(f"Torch type should be in {TYPE_TO_RING_SIZE.keys()}")
-
-    return TYPE_TO_RING_SIZE[dtype]
 
 
 def get_new_generator(seed: int) -> torch.Generator:

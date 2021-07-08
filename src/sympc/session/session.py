@@ -320,6 +320,5 @@ class Session:
         session.nr_parties = self.nr_parties
         session.config = deepcopy(self.config)
         session.protocol = self.protocol
-        session.ring_size = self.ring_size
 
         return session
