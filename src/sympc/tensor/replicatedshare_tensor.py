@@ -30,7 +30,7 @@ PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
 METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
 
-PRIME_NUMBER = 67
+PRIME_NUMBER = 67  # Global constant for prime order rings.
 
 
 class ReplicatedSharedTensor(metaclass=SyMPCTensor):

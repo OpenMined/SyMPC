@@ -1,5 +1,6 @@
 """Util functions needed around the repository."""
 
+from .mpc_utils import RING_SIZE_TO_TYPE
 from .mpc_utils import count_wraps
 from .mpc_utils import decompose
 from .mpc_utils import generate_random_element
@@ -18,4 +19,5 @@ __all__ = [
     "generate_random_element",
     "get_type_from_ring",
     "decompose",
+    "RING_SIZE_TO_TYPE",
 ]

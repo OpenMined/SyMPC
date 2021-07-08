@@ -11,8 +11,10 @@ from sympc.config import Config
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor import ShareTensor
+from sympc.utils import RING_SIZE_TO_TYPE
 from sympc.utils import generate_random_element
 from sympc.utils import get_new_generator
 from sympc.utils import get_type_from_ring
@@ -297,3 +299,74 @@ def test_prrs_rst_union_resolve(get_clients) -> None:
     share_pt_name = type(resolved_share_pt0).__name__
 
     assert share_pt_name == "ReplicatedSharedTensorPointer"
+
+
+def test_przs_share_ring_size(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    for ring_size in RING_SIZE_TO_TYPE.keys() - {2, 67}:
+        share_pt0 = session.session_ptrs[0].przs_generate_random_share(
+            shape=(1, 2), ring_size=str(ring_size)
+        )
+        share = share_pt0.get_copy()
+
+        assert share.ring_size == ring_size
+        assert share.tensor.dtype == RING_SIZE_TO_TYPE[ring_size]
+
+
+def test_przs_rst_ring_size(get_clients) -> None:
+    clients = get_clients(3)
+    falcon = Falcon()
+    session = Session(protocol=falcon, parties=clients)
+    SessionManager.setup_mpc(session)
+
+    for ring_size in RING_SIZE_TO_TYPE.keys():
+        rst_pt0 = session.session_ptrs[0].przs_generate_random_share(
+            shape=(1, 2), ring_size=str(ring_size)
+        )
+        share = rst_pt0.get_copy()
+
+        assert share.ring_size == ring_size
+        assert share.shares[0].dtype == RING_SIZE_TO_TYPE[ring_size]
+
+        if ring_size == PRIME_NUMBER:
+            assert torch.max(torch.cat(share.shares)) <= PRIME_NUMBER - 1
+            assert torch.min(torch.cat(share.shares)) >= 0
+
+
+def test_prrs_share_ring_size(get_clients) -> None:
+    clients = get_clients(3)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    for ring_size in RING_SIZE_TO_TYPE.keys() - {2, 67}:
+        share_pt0 = session.session_ptrs[0].prrs_generate_random_share(
+            shape=(1, 2), ring_size=str(ring_size)
+        )
+        share = share_pt0.get_copy()
+
+        assert share.ring_size == ring_size
+        assert share.tensor.dtype == RING_SIZE_TO_TYPE[ring_size]
+
+
+def test_prrs_rst_ring_size(get_clients) -> None:
+    clients = get_clients(3)
+    falcon = Falcon()
+    session = Session(protocol=falcon, parties=clients)
+    SessionManager.setup_mpc(session)
+
+    for ring_size in RING_SIZE_TO_TYPE.keys():
+        rst_pt0 = session.session_ptrs[0].prrs_generate_random_share(
+            shape=(1, 2), ring_size=str(ring_size)
+        )
+        share = rst_pt0.get_copy()
+
+        assert share.ring_size == ring_size
+        assert share.shares[0].dtype == RING_SIZE_TO_TYPE[ring_size]
+        assert share.shares[1].dtype == RING_SIZE_TO_TYPE[ring_size]
+
+        if ring_size == PRIME_NUMBER:
+            assert torch.max(torch.cat(share.shares)) <= PRIME_NUMBER - 1
+            assert torch.min(torch.cat(share.shares)) >= 0
