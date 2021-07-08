@@ -115,8 +115,7 @@ class Falcon(metaclass=Protocol):
         else:
             raise ValueError("Invalid security_type for Falcon multiplication")
 
-        if ring_size not in {2, 67}:
-            result = ABY3.truncate(result, session)
+        result = ABY3.truncate(result, session, ring_size)
 
         return result
 
@@ -127,7 +126,7 @@ class Falcon(metaclass=Protocol):
         session: Session,
         op_str: str,
         ring_size: int,
-        truncate: bool = True,
+        reshare: bool = False,
         **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
         """Falcon semihonest multiplication.
@@ -139,8 +138,8 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            truncate (bool) : Applies truncation on the result if set.
             ring_size(int) : Ring size of the underlying tensors.
+            reshare (bool) : Convert 3-out-3 to 2-out-3 if set.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
@@ -157,7 +156,7 @@ class Falcon(metaclass=Protocol):
 
         result = MPCTensor(shares=z_shares_ptrs, session=x.session)
 
-        if not truncate or ring_size in {2, 67}:
+        if reshare:
             z_shares = [share.get() for share in z_shares_ptrs]
 
             # Convert 3-3 shares to 2-3 shares by resharing
@@ -165,6 +164,7 @@ class Falcon(metaclass=Protocol):
                 z_shares, x.session, ring_size
             )
             result = MPCTensor(shares=reshared_shares, session=x.session)
+
         result.shape = MPCTensor._get_shape(op_str, x.shape, y.shape)  # for prrs
         return result
 
@@ -282,7 +282,7 @@ class Falcon(metaclass=Protocol):
         shape_y = tuple(y.shape)
 
         result = Falcon.mul_semi_honest(
-            x, y, session, op_str, ring_size, truncate=False, **kwargs_
+            x, y, session, op_str, ring_size, reshare=True, **kwargs_
         )
 
         args = [list(sh) + [op_str] for sh in zip(x.share_ptrs, y.share_ptrs)]

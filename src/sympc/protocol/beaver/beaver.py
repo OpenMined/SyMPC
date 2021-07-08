@@ -116,7 +116,7 @@ def _get_triples(
         a = MPCTensor(shares=a_ptrs, session=session, shape=a_shape)
         b = MPCTensor(shares=b_ptrs, session=session, shape=b_shape)
         c = Falcon.mul_semi_honest(
-            a, b, session, op_str, ring_size, truncate=False, **kwargs
+            a, b, session, op_str, ring_size, reshare=True, **kwargs
         )
 
         a_shares = [share.get_copy() for share in a.share_ptrs]
