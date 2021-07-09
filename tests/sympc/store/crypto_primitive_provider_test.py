@@ -178,14 +178,24 @@ def test_primitive_logging_model(get_clients) -> None:
         "beaver_matmul": [
             (
                 {"a_shape": (2, 3), "b_shape": (3, 10)},
-                {"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2},
+                {
+                    "session": session,
+                    "a_shape": (2, 3),
+                    "b_shape": (3, 10),
+                    "nr_parties": 2,
+                },
             )
         ],
         "fss_comp": [({}, {"n_values": 20})],
         "beaver_mul": [
             (
                 {"a_shape": (2, 10), "b_shape": (2, 10)},
-                {"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2},
+                {
+                    "session": session,
+                    "a_shape": (2, 10),
+                    "b_shape": (2, 10),
+                    "nr_parties": 2,
+                },
             )
         ],
     }
@@ -203,7 +213,12 @@ def test_primitive_logging_beaver_mul(get_clients) -> None:
     SessionManager.setup_mpc(session)
 
     p_kwargs = {"a_shape": (2, 10), "b_shape": (2, 10)}
-    g_kwargs = {"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2}
+    g_kwargs = {
+        "session": session,
+        "a_shape": (2, 10),
+        "b_shape": (2, 10),
+        "nr_parties": 2,
+    }
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
@@ -224,7 +239,12 @@ def test_primitive_logging_beaver_matmul(get_clients) -> None:
     SessionManager.setup_mpc(session)
 
     p_kwargs = {"a_shape": (2, 3), "b_shape": (3, 10)}
-    g_kwargs = {"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2}
+    g_kwargs = {
+        "session": session,
+        "a_shape": (2, 3),
+        "b_shape": (3, 10),
+        "nr_parties": 2,
+    }
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
@@ -245,7 +265,12 @@ def test_primitive_logging_beaver_conv2d(get_clients) -> None:
     SessionManager.setup_mpc(session)
 
     p_kwargs = {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5)}
-    g_kwargs = {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5), "nr_parties": 2}
+    g_kwargs = {
+        "session": session,
+        "a_shape": (1, 1, 28, 28),
+        "b_shape": (5, 1, 5, 5),
+        "nr_parties": 2,
+    }
 
     CryptoPrimitiveProvider.start_logging()
     CryptoPrimitiveProvider.generate_primitives(
@@ -269,7 +294,12 @@ def test_generate_primitive_from_dict_beaver_matmul(get_clients) -> None:
         "beaver_matmul": [
             (
                 {"a_shape": (2, 3), "b_shape": (3, 10)},
-                {"a_shape": (2, 3), "b_shape": (3, 10), "nr_parties": 2},
+                {
+                    "session": session,
+                    "a_shape": (2, 3),
+                    "b_shape": (3, 10),
+                    "nr_parties": 2,
+                },
             )
         ]
     }
@@ -308,11 +338,21 @@ def test_generate_primitive_from_dict_beaver_mul(get_clients) -> None:
         "beaver_mul": [
             (
                 {"a_shape": (2, 10), "b_shape": (2, 10)},
-                {"a_shape": (2, 10), "b_shape": (2, 10), "nr_parties": 2},
+                {
+                    "session": session,
+                    "a_shape": (2, 10),
+                    "b_shape": (2, 10),
+                    "nr_parties": 2,
+                },
             ),
             (
                 {"a_shape": (1, 5), "b_shape": (1, 5)},
-                {"a_shape": (1, 5), "b_shape": (1, 5), "nr_parties": 2},
+                {
+                    "session": session,
+                    "a_shape": (1, 5),
+                    "b_shape": (1, 5),
+                    "nr_parties": 2,
+                },
             ),
         ]
     }
@@ -355,6 +395,7 @@ def test_generate_primitive_from_dict_beaver_conv2d(get_clients) -> None:
             (
                 {"a_shape": (1, 1, 28, 28), "b_shape": (5, 1, 5, 5)},
                 {
+                    "session": session,
                     "a_shape": (1, 1, 28, 28),
                     "b_shape": (5, 1, 5, 5),
                     "nr_parties": 2,

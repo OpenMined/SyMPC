@@ -66,6 +66,7 @@ def mul_master(
             f"beaver_{op_str}",
             session=session,
             g_kwargs={
+                "session": session,
                 "a_shape": shape_x,
                 "b_shape": shape_y,
                 "nr_parties": session.nr_parties,
@@ -96,6 +97,88 @@ def mul_master(
     return result
 
 
+def spdz_mask(
+    x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
+) -> Tuple[ShareTensor, ShareTensor]:
+    """Spdz mask.
+
+    Args:
+        x_sh (ShareTensor): X share.
+        y_sh (ShareTensor): Y share.
+        op_str (str): Operator.
+
+    Returns:
+        Tuple[ShareTensor, ShareTensor]
+    """
+    session = get_session(x_sh.session_uuid)
+
+    crypto_store = session.crypto_store
+
+    primitives = crypto_store.get_primitives_from_store(
+        f"beaver_{op_str}", x_sh.shape, y_sh.shape, remove=False
+    )
+
+    a_sh, b_sh, _ = primitives
+
+    return x_sh - a_sh, y_sh - b_sh
+
+
+def mul_parties(
+    session_uuid_str: str, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
+) -> ShareTensor:
+    """SPDZ Multiplication.
+
+    Args:
+        session_uuid_str (str): UUID to identify the session on each party side.
+        eps (torch:tensor): Epsilon value of the protocol.
+        delta (torch.Tensor): Delta value of the protocol.
+        op_str (str): Operator string.
+        kwargs: Keywords arguments for the operator.
+
+    Returns:
+        ShareTensor: Shared result of the division.
+    """
+    session = get_session(session_uuid_str)
+
+    crypto_store = session.crypto_store
+    eps_shape = tuple(eps.shape)
+    delta_shape = tuple(delta.shape)
+
+    primitives = crypto_store.get_primitives_from_store(
+        f"beaver_{op_str}", eps_shape, delta_shape
+    )
+
+    a_share, b_share, c_share = primitives
+
+    if op_str in ["conv2d", "conv_transpose2d"]:
+        op = getattr(torch, op_str)
+    else:
+        op = getattr(operator, op_str)
+
+    eps_b = op(eps, b_share.tensor, **kwargs)
+    delta_a = op(a_share.tensor, delta, **kwargs)
+
+    share_tensor = c_share.tensor + eps_b + delta_a
+    if session.rank == 0:
+        eps_delta = op(eps, delta, **kwargs)
+        share_tensor += eps_delta
+
+    # Convert to our tensor type
+    share_tensor = share_tensor.type(session.tensor_type)
+
+    share = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
+    share.tensor = share_tensor
+
+    # Ideally this should stay in the MPCTensor
+    # Step 1. Do spdz_mul
+    # Step 2. Divide by scale
+    # This is done here to reduce one round of communication
+    if session.nr_parties == 2:
+        share.tensor //= share.fp_encoder.scale
+
+    return share
+
+
 def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
     """Function that is executed by the orchestrator to divide a secret by a public value.
 
@@ -116,7 +199,10 @@ def public_divide(x: MPCTensor, y: Union[torch.Tensor, int]) -> MPCTensor:
     primitives = CryptoPrimitiveProvider.generate_primitives(
         "beaver_wraps",
         session=session,
-        g_kwargs={"nr_parties": session.nr_parties, "shape": res_shape},
+        g_kwargs={
+            "nr_parties": session.nr_parties,
+            "shape": res_shape,
+        },
         p_kwargs=None,
     )
 
@@ -189,85 +275,3 @@ def div_wraps(
     x_share.tensor //= y
 
     return theta_x
-
-
-def spdz_mask(
-    x_sh: ShareTensor, y_sh: ShareTensor, op_str: str
-) -> Tuple[ShareTensor, ShareTensor]:
-    """Spdz mask.
-
-    Args:
-        x_sh (ShareTensor): X share.
-        y_sh (ShareTensor): Y share.
-        op_str (str): Operator.
-
-    Returns:
-        Tuple[ShareTensor, ShareTensor]
-    """
-    session = get_session(x_sh.session_uuid)
-
-    crypto_store = session.crypto_store
-
-    primitives = crypto_store.get_primitives_from_store(
-        f"beaver_{op_str}", x_sh.shape, y_sh.shape, remove=False
-    )
-
-    a_sh, b_sh, _ = primitives
-
-    return x_sh - a_sh, y_sh - b_sh
-
-
-def mul_parties(
-    session_uuid_str: str, eps: torch.Tensor, delta: torch.Tensor, op_str: str, **kwargs
-) -> ShareTensor:
-    """SPDZ Multiplication.
-
-    Args:
-        session_uuid_str (str): UUID to identify the session on each party side.
-        eps (torch:tensor): Epsilon value of the protocol.
-        delta (torch.Tensor): Delta value of the protocol.
-        op_str (str): Operator string.
-        kwargs: Keywords arguments for the operator.
-
-    Returns:
-        ShareTensor: Shared result of the division.
-    """
-    session = get_session(session_uuid_str)
-
-    crypto_store = session.crypto_store
-    eps_shape = tuple(eps.shape)
-    delta_shape = tuple(delta.shape)
-
-    primitives = crypto_store.get_primitives_from_store(
-        f"beaver_{op_str}", eps_shape, delta_shape
-    )
-
-    a_share, b_share, c_share = primitives
-
-    if op_str in ["conv2d", "conv_transpose2d"]:
-        op = getattr(torch, op_str)
-    else:
-        op = getattr(operator, op_str)
-
-    eps_b = op(eps, b_share.tensor, **kwargs)
-    delta_a = op(a_share.tensor, delta, **kwargs)
-
-    share_tensor = c_share.tensor + eps_b + delta_a
-    if session.rank == 0:
-        delta_eps = op(eps, delta, **kwargs)
-        share_tensor += delta_eps
-
-    # Convert to our tensor type
-    share_tensor = share_tensor.type(session.tensor_type)
-
-    share = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
-    share.tensor = share_tensor
-
-    # Ideally this should stay in the MPCTensor
-    # Step 1. Do spdz_mul
-    # Step 2. Divide by scale
-    # This is done here to reduce one round of communication
-    if session.nr_parties == 2:
-        share.tensor //= share.fp_encoder.scale
-
-    return share

@@ -8,6 +8,7 @@ from sympc.protocol import ABY3
 from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
+from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 
@@ -50,10 +51,13 @@ def test_eq():
     assert falcon != aby2
 
 
-def test_mul_private(get_clients):
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
+def test_mul_private(get_clients, security, base, precision):
     parties = get_clients(3)
-    protocol = Falcon("semi-honest")
-    session = Session(protocol=protocol, parties=parties)
+    protocol = Falcon(security)
+    config = Config(encoder_base=base, encoder_precision=precision)
+    session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
 
     secret1 = torch.tensor(
@@ -69,10 +73,11 @@ def test_mul_private(get_clients):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
-def test_mul_private_matrix(get_clients, base, precision):
+def test_mul_private_matrix(get_clients, security, base, precision):
     parties = get_clients(3)
-    protocol = Falcon("semi-honest")
+    protocol = Falcon(security)
     config = Config(encoder_base=base, encoder_precision=precision)
     session = Session(protocol=protocol, parties=parties, config=config)
     SessionManager.setup_mpc(session)
@@ -108,17 +113,61 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
         tensor1 * tensor2
 
 
-def test_mul_private_exception_malicious(get_clients):
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_private_matmul(get_clients, security):
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    secret1 = torch.tensor(
+        [
+            [[-100.25, 20.3, 30.12], [-50.1, 100.217, 1.2], [1032.15, -323.56, 15.15]],
+            [[-0.25, 2.3, 3012], [-5.01, 1.00217, 1.2], [2.15, -3.56, 15.15]],
+        ]
+    )
+    secret2 = torch.tensor([[-1, 0.28, 3], [-9, 10.18, 1], [32, -23, 5]])
+    tensor1 = MPCTensor(secret=secret1, session=session)
+    tensor2 = MPCTensor(secret=secret2, session=session)
+    result = tensor1 @ tensor2
+    expected_res = secret1 @ secret2
+    assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
+
+
+def test_exception_mul_malicious(get_clients):
     parties = get_clients(3)
     protocol = Falcon("malicious")
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
+    x = MPCTensor(secret=1, session=session)
+    y = MPCTensor(secret=2, session=session)
+    shape_x = tuple(x.shape)
+    shape_y = tuple(y.shape)
+    p_kwargs = {"a_shape": shape_x, "b_shape": shape_y}
+    tensor = torch.tensor([1])
+    primitives = CryptoPrimitiveProvider.generate_primitives(
+        "beaver_mul",
+        session=session,
+        g_kwargs={
+            "session": session,
+            "a_shape": shape_x,
+            "b_shape": shape_y,
+            "nr_parties": session.nr_parties,
+        },
+        p_kwargs=p_kwargs,
+    )
 
-    secret1 = torch.tensor([[-100, 20, 30], [-90, 1000, 1], [1032, -323, 15]])
-    secret2 = 8
+    party = [0, 2]  # modify the primitives of party 0,2
 
-    tensor1 = MPCTensor(secret=secret1, session=session)
-    tensor2 = MPCTensor(secret=secret2, session=session)
+    sess_list = [session.session_ptrs[i].get_copy() for i in party]
 
-    with pytest.raises(NotImplementedError):
-        tensor1 * tensor2
+    for i, p in enumerate(party):
+        idx = 0 if p == 0 else 1
+        primitives[p][0][0].shares[idx] = tensor
+        sess_list[i].crypto_store.store = {}
+        sess_list[i].crypto_store.populate_store(
+            "beaver_mul", primitives[p], **p_kwargs
+        )
+        session.session_ptrs[p] = sess_list[i].send(parties[p])
+
+    with pytest.raises(ValueError):
+        x * y
