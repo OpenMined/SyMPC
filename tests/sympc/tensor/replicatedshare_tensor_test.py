@@ -1,4 +1,5 @@
 # stdlib
+import itertools
 import operator
 from uuid import uuid4
 
@@ -13,6 +14,7 @@ from sympc.protocol import Falcon
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.utils import get_type_from_ring
 
@@ -22,7 +24,7 @@ def test_import_RSTensor() -> None:
 
 
 def test_different_session_ids() -> None:
-    x = torch.randn(1)
+    x = torch.tensor([1])
     shares = [x, x]
     x_share = ReplicatedSharedTensor(shares=shares, session_uuid=uuid4())
     y_share = ReplicatedSharedTensor(shares=shares, session_uuid=uuid4())
@@ -31,10 +33,10 @@ def test_different_session_ids() -> None:
     assert x_share != y_share
 
 
-def test_same_session_id_and_data() -> None:
-    x = torch.randn(1)
+def test_different_shares() -> None:
+    x = torch.tensor([1])
     shares1 = [x, x]
-    y = torch.randn(1)
+    y = torch.tensor([2])
     shares2 = [y, y]
     session_id = uuid4()
     x_share = ReplicatedSharedTensor(shares=shares1, session_uuid=session_id)
@@ -45,7 +47,7 @@ def test_same_session_id_and_data() -> None:
 
 
 def test_different_config() -> None:
-    x = torch.randn(1)
+    x = torch.tensor([1])
     shares = [x, x]
     session_id = uuid4()
     config1 = Config(encoder_precision=10, encoder_base=2)
@@ -58,6 +60,17 @@ def test_different_config() -> None:
     )
 
     # Different fixed point config
+    assert x_share != y_share
+
+
+def test_different_ring_size() -> None:
+    x = torch.tensor([1])
+    shares = [x, x]
+
+    x_share = ReplicatedSharedTensor(shares=shares, ring_size=2 ** 32)
+    y_share = ReplicatedSharedTensor(shares=shares, ring_size=2 ** 64)
+
+    # Different ring_size
     assert x_share != y_share
 
 
@@ -409,7 +422,7 @@ def test_ops_bin_share_public(op_str) -> None:
 
 
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
-def test_ops_bin_public_mul(get_clients, security):
+def test_ops_bin_public_mul(get_clients, security) -> None:
     parties = get_clients(3)
     protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
@@ -438,7 +451,7 @@ def test_ops_bin_public_mul(get_clients, security):
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 def test_ops_prime_share_private(op_str) -> None:
     op = getattr(operator, op_str)
-    ring_size = 67
+    ring_size = PRIME_NUMBER
     prime_op = ReplicatedSharedTensor.get_op(ring_size, op_str)
     x = torch.tensor([[24, 34], [66, 1]], dtype=torch.uint8)
     y = torch.tensor([[34, 47], [45, 32]], dtype=torch.uint8)
@@ -456,7 +469,7 @@ def test_ops_prime_share_private(op_str) -> None:
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 def test_ops_prime_share_public(op_str) -> None:
     op = getattr(operator, op_str)
-    ring_size = 67
+    ring_size = PRIME_NUMBER
     prime_op = ReplicatedSharedTensor.get_op(ring_size, op_str)
     x = torch.tensor([[24, 34], [66, 1]], dtype=torch.uint8)
     y = torch.tensor([[34, 47], [45, 32]], dtype=torch.uint8)
@@ -471,12 +484,12 @@ def test_ops_prime_share_public(op_str) -> None:
 
 
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
-def test_ops_prime_public_mul(get_clients, security):
+def test_ops_prime_public_mul(get_clients, security) -> None:
     parties = get_clients(3)
     protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
-    ring_size = 67
+    ring_size = PRIME_NUMBER
     bin_op = ReplicatedSharedTensor.get_op(ring_size, "mul")
 
     sh = torch.tensor([[33, 45, 0], [52, 41, 22]], dtype=torch.uint8)
@@ -495,3 +508,34 @@ def test_ops_prime_public_mul(get_clients, security):
     expected_res = bin_op(secret, value)
 
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+def test_ops_mod_prime(op_str) -> None:
+    op_prime = getattr(ReplicatedSharedTensor, op_str + "modprime")
+    op = getattr(operator, op_str)
+
+    input_lst = [val for val in range(PRIME_NUMBER)]
+
+    for val1, val2 in itertools.combinations(input_lst, 2):
+        tensor1 = torch.tensor([val1], dtype=torch.uint8)
+        tensor2 = torch.tensor([val2], dtype=torch.uint8)
+
+        assert op(val1, val2) % PRIME_NUMBER == op_prime(tensor1, tensor2)
+
+
+@pytest.mark.parametrize("op_str", ["add", "sub", "mul"])
+def test_exception_prime_dtype(op_str) -> None:
+    a = torch.tensor([1], dtype=torch.int8)
+    b = torch.tensor([1], dtype=torch.int16)
+
+    op = getattr(ReplicatedSharedTensor, op_str + "modprime")
+
+    with pytest.raises(ValueError):
+        op(a, b)
+
+
+def test_exception_get_op() -> None:
+
+    with pytest.raises(ValueError):
+        ReplicatedSharedTensor.get_op(28, "add")

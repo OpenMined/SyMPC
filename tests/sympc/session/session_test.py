@@ -306,7 +306,7 @@ def test_przs_share_ring_size(get_clients) -> None:
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    for ring_size in RING_SIZE_TO_TYPE.keys() - {2, 67}:
+    for ring_size in RING_SIZE_TO_TYPE.keys() - {2, PRIME_NUMBER}:
         share_pt0 = session.session_ptrs[0].przs_generate_random_share(
             shape=(1, 2), ring_size=str(ring_size)
         )
@@ -341,7 +341,7 @@ def test_prrs_share_ring_size(get_clients) -> None:
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    for ring_size in RING_SIZE_TO_TYPE.keys() - {2, 67}:
+    for ring_size in RING_SIZE_TO_TYPE.keys() - {2, PRIME_NUMBER}:
         share_pt0 = session.session_ptrs[0].prrs_generate_random_share(
             shape=(1, 2), ring_size=str(ring_size)
         )

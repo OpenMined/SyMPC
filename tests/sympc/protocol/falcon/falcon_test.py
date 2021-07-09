@@ -14,6 +14,7 @@ from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 
 
@@ -216,7 +217,7 @@ def test_prime_mul_private(get_clients, security):
     protocol = Falcon(security)
     session = Session(protocol=protocol, parties=parties)
     SessionManager.setup_mpc(session)
-    ring_size = 67
+    ring_size = PRIME_NUMBER
     prime_op = ReplicatedSharedTensor.get_op(ring_size, "mul")
 
     sh1 = torch.tensor([[32, 12, 23], [17, 35, 7]], dtype=torch.uint8)

@@ -162,7 +162,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             value(torch.Tensor): Result of the operation.
+
+        Raises:
+            ValueError : If either of the tensors datatype is not torch.uint8
         """
+        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+            raise ValueError(
+                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+            )
+
         return (x + y) % PRIME_NUMBER
 
     @staticmethod
@@ -175,7 +183,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             value(torch.Tensor): Result of the operation.
+
+        Raises:
+            ValueError : If either of the tensors datatype is not torch.uint8
         """
+        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+            raise ValueError(
+                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+            )
+
         # Typecasting is done, as underflow returns a positive number,as it is unsigned.
         x = x.to(torch.int8)
         y = y.to(torch.int8)
@@ -194,7 +210,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             value(torch.Tensor): Result of the operation.
+
+        Raises:
+            ValueError : If either of the tensors datatype is not torch.uint8
         """
+        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+            raise ValueError(
+                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+            )
+
         # We typecast as multiplication result in 2n bits ,which causes overflow.
         x = x.to(torch.int16)
         y = y.to(torch.int16)
