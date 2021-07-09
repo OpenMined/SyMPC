@@ -225,7 +225,9 @@ class Falcon(metaclass=Protocol):
                 [rst_share.shares[1], eps_delta], ring_size
             )
 
-        return rst_share
+        result = z_sh - rst_share
+
+        return result
 
     @staticmethod
     def falcon_mask(
@@ -323,7 +325,7 @@ class Falcon(metaclass=Protocol):
 
         triple = MPCTensor(shares=triple_shares, session=x.session)
 
-        if (triple.reconstruct(decode=False) == result.reconstruct(decode=False)).all():
+        if (triple.reconstruct(decode=False) == 0).all():
             return result
         else:
             raise ValueError("Computation Aborted: Malicious behavior.")
