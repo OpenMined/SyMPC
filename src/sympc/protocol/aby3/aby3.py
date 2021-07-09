@@ -112,7 +112,7 @@ class ABY3(metaclass=Protocol):
         ptr_list = []
         ptr_name = x.share_ptrs[0].__name__
 
-        # TODO:Lot of branching done,to improve communication
+        # TODO:Shoud be concised,lot of branching done,to improve communication efficiency.
 
         if ptr_name == "ReplicatedSharedTensorPointer":
 

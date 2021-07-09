@@ -20,6 +20,7 @@ from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
+from sympc.utils import RING_SIZE_TO_TYPE
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
 from sympc.utils import parallel_execution
@@ -142,7 +143,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return self.shares
 
     def get_ring_size(self) -> str:
-        """Ring_size of tensor.
+        """Ring size of tensor.
 
         Returns:
             ring_size(str): Returns ring_size of tensor in string.
@@ -175,6 +176,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             value(torch.Tensor): Result of the operation.
         """
+        # Typecasting is done, as underflow returns a positive number,as it is unsigned.
         x = x.to(torch.int8)
         y = y.to(torch.int8)
 
@@ -202,7 +204,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return result.to(torch.uint8)
 
     @staticmethod
-    def get_op(ring_size: int, op_str: str) -> Any:
+    def get_op(ring_size: int, op_str: str) -> Callable[..., Any]:
         """Returns method attribute based on ring_size and op_str.
 
         Args:
@@ -210,15 +212,20 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             op_str(str): Operation string.
 
         Returns:
-            op(Any): The operation method for the op_str.
+            op(Callable[...,Any]): The operation method for the op_str.
+
+        Raises:
+            ValueError : If invalid ring size is given as input.
         """
         op = None
         if ring_size == 2:
             op = getattr(operator, BINARY_MAP[op_str])
         elif ring_size == PRIME_NUMBER:
             op = getattr(ReplicatedSharedTensor, op_str + "modprime")
-        else:
+        elif ring_size in RING_SIZE_TO_TYPE.keys():
             op = getattr(operator, op_str)
+        else:
+            raise ValueError(f"Invalid ring size: {ring_size}")
 
         return op
 
@@ -244,7 +251,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         if not isinstance(y, ReplicatedSharedTensor):
 
             y = ReplicatedSharedTensor(
-                shares=[y], ring_size=x.ring_size, config=x.config
+                session_uuid=x.session_uuid,
+                shares=[y],
+                ring_size=x.ring_size,
+                config=x.config,
             )
 
         elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
@@ -630,7 +640,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Args:
             shares(List[torch.Tensor]) : List of tensors.
-            ring_size(int): Ring size of share associated with the tensor.
+            ring_size(int): Ring size of share associated with the tensors.
 
         Returns:
             value(torch.Tensor): sum of the tensors.
@@ -829,7 +839,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ring_size(int): ring_size the shares belong to.
 
         Returns:
-            List of ReplicatedSharedTensor.
+            List of ReplicatedSharedTensors.
 
         Raises:
             TypeError: when Datatype of shares is invalid.
