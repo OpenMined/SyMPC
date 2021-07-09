@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1625588139107,
+  "lastUpdate": 1625875142337,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1271,6 +1271,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.03321223089184483",
             "extra": "mean: 1.9973991111999965 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ded5b9f1a9692972328259cd7203b7fcca2c263a",
+          "message": "Falcon  Multiplication(M) , Matrix Multiplication(S,M) , Beaver Triple Generation.(S-Semi-honest,M-Malicious) (#264)\n\n* Changed relative paths to absolute paths\r\n\r\n* Linting\r\n\r\n* Added truncation\r\n\r\n* Changed parties\r\n\r\n* Linting\r\n\r\n* Added ABY3 Protocol folder\r\n\r\n* modified to trunc1 algorithm\r\n\r\n* Added more tests\r\n\r\n* Modified Falcon Tests\r\n\r\n* Added malicious mult with truncation\r\n\r\n* Refactored and modified tests\r\n\r\n* added tests and made random_gen global\r\n\r\n* Minor refactoring\r\n\r\n* modfied redistribution and added tests\r\n\r\n* revert distribution and modify type annotations\r\n\r\n* modified resharing\r\n\r\n* Added support for tensor pointer\r\n\r\n* Increased test coverage\r\n\r\n* Modified truncation algorithm name\r\n\r\n* Added triple verfication and mask\r\n\r\n* ABY3 refactoring changes\r\n\r\n* Malicious mult refactored-green\r\n\r\n* modified to aby3 name_changes\r\n\r\n* Falcon malicious mult -check-modification\r\n\r\n* modify spdz to session attribute\r\n\r\n* Modify spdz to use session and linting\r\n\r\n* modified crypto primitive provider tests\r\n\r\n* modify prrs tests\r\n\r\n* remove malicious not implemented\r\n\r\n* added tests\r\n\r\n* Added beaver test and reduced round complexity\r\n\r\n* modified przs shape and ops\r\n\r\n* Added matmul\r\n\r\n* Modified type annotations\r\n\r\n* modified return type name\r\n\r\n* changes kwargs format\r\n\r\n* changed kwargs type for beaver\r\n\r\n* minor refactor\r\n\r\n* minor refactor\r\n\r\n* revert prrs encoding\r\n\r\n* Modified session tests and added test for malicious behavious in mul\r\n\r\n* modified triple reconstruction",
+          "timestamp": "2021-07-10T05:26:15+05:30",
+          "tree_id": "1a311a3d859fd4aa491a1b274f0478e2f7c4d0ee",
+          "url": "https://github.com/OpenMined/SyMPC/commit/ded5b9f1a9692972328259cd7203b7fcca2c263a"
+        },
+        "date": 1625875141025,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.48632322507219056,
+            "unit": "iter/sec",
+            "range": "stddev: 0.02281229003677964",
+            "extra": "mean: 2.0562456170000076 sec\nrounds: 5"
           }
         ]
       }
