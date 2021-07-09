@@ -674,9 +674,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
 
             elif self.session.protocol.share_class == ReplicatedSharedTensor:
-                if op_str == "mul":
-                    result = Falcon.mul_master(self, y, self.session)
-                    result.shape = MPCTensor._get_shape("mul", self.shape, y.shape)
+                if op_str in {"mul", "matmul"}:
+                    result = Falcon.mul_master(self, y, self.session, op_str, kwargs_)
+                    result.shape = MPCTensor._get_shape(op_str, self.shape, y.shape)
                 else:
                     raise NotImplementedError(
                         f"{op_str} has not implemented for ReplicatedSharedTensor"
@@ -789,7 +789,10 @@ class MPCTensor(metaclass=SyMPCTensor):
             and (not is_private)
             and self.session.protocol.share_class == ReplicatedSharedTensor
         ):
-            result = ABY3.truncate(input_tensor, self.session)
+            ring_size = int(self.share_ptrs[0].get_ring_size().get_copy())
+
+            result = ABY3.truncate(input_tensor, self.session, ring_size)
+
         else:
             result = input_tensor
 

@@ -19,11 +19,13 @@ import torch
 import torchcsprng as csprng  # type: ignore
 
 from sympc.config import Config
+from sympc.session import Session
 from sympc.store import register_primitive_generator
 from sympc.store import register_primitive_store_add
 from sympc.store import register_primitive_store_get
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
+from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor import ShareTensor
 from sympc.utils import count_wraps
 
@@ -37,6 +39,8 @@ def _get_triples(
     nr_parties: int,
     a_shape: Tuple[int],
     b_shape: Tuple[int],
+    session: Session,
+    ring_size: int = None,
     **kwargs: Dict[Any, Any],
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
@@ -49,42 +53,87 @@ def _get_triples(
         nr_parties (int): Number of parties
         a_shape (Tuple[int]): Shape of a from beaver triples protocol.
         b_shape (Tuple[int]): Shape of b part from beaver triples protocol.
+        session (Session) : Session to generate the triples for.
+        ring_size(int) : Ring Size of the triples to generate.
         kwargs: Arbitrary keyword arguments for commands.
 
     Returns:
         List[List[3 x List[ShareTensor, ShareTensor, ShareTensor]]]:
         The generated triples a,b,c for each party.
+
+    Raises:
+        ValueError: If the triples are not consistent.
+        ValueError: If the share class is invalid.
     """
+    from sympc.protocol import Falcon
+
     config = Config(encoder_precision=0)
-    a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
-        generator=ttp_generator
-    )
-    a_shares = MPCTensor.generate_shares(
-        secret=a_rand,
-        nr_parties=nr_parties,
-        tensor_type=torch.long,
-        config=config,
-    )
-
-    b_rand = torch.empty(size=b_shape, dtype=torch.long).random_(
-        generator=ttp_generator
-    )
-    b_shares = MPCTensor.generate_shares(
-        secret=b_rand,
-        nr_parties=nr_parties,
-        tensor_type=torch.long,
-        config=config,
-    )
-
     if op_str in ["conv2d", "conv_transpose2d"]:
         cmd = getattr(torch, op_str)
     else:
         cmd = getattr(operator, op_str)
 
-    c_val = cmd(a_rand, b_rand, **kwargs)
-    c_shares = MPCTensor.generate_shares(
-        secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, config=config
-    )
+    if session.protocol.share_class == ShareTensor:
+        a_rand = torch.empty(size=a_shape, dtype=torch.long).random_(
+            generator=ttp_generator
+        )
+        a_shares = MPCTensor.generate_shares(
+            secret=a_rand,
+            nr_parties=nr_parties,
+            tensor_type=torch.long,
+            config=config,
+        )
+
+        b_rand = torch.empty(size=b_shape, dtype=torch.long).random_(
+            generator=ttp_generator
+        )
+        b_shares = MPCTensor.generate_shares(
+            secret=b_rand,
+            nr_parties=nr_parties,
+            tensor_type=torch.long,
+            config=config,
+        )
+
+        c_val = cmd(a_rand, b_rand, **kwargs)
+        c_shares = MPCTensor.generate_shares(
+            secret=c_val, nr_parties=nr_parties, tensor_type=torch.long, config=config
+        )
+    elif session.protocol.share_class == ReplicatedSharedTensor:
+
+        if ring_size is None:
+            ring_size = session.ring_size
+
+        a_ptrs: List = []
+        b_ptrs: List = []
+        for session_ptr in session.session_ptrs:
+            a_ptrs.append(
+                session_ptr.prrs_generate_random_share(a_shape, str(ring_size))
+            )
+            b_ptrs.append(
+                session_ptr.prrs_generate_random_share(b_shape, str(ring_size))
+            )
+
+        a = MPCTensor(shares=a_ptrs, session=session, shape=a_shape)
+        b = MPCTensor(shares=b_ptrs, session=session, shape=b_shape)
+        c = Falcon.mul_semi_honest(
+            a, b, session, op_str, ring_size, reshare=True, **kwargs
+        )
+
+        a_shares = [share.get_copy() for share in a.share_ptrs]
+        b_shares = [share.get_copy() for share in b.share_ptrs]
+        c_shares = [share.get_copy() for share in c.share_ptrs]
+
+        shares_sum = ReplicatedSharedTensor.shares_sum
+        a_val = shares_sum([a_shares[0].shares[0]] + a_shares[1].shares, ring_size)
+        b_val = shares_sum([b_shares[0].shares[0]] + b_shares[1].shares, ring_size)
+        c_val = shares_sum([c_shares[0].shares[0]] + c_shares[1].shares, ring_size)
+
+        op = ReplicatedSharedTensor.get_op(ring_size, op_str)
+
+        if (c_val != op(a_val, b_val)).all():
+            raise ValueError("Computation aborted:Invalid Triples")
+    else:
+        raise ValueError("Invalid share class.")
 
     # We are always creating an instance
     triple_sequential = [(a_shares, b_shares, c_shares)]

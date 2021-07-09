@@ -125,7 +125,7 @@ def test_local_secret_not_tensor(get_clients) -> None:
     assert np.allclose(torch.tensor(x_float), result)
 
 
-@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["mul", "matmul"])
 def test_ops_mpc_mpc(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
@@ -163,7 +163,7 @@ def test_ops_mpc_mpc_div(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, rtol=10e-4)
 
 
-@pytest.mark.parametrize("nr_clients", [2, 3, 4])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("bias", [None, torch.ones(1)])
 @pytest.mark.parametrize("stride", [1, 2])
 @pytest.mark.parametrize("padding", [0, 1])
@@ -188,7 +188,7 @@ def test_conv_mpc_mpc(get_clients, nr_clients, bias, stride, padding, op_str) ->
     assert np.allclose(result, expected_result, rtol=10e-4)
 
 
-@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["mul", "matmul", "truediv"])
 def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
@@ -211,7 +211,7 @@ def test_ops_mpc_public(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
-@pytest.mark.parametrize("nr_parties", [3, 4, 5])
+@pytest.mark.parametrize("nr_parties", [3, 5])
 def test_ops_divfloat_exception(get_clients, nr_parties) -> None:
     # Define the virtual machines that would be use in the computation
     parties = get_clients(nr_parties)
@@ -231,7 +231,7 @@ def test_ops_divfloat_exception(get_clients, nr_parties) -> None:
         x / y
 
 
-@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "matmul"])
 def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
@@ -253,10 +253,11 @@ def test_ops_public_mpc(get_clients, nr_clients, op_str) -> None:
 falcon = Protocol.registered_protocols["Falcon"]()
 
 
-@pytest.mark.parametrize("nr_clients", [3, 5, 7])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 def test_ops_public_tensor_rst(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
+    falcon = Protocol.registered_protocols["Falcon"]()
     session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
 
@@ -272,10 +273,12 @@ def test_ops_public_tensor_rst(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-4)
 
 
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("op_str", ["mul"])  # matmul to be added
-def test_ops_mpc_private_rst_mul(get_clients, op_str) -> None:
+def test_ops_mpc_private_rst_mul(get_clients, op_str, security) -> None:
     clients = get_clients(3)
-    session = Session(parties=clients)
+    falcon = Protocol.registered_protocols["Falcon"](security)
+    session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
 
     op = getattr(operator, op_str)
@@ -290,7 +293,7 @@ def test_ops_mpc_private_rst_mul(get_clients, op_str) -> None:
     assert np.allclose(result, expected_result, rtol=10e-3)
 
 
-@pytest.mark.parametrize("nr_clients", [2, 3, 4, 5])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub", "mul", "truediv"])
 def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
@@ -310,10 +313,11 @@ def test_ops_integer(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-3)
 
 
-@pytest.mark.parametrize("nr_clients", [3, 5, 7])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 def test_ops_public_integer_rst(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
+    falcon = Protocol.registered_protocols["Falcon"]()
     session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
 
@@ -330,10 +334,11 @@ def test_ops_public_integer_rst(get_clients, nr_clients, op_str) -> None:
     assert np.allclose(result, expected_result, atol=10e-3)
 
 
-@pytest.mark.parametrize("nr_clients", [3, 5, 7])
+@pytest.mark.parametrize("nr_clients", [2, 3, 5])
 @pytest.mark.parametrize("op_str", ["add", "sub"])
 def test_ops_mpc_private_rst(get_clients, nr_clients, op_str) -> None:
     clients = get_clients(nr_clients)
+    falcon = Protocol.registered_protocols["Falcon"]()
     session = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session)
 
@@ -634,6 +639,7 @@ def test_invalid_share_class(get_clients) -> None:
 def test_ops_different_share_class(get_clients) -> None:
     clients = get_clients(2)
     session1 = Session(parties=clients)
+    falcon = Protocol.registered_protocols["Falcon"]()
     session2 = Session(parties=clients, protocol=falcon)
     SessionManager.setup_mpc(session1)
     SessionManager.setup_mpc(session2)
