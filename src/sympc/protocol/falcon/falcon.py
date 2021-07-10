@@ -402,3 +402,40 @@ class Falcon(metaclass=Protocol):
             x.ring_size,
         )
         return z_value
+
+    @staticmethod
+    def select_shares(x: MPCTensor, y: MPCTensor, b: MPCTensor) -> MPCTensor:
+        """Returns either x or y based on bit b.
+
+        Args:
+            x(MPCTensor): input tensor
+            y(MPCTensor): input tensor
+            b(MPCTensor): input tensor which is shares of a bit used as selector bit.
+
+        Returns:
+            z(MPCTensor):Returns x(if b==0) or y (if b==1).
+        """
+        session = x.session
+        c_ptrs: List = []
+        ring_size = 2
+        for session_ptr in session.session_ptrs:
+            c_ptrs.append(
+                session_ptr.prrs_generate_random_share(
+                    shape=(1,), ring_size=str(ring_size)
+                )
+            )
+
+        c = MPCTensor(shares=c_ptrs, session=session, shape=(1,))  # bit random share
+        c_r = ABY3.bit_injection(
+            c, session, session.ring_size
+        )  # bit random share in session ring.
+
+        if (b + c).reconstruct(decode=False) == 1:
+            d = 1 - c_r
+        else:
+            d = c_r
+
+        # Order placed carefully to prevent re-encoding,should not be changed.
+        z = x + (d * (y - x))
+
+        return z

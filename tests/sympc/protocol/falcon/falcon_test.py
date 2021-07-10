@@ -242,3 +242,30 @@ def test_prime_mul_private(get_clients, security):
     expected_res = prime_op(secret1, secret2)
 
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("bit", ["zero", "one"])
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_select_shares(get_clients, security, bit) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    val = {
+        "one": torch.tensor([1], dtype=torch.bool),
+        "zero": torch.tensor([0], dtype=torch.bool),
+    }
+    sh = val[bit]
+    shares = [sh, sh, sh]
+    ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
+    b = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
+
+    x = MPCTensor(secret=1, session=session)
+    y = MPCTensor(secret=2, session=session)
+
+    z = Falcon.select_shares(x, y, b)
+
+    if bit == "zero":
+        assert (z.reconstruct() == x.reconstruct()).all()
+    else:
+        assert (z.reconstruct() == y.reconstruct()).all()
