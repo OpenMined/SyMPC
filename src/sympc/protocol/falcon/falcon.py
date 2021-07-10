@@ -12,6 +12,7 @@ from typing import Tuple
 # third party
 import torch
 
+from sympc.config import Config
 from sympc.protocol import ABY3
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
@@ -107,15 +108,21 @@ class Falcon(metaclass=Protocol):
         result = None
 
         ring_size = int(x.share_ptrs[0].get_ring_size().get_copy())
+        conf_dict = x.share_ptrs[0].get_config().get_copy()
+        config = Config(**conf_dict)
 
         if session.protocol.security_type == "semi-honest":
-            result = Falcon.mul_semi_honest(x, y, session, op_str, ring_size, **kwargs_)
+            result = Falcon.mul_semi_honest(
+                x, y, session, op_str, ring_size, config, **kwargs_
+            )
         elif session.protocol.security_type == "malicious":
-            result = Falcon.mul_malicious(x, y, session, op_str, ring_size, **kwargs_)
+            result = Falcon.mul_malicious(
+                x, y, session, op_str, ring_size, config, **kwargs_
+            )
         else:
             raise ValueError("Invalid security_type for Falcon multiplication")
 
-        result = ABY3.truncate(result, session, ring_size)
+        result = ABY3.truncate(result, session, ring_size, config)
 
         return result
 
@@ -126,6 +133,7 @@ class Falcon(metaclass=Protocol):
         session: Session,
         op_str: str,
         ring_size: int,
+        config: Config,
         reshare: bool = False,
         **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
@@ -139,6 +147,7 @@ class Falcon(metaclass=Protocol):
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
             ring_size(int) : Ring size of the underlying tensors.
+            config(Config): The configuration(base,precision) of the underlying tensor.
             reshare (bool) : Convert 3-out-3 to 2-out-3 if set.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
@@ -161,7 +170,7 @@ class Falcon(metaclass=Protocol):
 
             # Convert 3-3 shares to 2-3 shares by resharing
             reshared_shares = ReplicatedSharedTensor.distribute_shares(
-                z_shares, x.session, ring_size
+                z_shares, x.session, ring_size, config
             )
             result = MPCTensor(shares=reshared_shares, session=x.session)
 
@@ -262,6 +271,7 @@ class Falcon(metaclass=Protocol):
         session: Session,
         op_str: str,
         ring_size: int,
+        config: Config,
         **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
         """Falcon malicious multiplication.
@@ -272,6 +282,7 @@ class Falcon(metaclass=Protocol):
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
             ring_size(int) : Ring size of the underlying tensor.
+            config(Config): The configuration(base,precision) of the underlying tensor.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
@@ -284,7 +295,7 @@ class Falcon(metaclass=Protocol):
         shape_y = tuple(y.shape)
 
         result = Falcon.mul_semi_honest(
-            x, y, session, op_str, ring_size, reshare=True, **kwargs_
+            x, y, session, op_str, ring_size, config, reshare=True, **kwargs_
         )
 
         args = [list(sh) + [op_str] for sh in zip(x.share_ptrs, y.share_ptrs)]
@@ -300,6 +311,7 @@ class Falcon(metaclass=Protocol):
                     "b_shape": shape_y,
                     "nr_parties": session.nr_parties,
                     "ring_size": ring_size,
+                    "config": config,
                     **kwargs_,
                 },
                 p_kwargs={"a_shape": shape_x, "b_shape": shape_y},

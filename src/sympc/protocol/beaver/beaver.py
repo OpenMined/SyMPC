@@ -41,6 +41,7 @@ def _get_triples(
     b_shape: Tuple[int],
     session: Session,
     ring_size: int = None,
+    config: Config = None,
     **kwargs: Dict[Any, Any],
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
@@ -55,6 +56,7 @@ def _get_triples(
         b_shape (Tuple[int]): Shape of b part from beaver triples protocol.
         session (Session) : Session to generate the triples for.
         ring_size(int) : Ring Size of the triples to generate.
+        config(Config) : The configuration(base,precision) of the shares to generate.
         kwargs: Arbitrary keyword arguments for commands.
 
     Returns:
@@ -102,6 +104,8 @@ def _get_triples(
 
         if ring_size is None:
             ring_size = session.ring_size
+        if config is None:
+            config = session.config
 
         a_ptrs: List = []
         b_ptrs: List = []
@@ -116,7 +120,7 @@ def _get_triples(
         a = MPCTensor(shares=a_ptrs, session=session, shape=a_shape)
         b = MPCTensor(shares=b_ptrs, session=session, shape=b_shape)
         c = Falcon.mul_semi_honest(
-            a, b, session, op_str, ring_size, reshare=True, **kwargs
+            a, b, session, op_str, ring_size, config, reshare=True, **kwargs
         )
 
         a_shares = [share.get_copy() for share in a.share_ptrs]

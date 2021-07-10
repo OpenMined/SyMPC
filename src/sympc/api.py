@@ -232,6 +232,10 @@ replicated_shared_tensor_attrs = [
         "syft.lib.python.String",
     ),
     (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.get_config",
+        "syft.lib.python.Dict",
+    ),
+    (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.T",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
