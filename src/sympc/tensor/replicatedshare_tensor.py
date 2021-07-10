@@ -1,6 +1,7 @@
 """Used to abstract multiple shared values held by parties."""
 
 # stdlib
+import dataclasses
 from functools import reduce
 import operator
 from typing import Any
@@ -151,6 +152,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         It is typecasted to string as we cannot serialize 2**64
         """
         return str(self.ring_size)
+
+    def get_config(self) -> Dict:
+        """Config of tensor.
+
+        Returns:
+            config(Dict): returns config of the tensor as dict.
+        """
+        return dataclasses.asdict(self.config)
 
     @staticmethod
     def addmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -810,6 +819,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         party_rank: int,
         session: Session,
         ring_size: int,
+        config: Config,
     ) -> "ReplicatedSharedTensor":
         """Distributes shares to party.
 
@@ -818,6 +828,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             party_rank (int): Rank of party.
             session (Session): Current session
             ring_size(int): Ring size of tensor to distribute
+            config(Config): The configuration(base,precision) of the tensor.
 
         Returns:
             tensor (ReplicatedSharedTensor): Tensor with shares
@@ -843,7 +854,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         tensor = ReplicatedSharedTensor(
             session_uuid=session.rank_to_uuid[party_rank],
-            config=session.config,
+            config=config,
             ring_size=ring_size,
         )
         tensor.shares = party_shares
@@ -854,6 +865,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         shares: List[Union[ShareTensor, torch.Tensor]],
         session: Session,
         ring_size: int = None,
+        config: Config = None,
     ) -> List["ReplicatedSharedTensor"]:
         """Distribute a list of shares.
 
@@ -861,6 +873,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             shares (List[ShareTensor): list of shares to distribute.
             session (Session): Session.
             ring_size(int): ring_size the shares belong to.
+            config(Config): The configuration(base,precision) of the tensor.
 
         Returns:
             List of ReplicatedSharedTensors.
@@ -879,9 +892,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         if ring_size is None:
             ring_size = session.ring_size
+        if config is None:
+            config = session.config
 
         args = [
-            [shares, party_rank, session, ring_size]
+            [shares, party_rank, session, ring_size, config]
             for party_rank in range(session.nr_parties)
         ]
 

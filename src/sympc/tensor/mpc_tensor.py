@@ -790,8 +790,10 @@ class MPCTensor(metaclass=SyMPCTensor):
             and self.session.protocol.share_class == ReplicatedSharedTensor
         ):
             ring_size = int(self.share_ptrs[0].get_ring_size().get_copy())
+            conf_dict = self.share_ptrs[0].get_config().get_copy()
+            config = Config(**conf_dict)
 
-            result = ABY3.truncate(input_tensor, self.session, ring_size)
+            result = ABY3.truncate(input_tensor, self.session, ring_size, config)
 
         else:
             result = input_tensor
