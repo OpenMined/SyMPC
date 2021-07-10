@@ -86,19 +86,25 @@ def test_invalid_mpc_pointer(get_clients) -> None:
         ABY3.truncate(x, session, 2 ** 32, None)
 
 
+@pytest.mark.parametrize("x1", ["zero", "one"])
+@pytest.mark.parametrize("x2", ["zero", "one"])
+@pytest.mark.parametrize("x3", ["zero", "one"])
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
-def test_bit_injection_prime(get_clients, security_type) -> None:
+def test_bit_injection_prime(get_clients, security_type, x1, x2, x3) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security_type)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     ring_size = PRIME_NUMBER
 
-    one = torch.tensor([1], dtype=torch.bool)
-    zero = torch.tensor([0], dtype=torch.bool)
-    shares = [one, zero, one]
+    val = {
+        "one": torch.tensor([1], dtype=torch.bool),
+        "zero": torch.tensor([0], dtype=torch.bool),
+    }
+
+    shares = [val[x1], val[x2], val[x3]]  # All possible combinations
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    x = MPCTensor(shares=ptr_lst, session=session, shape=one.shape)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
 
     xbit = ABY3.bit_injection(x, session, ring_size)
 
@@ -108,19 +114,25 @@ def test_bit_injection_prime(get_clients, security_type) -> None:
     assert ring_size == ring0
 
 
+@pytest.mark.parametrize("x1", ["zero", "one"])
+@pytest.mark.parametrize("x2", ["zero", "one"])
+@pytest.mark.parametrize("x3", ["zero", "one"])
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
-def test_bit_injection_session_ring(get_clients, security_type) -> None:
+def test_bit_injection_session_ring(get_clients, security_type, x1, x2, x3) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security_type)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     ring_size = session.ring_size
 
-    one = torch.tensor([1], dtype=torch.bool)
-    zero = torch.tensor([0], dtype=torch.bool)
-    shares = [one, zero, zero]
+    val = {
+        "one": torch.tensor([1], dtype=torch.bool),
+        "zero": torch.tensor([0], dtype=torch.bool),
+    }
+
+    shares = [val[x1], val[x2], val[x3]]  # All possible combinations
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    x = MPCTensor(shares=ptr_lst, session=session, shape=one.shape)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
 
     xbit = ABY3.bit_injection(x, session, ring_size)
 
