@@ -4,7 +4,6 @@ Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
-import operator
 from typing import Any
 from typing import Dict
 from typing import List
