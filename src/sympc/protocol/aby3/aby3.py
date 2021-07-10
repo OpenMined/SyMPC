@@ -246,6 +246,7 @@ class ABY3(metaclass=Protocol):
         for i in range(nr_parties):
             rst = x.clone()
             rst.shares = shares[i]
+            rst.ring_size = ring_size
             rst_list.append(rst)
 
         return rst_list
