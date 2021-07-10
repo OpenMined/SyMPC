@@ -358,6 +358,7 @@ class Falcon(metaclass=Protocol):
         # Add PRZS Mask to z  value
         op = ReplicatedSharedTensor.get_op(x.ring_size, "add")
         share = op(z_value, przs_mask.get_shares()[0])
+
         return share
 
     @staticmethod

@@ -14,10 +14,13 @@ import torchcsprng as csprng
 
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
+from sympc.session import get_session
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_type_from_ring
+from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
 
@@ -188,3 +191,77 @@ class ABY3(metaclass=Protocol):
         r_mpc = MPCTensor(shares=r, session=session, shape=x.shape)
         rPrime_mpc = MPCTensor(shares=rPrime, session=session, shape=x.shape)
         return r_mpc, rPrime_mpc
+
+    @staticmethod
+    def local_decomposition(
+        x: ReplicatedSharedTensor, ring_size: str
+    ) -> List[ReplicatedSharedTensor]:
+        """Performs local decomposition to generate shares of shares.
+
+        Args:
+            x(ReplicatedSharedTensor) : input RSTensor.
+            ring_size(str) : Ring size to generate decomposed shares in.
+
+        Returns:
+            List[ReplicatedSharedTensor]: Decomposed shares in the given ring size.
+
+        Raises:
+            ValueError: If RSTensor does not have session uuid.
+        """
+        if x.session_uuid is not None:
+            session = get_session(x.session_uuid)
+        else:
+            raise ValueError("Input RSTensor should have session_uuid")
+
+        ring_size = int(ring_size)
+        tensor_type = get_type_from_ring(ring_size)
+        rank = session.rank
+        nr_parties = session.nr_parties
+
+        zero = torch.zeros(x.shares[0].shape).type(tensor_type)
+
+        shares = [[zero, zero] for i in range(nr_parties)]
+
+        shares[rank][0] = x.shares[0].type(tensor_type)
+
+        shares[(rank + 1) % nr_parties][1] = x.shares[1].type(tensor_type)
+
+        rst_list = []
+        for i in range(nr_parties):
+            rst = x.clone()
+            rst.shares = shares[i]
+            rst_list.append(rst)
+
+        return rst_list
+
+    @staticmethod
+    def bit_injection(x: MPCTensor, session: Session, ring_size: int) -> MPCTensor:
+        """Perfom ABY3 bit injection for conversion of binary share to arithmetic share.
+
+        Args:
+            x(MPCTensor) : MPCTensor with shares of bit.
+            session(Session): session the share belongs to.
+            ring_size(int) : Ring size of arithmetic share to convert.
+
+        Returns:
+            arith_share(MPCTensor): Arithmetic shares of bit in input ring size.
+        """
+        args = [[share, str(ring_size)] for share in x.share_ptrs]
+
+        decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+
+        x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+
+        x1_sh = list(map(lambda pt: pt.resolve_pointer_type(), x1_sh))
+        x2_sh = list(map(lambda pt: pt.resolve_pointer_type(), x2_sh))
+        x3_sh = list(map(lambda pt: pt.resolve_pointer_type(), x3_sh))
+
+        x1 = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
+        x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
+        x3 = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
+
+        x1_2 = x1 + x2 - (x1 * x2 * 2)
+
+        arith_share = x3 + x1_2 - (x3 * x1_2 * 2)
+
+        return arith_share
