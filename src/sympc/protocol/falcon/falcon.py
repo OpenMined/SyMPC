@@ -4,10 +4,12 @@ Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
+import math
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # third party
 import torch
@@ -20,6 +22,7 @@ from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import parallel_execution
@@ -402,3 +405,83 @@ class Falcon(metaclass=Protocol):
             x.ring_size,
         )
         return z_value
+
+    @staticmethod
+    def _random_prime_group(
+        session: Session, shape: Union[torch.Size, tuple]
+    ) -> MPCTensor:
+        """Computes shares of random number in Zp*.Zp* is the multplicative group mod p.Zp* = {1,2..,p-1}.
+
+        Args:
+            session(Session): session to generate random shares for.
+            shape(Union[torch.Size,tuple]): shape of the random share to generate.
+
+        Returns:
+            share(MPCTensor): Retuns shares of random number in group Zp*.
+
+        We use Euler's Theorum for verifying that random share is not zero.
+        It states that:
+        For a prime number p
+        a^p-1 = 1(mod p), if a is co prime to p.
+        """
+        while True:
+            ptr_list: List = []
+            for session_ptr in session.session_ptrs:
+                ptr_list.append(
+                    session_ptr.przs_generate_random_share(
+                        shape=shape, ring_size=str(PRIME_NUMBER)
+                    )
+                )
+            m = MPCTensor(shares=ptr_list, session=session, shape=shape)
+
+            m_fermat = m ** (PRIME_NUMBER - 1)
+
+            if (m_fermat.reconstruct(decode=False) == 1).all():
+                return m
+
+    @staticmethod
+    def private_compare(x: List[MPCTensor], r: torch.Tensor) -> MPCTensor:
+        """Falcon Private Compare functionality which computes(x>r).
+
+        Args:
+            x(List[MPCTensor]) : shares of bits of x in Zp.
+            r(torch.Tensor) : Public integer r.
+
+        Returns:
+            result(MPCTensor): Returns shares of bits of the operation.
+
+        (if(x>=r) returns 1 else returns 0)
+        """
+        shape = x[0].shape
+        session = x[0].session
+        ptr_list: List = []
+        for session_ptr in session.session_ptrs:
+            ptr_list.append(
+                session_ptr.przs_generate_random_share(shape=shape, ring_size=str(2))
+            )
+
+        beta_2 = MPCTensor(
+            shares=ptr_list, session=session, shape=shape
+        )  # shares of random bit
+        beta_p = ABY3.bit_injection(
+            beta_2, session, PRIME_NUMBER
+        )  # shares of random bit in Zp.
+        m = Falcon._random_prime_group(session, shape)
+
+        u = [0 for i in range(len(x))]
+        w = [0 for i in range(len(x))]
+        c = [0 for i in range(len(x))]
+        for i in range(len(x) - 1, -1, -1):
+            r_i = r >> i & 1  # bit at ith position
+            u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
+            w[i] = x[i] + r_i - (x[i] * r_i * 2)
+            c[i] = u[i] + 1
+            c[i] += 0 if i == len(x) - 2 else sum(w[i + 1 :])
+        d = m ** PRIME_NUMBER * (math.prod(c))
+
+        if (d.reconstruct(decode=False) != 0).all():
+            beta_prime = 1
+        else:
+            beta_prime = 0
+
+        return beta_2 + beta_prime
