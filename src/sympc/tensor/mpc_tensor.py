@@ -1130,6 +1130,25 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
+    def xor(self, other) -> "MPCTensor":
+        """Not equal operator.
+
+        Args:
+            other (MPCTensor): MPCTensor to find xor.
+
+        Returns:
+            MPCTensor: Result of the xor.
+        """
+        session = self.session
+        op = getattr(operator, "xor")
+        from sympc.tensor import ReplicatedSharedTensor
+
+        if session.protocol.share_class == ReplicatedSharedTensor:
+            shares = [op(share, other) for share in self.share_ptrs]
+
+        result = MPCTensor(shares=shares, session=self.session)
+        return result
+
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
     __sub__ = wrapper_getattribute(sub)
@@ -1147,6 +1166,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __gt__ = wrapper_getattribute(gt)
     __eq__ = wrapper_getattribute(eq)
     __ne__ = wrapper_getattribute(ne)
+    __xor__ = wrapper_getattribute(xor)
 
 
 PARTIES_TO_SESSION: Dict[Any, Session] = {}
