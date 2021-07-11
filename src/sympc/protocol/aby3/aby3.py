@@ -215,8 +215,8 @@ class ABY3(metaclass=Protocol):
         """Performs local decomposition to generate shares of shares.
 
         Args:
-            x(ReplicatedSharedTensor) : input RSTensor.
-            ring_size(str) : Ring size to generate decomposed shares in.
+            x (ReplicatedSharedTensor) : input RSTensor.
+            ring_size (str) : Ring size to generate decomposed shares in.
 
         Returns:
             List[ReplicatedSharedTensor]: Decomposed shares in the given ring size.
@@ -224,11 +224,10 @@ class ABY3(metaclass=Protocol):
         Raises:
             ValueError: If RSTensor does not have session uuid.
         """
-        if x.session_uuid is not None:
-            session = get_session(x.session_uuid)
-        else:
+        if x.session_uuid is None:
             raise ValueError("Input RSTensor should have session_uuid")
 
+        session = get_session(x.session_uuid)
         ring_size = int(ring_size)
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
@@ -236,11 +235,11 @@ class ABY3(metaclass=Protocol):
 
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
-        shares = [[zero, zero] for i in range(nr_parties)]
+        shares = [[zero.clone(), zero.clone()] for i in range(nr_parties)]
 
-        shares[rank][0] = x.shares[0].type(tensor_type)
+        shares[rank][0] = x.shares[0].clone().type(tensor_type)
 
-        shares[(rank + 1) % nr_parties][1] = x.shares[1].type(tensor_type)
+        shares[(rank + 1) % nr_parties][1] = x.shares[1].clone().type(tensor_type)
 
         rst_list = []
         for i in range(nr_parties):
@@ -256,12 +255,12 @@ class ABY3(metaclass=Protocol):
         """Perfom ABY3 bit injection for conversion of binary share to arithmetic share.
 
         Args:
-            x(MPCTensor) : MPCTensor with shares of bit.
-            session(Session): session the share belongs to.
-            ring_size(int) : Ring size of arithmetic share to convert.
+            x (MPCTensor) : MPCTensor with shares of bit.
+            session (Session): session the share belongs to.
+            ring_size (int) : Ring size of arithmetic share to convert.
 
         Returns:
-            arith_share(MPCTensor): Arithmetic shares of bit in input ring size.
+            arith_share (MPCTensor): Arithmetic shares of bit in input ring size.
         """
         args = [[share, str(ring_size)] for share in x.share_ptrs]
 
