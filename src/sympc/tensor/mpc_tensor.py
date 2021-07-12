@@ -1138,6 +1138,9 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         Returns:
             MPCTensor: Result of the xor.
+
+        Raises:
+            ValueError : If share class is invalid..
         """
         session = self.session
         op = getattr(operator, "xor")
@@ -1145,6 +1148,10 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         if session.protocol.share_class == ReplicatedSharedTensor:
             shares = [op(share, other) for share in self.share_ptrs]
+        else:
+            raise ValueError(
+                f"xor is not supported for share_class: {session.protocol.share_class}"
+            )
 
         result = MPCTensor(shares=shares, session=self.session)
         return result

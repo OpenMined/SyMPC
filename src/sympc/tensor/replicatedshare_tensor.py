@@ -579,21 +579,26 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         raise NotImplementedError
 
-    def xor(self, b: Union[int, torch.Tensor, "ReplicatedSharedTensor"]):
+    def xor(self, y: Union[int, torch.Tensor, "ReplicatedSharedTensor"]):
         """Apply the "xor" operation between "self" and "y".
 
         Args:
-            b: public bit
+            y: public bit
 
         Returns:
             ReplicatedSharedTensor: Result of the operation.
+
+        Raises:
+            ValueError : If ring size is invalid.
         """
         if self.ring_size == 2:
-            return self + b
-        elif self.ring_size == PRIME_NUMBER:
-            return self + b - (self * b * 2)
-        elif self.ring_size in RING_SIZE_TO_TYPE.keys():
-            return self + b - (self * b * 2)
+            return self + y
+        elif (
+            self.ring_size == PRIME_NUMBER or self.ring_size in RING_SIZE_TO_TYPE.keys()
+        ):
+            return self + y - (self * y * 2)
+        else:
+            raise ValueError(f"The ring_size {self.ring_size} is not supported.")
 
     def lt(self, y):
         """Lower than operator.
