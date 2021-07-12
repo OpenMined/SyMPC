@@ -1131,7 +1131,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         return 1 - self.eq(other)
 
     def xor(self, other) -> "MPCTensor":
-        """Not equal operator.
+        """XOR operator.
 
         Args:
             other (MPCTensor): MPCTensor to find xor.
