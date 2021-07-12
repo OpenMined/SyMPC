@@ -268,14 +268,15 @@ class ABY3(metaclass=Protocol):
 
         x1_sh, x2_sh, x3_sh = list(zip(*decompose))
 
-        x1_sh = list(map(lambda pt: pt.resolve_pointer_type(), x1_sh))
-        x2_sh = list(map(lambda pt: pt.resolve_pointer_type(), x2_sh))
-        x3_sh = list(map(lambda pt: pt.resolve_pointer_type(), x3_sh))
+        x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
+        x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
+        x3_sh = [ptr.resolve_pointer_type() for ptr in x3_sh]
 
         x1 = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
         x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
         x3 = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
 
+        # TODO : should be modified to use XOR after XOR PR gets merged.
         x1_2 = x1 + x2 - (x1 * x2 * 2)
 
         arith_share = x3 + x1_2 - (x3 * x1_2 * 2)
