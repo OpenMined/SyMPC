@@ -413,30 +413,33 @@ class Falcon(metaclass=Protocol):
         """Computes shares of random number in Zp*.Zp* is the multplicative group mod p.Zp* = {1,2..,p-1}.
 
         Args:
-            session(Session): session to generate random shares for.
-            shape(Union[torch.Size,tuple]): shape of the random share to generate.
+            session (Session): session to generate random shares for.
+            shape (Union[torch.Size,tuple]): shape of the random share to generate.
 
         Returns:
-            share(MPCTensor): Retuns shares of random number in group Zp*.
+            share (MPCTensor): Retuns shares of random number in group Zp*.
 
         We use Euler's Theorum for verifying that random share is not zero.
         It states that:
-        For a prime number p
-        a^p-1 = 1(mod p), if a is co prime to p.
+        For a general modulus n
+        a^phi(n) = 1(mod n), if a is co prime to n.
+        In our case n=p(prime number), phi(p) = p-1
+        phi(n) = Euler totient function.
         """
         while True:
-            ptr_list: List = []
+            ptr_list: List[ReplicatedSharedTensor] = []
             for session_ptr in session.session_ptrs:
-                ptr_list.append(
-                    session_ptr.przs_generate_random_share(
-                        shape=shape, ring_size=str(PRIME_NUMBER)
-                    )
-                )
+                ptr = session_ptr.prrs_generate_random_share(
+                    shape=(), ring_size=str(PRIME_NUMBER)
+                ).resolve_pointer_type()
+                ptr = ptr.repeat(shape)
+                ptr_list.append(ptr)
+
             m = MPCTensor(shares=ptr_list, session=session, shape=shape)
 
-            m_fermat = m ** (PRIME_NUMBER - 1)
+            m_euler = m ** (PRIME_NUMBER - 1)
 
-            if (m_fermat.reconstruct(decode=False) == 1).all():
+            if (m_euler.reconstruct(decode=False) == 1).all():
                 return m
 
     @staticmethod
@@ -444,13 +447,13 @@ class Falcon(metaclass=Protocol):
         """Falcon Private Compare functionality which computes(x>r).
 
         Args:
-            x(List[MPCTensor]) : shares of bits of x in Zp.
-            r(torch.Tensor) : Public integer r.
+            x (List[MPCTensor]) : shares of bits of x in Zp.
+            r (torch.Tensor) : Public integer r.
 
         Returns:
-            result(MPCTensor): Returns shares of bits of the operation.
+            result (MPCTensor): Returns shares of bits of the operation.
 
-        (if(x>=r) returns 1 else returns 0)
+        (if (x>=r) returns 1 else returns 0)
         """
         shape = x[0].shape
         session = x[0].session
@@ -477,7 +480,7 @@ class Falcon(metaclass=Protocol):
             w[i] = x[i] + r_i - (x[i] * r_i * 2)
             c[i] = u[i] + 1
             c[i] += 0 if i == len(x) - 2 else sum(w[i + 1 :])
-        d = m ** PRIME_NUMBER * (math.prod(c))
+        d = m * (math.prod(c))
 
         if (d.reconstruct(decode=False) != 0).all():
             beta_prime = 1
