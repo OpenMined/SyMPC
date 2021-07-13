@@ -22,6 +22,7 @@ from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 shares_sum = ReplicatedSharedTensor.shares_sum
@@ -413,34 +414,37 @@ class Falcon(metaclass=Protocol):
             b (MPCTensor): input tensor which is shares of a bit used as selector bit.
 
         Returns:
-            z (MPCTensor):Returns x(if b==0) or y (if b==1).
+            z (MPCTensor):Returns x (if b==0) or y (if b==1).
 
         Raises:
             ValueError: If the selector bit tensor is not of ring size "2".
         """
         ring_size = int(b.share_ptrs[0].get_ring_size().get_copy())
+        shape = b.shape
         if ring_size != 2:
             raise ValueError(
                 f"Invalid {ring_size} for bit_injection,must be of ring size 2"
             )
+        if shape is None:
+            raise ValueError("The selector bit tensor must have a valid shape.")
         session = x.session
         c_ptrs: List[ReplicatedSharedTensor] = []
         for session_ptr in session.session_ptrs:
             c_ptrs.append(
                 session_ptr.prrs_generate_random_share(
-                    shape=(1,), ring_size=str(ring_size)
+                    shape=shape, ring_size=str(ring_size)
                 )
             )
 
-        c = MPCTensor(shares=c_ptrs, session=session, shape=(1,))  # bit random share
+        c = MPCTensor(shares=c_ptrs, session=session, shape=shape)  # bit random share
         c_r = ABY3.bit_injection(
             c, session, session.ring_size
         )  # bit random share in session ring.
 
-        if (b + c).reconstruct(decode=False) == 1:
-            d = 1 - c_r
-        else:
-            d = c_r
+        tensor_type = get_type_from_ring(session.ring_size)
+        mask = (b + c).reconstruct(decode=False).type(tensor_type)
+
+        d = (mask - (c_r * mask)) + (c_r * (mask ^ 1))
 
         # Order placed carefully to prevent re-encoding,should not be changed.
         z = x + (d * (y - x))

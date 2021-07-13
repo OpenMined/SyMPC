@@ -16,6 +16,7 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_type_from_ring
 
 
 def test_share_class() -> None:
@@ -244,31 +245,29 @@ def test_prime_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.parametrize("bit", ["zero", "one"])
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
-def test_select_shares(get_clients, security, bit) -> None:
+def test_select_shares(get_clients, security) -> None:
     parties = get_clients(3)
     falcon = Falcon(security)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
-    val = {
-        "one": torch.tensor([1], dtype=torch.bool),
-        "zero": torch.tensor([0], dtype=torch.bool),
-    }
-    sh = val[bit]
+    sh = torch.tensor([[1, 0], [0, 1]], dtype=torch.bool)
     shares = [sh, sh, sh]
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    b = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
+    b = MPCTensor(shares=ptr_lst, session=session, shape=sh.shape)
 
-    x = MPCTensor(secret=1, session=session)
-    y = MPCTensor(secret=2, session=session)
+    x_val = torch.tensor([[1, 2], [3, 4]])
+    y_val = torch.tensor([[5, 6], [7, 8]])
+    x = MPCTensor(secret=x_val, session=session)
+    y = MPCTensor(secret=y_val, session=session)
 
     z = Falcon.select_shares(x, y, b)
 
-    if bit == "zero":
-        assert (z.reconstruct() == x.reconstruct()).all()
-    else:
-        assert (z.reconstruct() == y.reconstruct()).all()
+    tensor_type = get_type_from_ring(session.ring_size)
+    bit_tensor = b.reconstruct(decode=False).type(tensor_type)
+    result = (x.reconstruct() * (bit_tensor ^ 1)) + (y.reconstruct() * bit_tensor)
+
+    assert (result == z.reconstruct()).all()
 
 
 def test_select_shares_invalid_ring(get_clients) -> None:
