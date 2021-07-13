@@ -16,6 +16,7 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_type_from_ring
 
 
 def test_share_class() -> None:
@@ -241,4 +242,31 @@ def test_prime_mul_private(get_clients, security):
     result = operator.mul(tensor1, tensor2)
     expected_res = prime_op(secret1, secret2)
 
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("r", ["zero"])
+@pytest.mark.parametrize("x", ["zero"])
+@pytest.mark.parametrize("security", ["semi-honest"])
+def test_private_compare(get_clients, security, x, r) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    val = {
+        "zero": torch.tensor([0], dtype=torch.bool),
+        "one": torch.tensor([1], dtype=torch.bool),
+    }
+    x_sh = [val[x], val[x], val[x]]
+    rst_list = ReplicatedSharedTensor.distribute_shares(
+        shares=x_sh, session=session, ring_size=2
+    )
+    x_b = MPCTensor(shares=rst_list, session=session, shape=val[x].shape)
+    x_p = ABY3.bit_injection(x_b, session, PRIME_NUMBER)
+
+    tensor_type = get_type_from_ring(session.ring_size)
+    result = Falcon.private_compare([x_p], val[r].type(tensor_type))
+    expected_res = val[x] >= val[r]
+    print(result.reconstruct(decode=False))
+    print(expected_res)
     assert (result.reconstruct(decode=False) == expected_res).all()

@@ -460,7 +460,7 @@ class Falcon(metaclass=Protocol):
         ptr_list: List = []
         for session_ptr in session.session_ptrs:
             ptr_list.append(
-                session_ptr.przs_generate_random_share(shape=shape, ring_size=str(2))
+                session_ptr.prrs_generate_random_share(shape=shape, ring_size=str(2))
             )
 
         beta_2 = MPCTensor(
@@ -478,13 +478,14 @@ class Falcon(metaclass=Protocol):
             r_i = r >> i & 1  # bit at ith position
             u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
             w[i] = x[i] + r_i - (x[i] * r_i * 2)
-            c[i] = u[i] + 1
-            c[i] += 0 if i == len(x) - 2 else sum(w[i + 1 :])
+            c[i] = u[i] + 1 + sum(w[i + 1 :])
+
         d = m * (math.prod(c))
 
-        if (d.reconstruct(decode=False) != 0).all():
-            beta_prime = 1
-        else:
-            beta_prime = 0
+        d_val = d.reconstruct(decode=False)  # plaintext d.
+        print(d_val)
+        d_val[d_val != 0] = 1  # making all non zero values as 1.
+        print(d_val)
+        beta_prime = d_val
 
         return beta_2 + beta_prime
