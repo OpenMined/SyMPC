@@ -1,6 +1,7 @@
 """Used to abstract multiple shared values held by parties."""
 
 # stdlib
+import copy
 import dataclasses
 from functools import reduce
 import operator
@@ -147,7 +148,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Ring size of tensor.
 
         Returns:
-            ring_size(str): Returns ring_size of tensor in string.
+            ring_size (str): Returns ring_size of tensor in string.
 
         It is typecasted to string as we cannot serialize 2**64
         """
@@ -157,7 +158,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Config of tensor.
 
         Returns:
-            config(Dict): returns config of the tensor as dict.
+            config (Dict): returns config of the tensor as dict.
         """
         return dataclasses.asdict(self.config)
 
@@ -166,11 +167,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Computes addition(x+y) modulo PRIME_NUMBER constant.
 
         Args:
-            x(torch.Tensor): input tensor
-            y(torch.tensor): input tensor
+            x (torch.Tensor): input tensor
+            y (torch.tensor): input tensor
 
         Returns:
-            value(torch.Tensor): Result of the operation.
+            value (torch.Tensor): Result of the operation.
 
         Raises:
             ValueError : If either of the tensors datatype is not torch.uint8
@@ -187,11 +188,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Computes subtraction(x-y) modulo PRIME_NUMBER constant.
 
         Args:
-            x(torch.Tensor): input tensor
-            y(torch.tensor): input tensor
+            x (torch.Tensor): input tensor
+            y (torch.tensor): input tensor
 
         Returns:
-            value(torch.Tensor): Result of the operation.
+            value (torch.Tensor): Result of the operation.
 
         Raises:
             ValueError : If either of the tensors datatype is not torch.uint8
@@ -214,11 +215,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Computes multiplication(x*y) modulo PRIME_NUMBER constant.
 
         Args:
-            x(torch.Tensor): input tensor
-            y(torch.tensor): input tensor
+            x (torch.Tensor): input tensor
+            y (torch.tensor): input tensor
 
         Returns:
-            value(torch.Tensor): Result of the operation.
+            value (torch.Tensor): Result of the operation.
 
         Raises:
             ValueError : If either of the tensors datatype is not torch.uint8
@@ -241,11 +242,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Returns method attribute based on ring_size and op_str.
 
         Args:
-            ring_size(int): Ring size
-            op_str(str): Operation string.
+            ring_size (int): Ring size
+            op_str (str): Operation string.
 
         Returns:
-            op(Callable[...,Any]): The operation method for the op_str.
+            op (Callable[...,Any]): The operation method for the op_str.
 
         Raises:
             ValueError : If invalid ring size is given as input.
@@ -328,7 +329,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         op = ReplicatedSharedTensor.get_op(self.ring_size, op_str)
 
-        shares = self.shares.copy()
+        shares = copy.deepcopy(self.shares)
         if op_str in {"add", "sub"}:
             if session.rank != 1:
                 idx = (session.nr_parties - session.rank) % session.nr_parties
@@ -350,7 +351,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Apply an operation on 2 RSTensors (secret shared values).
 
         Args:
-            y (RSTensor): Tensor to apply the operation
+            y (RelicatedSharedTensor): Tensor to apply the operation
             op_str (str): The operation
 
         Returns:
@@ -388,8 +389,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
          This function checks if "y" is private or public value.
 
         Args:
-            y: tensor to apply the operation.
-            op_str: the operation.
+            y (Union[ReplicatedSharedTensor,torch.Tensor, float, int]): tensor
+                to apply the operation.
+            op_str (str): the operation.
 
         Returns:
             ReplicatedSharedTensor: the operation "op_str" applied on "self" and "y"
@@ -448,7 +450,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Apply the "mul" operation between "self" and "y".
 
         Args:
-            y: self*y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self*y
 
         Returns:
             ReplicatedSharedTensor: Result of the operation.
@@ -487,7 +489,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Apply the "matmul" operation between "self" and "y".
 
         Args:
-            y: self@y
+            y (Union[int, float, torch.Tensor, "ReplicatedSharedTensor"]): self@y
 
         Returns:
             ReplicatedSharedTensor: Result of the operation.
@@ -672,11 +674,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """Returns sum of tensors based on ring_size.
 
         Args:
-            shares(List[torch.Tensor]) : List of tensors.
-            ring_size(int): Ring size of share associated with the tensors.
+            shares (List[torch.Tensor]) : List of tensors.
+            ring_size (int): Ring size of share associated with the tensors.
 
         Returns:
-            value(torch.Tensor): sum of the tensors.
+            value (torch.Tensor): sum of the tensors.
         """
         if ring_size == 2:
             return reduce(lambda x, y: x ^ y, shares)
@@ -827,8 +829,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             shares (List[Union[ShareTensor,torch.Tensor]]): Shares to be distributed.
             party_rank (int): Rank of party.
             session (Session): Current session
-            ring_size(int): Ring size of tensor to distribute
-            config(Config): The configuration(base,precision) of the tensor.
+            ring_size (int): Ring size of tensor to distribute
+            config (Config): The configuration(base,precision) of the tensor.
 
         Returns:
             tensor (ReplicatedSharedTensor): Tensor with shares
@@ -864,16 +866,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     def distribute_shares(
         shares: List[Union[ShareTensor, torch.Tensor]],
         session: Session,
-        ring_size: int = None,
-        config: Config = None,
+        ring_size: Optional[int] = None,
+        config: Optional[Config] = None,
     ) -> List["ReplicatedSharedTensor"]:
         """Distribute a list of shares.
 
         Args:
             shares (List[ShareTensor): list of shares to distribute.
             session (Session): Session.
-            ring_size(int): ring_size the shares belong to.
-            config(Config): The configuration(base,precision) of the tensor.
+            ring_size (int): ring_size the shares belong to.
+            config (Config): The configuration(base,precision) of the tensor.
 
         Returns:
             List of ReplicatedSharedTensors.
