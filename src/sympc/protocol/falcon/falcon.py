@@ -99,7 +99,7 @@ class Falcon(metaclass=Protocol):
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
-            result(MPCTensor): Result of the operation.
+            result (MPCTensor): Result of the operation.
 
         Raises:
             ValueError: Raised when number of parties are not three.
@@ -149,8 +149,8 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            ring_size(int) : Ring size of the underlying tensors.
-            config(Config): The configuration(base,precision) of the underlying tensor.
+            ring_size (int) : Ring size of the underlying tensors.
+            config (Config): The configuration(base,precision) of the underlying tensor.
             reshare (bool) : Convert 3-out-3 to 2-out-3 if set.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
@@ -195,7 +195,7 @@ class Falcon(metaclass=Protocol):
             eps (torch.Tensor) :masked value of x
             delta (torch.Tensor): masked value of y
             op_str (str): Operator string.
-            kwargs(Dict[Any, Any]): Keywords arguments for the operator.
+            kwargs (Dict[Any, Any]): Keywords arguments for the operator.
 
         Returns:
             ReplicatedSharedTensor : Result of the verification.
@@ -284,8 +284,8 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            ring_size(int) : Ring size of the underlying tensor.
-            config(Config): The configuration(base,precision) of the underlying tensor.
+            ring_size (int) : Ring size of the underlying tensor.
+            config (Config): The configuration(base,precision) of the underlying tensor.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
@@ -389,7 +389,7 @@ class Falcon(metaclass=Protocol):
             x (ReplicatedSharedTensor): Secret
             y (ReplicatedSharedTensor): Another secret
             op_str (str): Operator string.
-            kwargs(Dict[Any, Any]): Keywords arguments for the operator.
+            kwargs (Dict[Any, Any]): Keywords arguments for the operator.
 
         Returns:
             shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
