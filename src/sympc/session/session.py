@@ -192,7 +192,7 @@ class Session:
 
         Args:
             shape (Union[tuple, torch.Size]): Shape for the share.
-            ring_size(int): ring size to generate share.
+            ring_size (int): ring size to generate share.
 
         The generators are invoked in Counter(CTR) mode as parties with the same initial seeds
         could generate correlated random numbers on subsequent invocations.
@@ -226,13 +226,13 @@ class Session:
     def przs_generate_random_share(
         self,
         shape: Union[tuple, torch.Size],
-        ring_size: str = None,
+        ring_size: Optional[str] = None,
     ) -> Any:
         """Generates a random zero share using the two generators held by a party.
 
         Args:
             shape (Union[tuple, torch.Size]): Shape for the share.
-            ring_size(str): ring size to generate share.
+            ring_size (str): ring size to generate share.
 
         Returns:
             Any: ShareTensor or ReplicatedSharedTensor
@@ -269,13 +269,13 @@ class Session:
     def prrs_generate_random_share(
         self,
         shape: Union[tuple, torch.Size],
-        ring_size: str = None,
+        ring_size: Optional[str] = None,
     ) -> Any:
         """Generates a random share using the generators held by a party.
 
         Args:
             shape (Union[tuple, torch.Size]): Shape for the share.
-            ring_size(str): ring size to generate share.
+            ring_size (str): ring size to generate share.
 
         Returns:
             Any: ShareTensor or ReplicatedSharedTensor

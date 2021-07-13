@@ -12,6 +12,7 @@ from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import Optional
 from typing import Tuple
 
 # third party
@@ -40,8 +41,8 @@ def _get_triples(
     a_shape: Tuple[int],
     b_shape: Tuple[int],
     session: Session,
-    ring_size: int = None,
-    config: Config = None,
+    ring_size: Optional[int] = None,
+    config: Optional[Config] = None,
     **kwargs: Dict[Any, Any],
 ) -> List[Tuple[Tuple[ShareTensor, ShareTensor, ShareTensor]]]:
     """Get triples.
@@ -55,8 +56,8 @@ def _get_triples(
         a_shape (Tuple[int]): Shape of a from beaver triples protocol.
         b_shape (Tuple[int]): Shape of b part from beaver triples protocol.
         session (Session) : Session to generate the triples for.
-        ring_size(int) : Ring Size of the triples to generate.
-        config(Config) : The configuration(base,precision) of the shares to generate.
+        ring_size (int) : Ring Size of the triples to generate.
+        config (Config) : The configuration(base,precision) of the shares to generate.
         kwargs: Arbitrary keyword arguments for commands.
 
     Returns:

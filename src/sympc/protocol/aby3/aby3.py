@@ -76,10 +76,10 @@ class ABY3(metaclass=Protocol):
 
         Args:
             ptr_list (List[torch.Tensor]): Tensors to truncate
-            shape(torch.Size) : shape of tensor values
-            session(Session) : session the tensor belong to
-            ring_size(int): Ring size of the underlying tensors.
-            config(Config): The configuration(base,precision) of the underlying tensors.
+            shape (torch.Size) : shape of tensor values
+            session (Session) : session the tensor belong to
+            ring_size (int): Ring size of the underlying tensors.
+            config (Config): The configuration(base,precision) of the underlying tensors.
 
         Returns:
             List["ReplicatedSharedTensor"] : Truncated shares.
@@ -108,8 +108,8 @@ class ABY3(metaclass=Protocol):
         Args:
             x (MPCTensor): input tensor
             session (Session) : session of the input tensor.
-            ring_size(int): Ring size of the underlying tensor.
-            config(Config) : The configuration(base,precision) of the underlying tensor.
+            ring_size (int): Ring size of the underlying tensor.
+            config (Config) : The configuration(base,precision) of the underlying tensor.
 
         Returns:
             MPCTensor: truncated MPCTensor.
