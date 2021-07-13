@@ -269,3 +269,13 @@ def test_select_shares(get_clients, security, bit) -> None:
         assert (z.reconstruct() == x.reconstruct()).all()
     else:
         assert (z.reconstruct() == y.reconstruct()).all()
+
+
+def test_select_shares_invalid_ring(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    val = MPCTensor(secret=1, session=session)
+    with pytest.raises(ValueError):
+        Falcon.select_shares(val, val, val)

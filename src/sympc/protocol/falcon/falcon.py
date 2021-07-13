@@ -408,16 +408,23 @@ class Falcon(metaclass=Protocol):
         """Returns either x or y based on bit b.
 
         Args:
-            x(MPCTensor): input tensor
-            y(MPCTensor): input tensor
-            b(MPCTensor): input tensor which is shares of a bit used as selector bit.
+            x (MPCTensor): input tensor
+            y (MPCTensor): input tensor
+            b (MPCTensor): input tensor which is shares of a bit used as selector bit.
 
         Returns:
-            z(MPCTensor):Returns x(if b==0) or y (if b==1).
+            z (MPCTensor):Returns x(if b==0) or y (if b==1).
+
+        Raises:
+            ValueError: If the selector bit tensor is not of ring size "2".
         """
+        ring_size = int(b.share_ptrs[0].get_ring_size().get_copy())
+        if ring_size != 2:
+            raise ValueError(
+                f"Invalid {ring_size} for bit_injection,must be of ring size 2"
+            )
         session = x.session
-        c_ptrs: List = []
-        ring_size = 2
+        c_ptrs: List[ReplicatedSharedTensor] = []
         for session_ptr in session.session_ptrs:
             c_ptrs.append(
                 session_ptr.prrs_generate_random_share(
