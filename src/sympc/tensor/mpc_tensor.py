@@ -750,8 +750,12 @@ class MPCTensor(metaclass=SyMPCTensor):
         else:
             op = getattr(operator, op_str)
 
-        x = torch.empty(size=x_shape, dtype=torch.bool)
-        y = torch.empty(size=y_shape, dtype=torch.bool)
+        if op_str == "xor":
+            x = torch.empty(size=x_shape, dtype=torch.bool)
+            y = torch.empty(size=y_shape, dtype=torch.bool)
+        else:
+            x = torch.empty(size=x_shape)
+            y = torch.empty(size=y_shape)
 
         res = op(x, y, **kwargs_)
         return res.shape
