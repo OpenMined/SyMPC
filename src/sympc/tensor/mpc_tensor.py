@@ -685,7 +685,7 @@ class MPCTensor(metaclass=SyMPCTensor):
             else:
                 raise TypeError("Invalid Share Class")
 
-        elif op_str in {"sub", "add"}:
+        elif op_str in {"sub", "add", "xor"}:
 
             op = getattr(operator, op_str)
             shares = [
@@ -719,7 +719,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
 
-        elif op_str in {"add", "sub"}:
+        elif op_str in {"add", "sub", "xor"}:
             shares = list(self.share_ptrs)
             # Only the rank 0 party has to add the element
             if self.session.protocol.share_class == ShareTensor:
@@ -1130,31 +1130,16 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
-    def xor(self, other) -> "MPCTensor":
+    def xor(self, other: Union["MPCTensor", torch.Tensor, int]) -> "MPCTensor":
         """XOR operator.
 
         Args:
-            other (MPCTensor): MPCTensor to find xor.
+            other (Union["MPCTensor", torch.Tensor, int]): MPCTensor to find xor.
 
         Returns:
             MPCTensor: Result of the xor.
-
-        Raises:
-            ValueError : If share class is invalid..
         """
-        session = self.session
-        op = getattr(operator, "xor")
-        from sympc.tensor import ReplicatedSharedTensor
-
-        if session.protocol.share_class == ReplicatedSharedTensor:
-            shares = [op(share, other) for share in self.share_ptrs]
-        else:
-            raise ValueError(
-                f"xor is not supported for share_class: {session.protocol.share_class}"
-            )
-
-        result = MPCTensor(shares=shares, session=self.session)
-        return result
+        return self.__apply_op(other, "xor")
 
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
