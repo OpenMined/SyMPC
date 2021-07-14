@@ -428,6 +428,8 @@ class Falcon(metaclass=Protocol):
         if shape is None:
             raise ValueError("The selector bit tensor must have a valid shape.")
         session = x.session
+
+        # TODO: Should be made to generate with CryptoProvider in Preprocessing stage.
         c_ptrs: List[ReplicatedSharedTensor] = []
         for session_ptr in session.session_ptrs:
             c_ptrs.append(
