@@ -7,7 +7,8 @@ import torch
 
 import sympc
 from sympc.module.nn import mse_loss
-from sympc.module.nn import relu, sigmoid
+from sympc.module.nn import relu
+from sympc.module.nn import sigmoid
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
