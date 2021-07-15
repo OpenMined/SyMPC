@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1625875142337,
+  "lastUpdate": 1626381681423,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1302,6 +1302,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.02281229003677964",
             "extra": "mean: 2.0562456170000076 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "090c11dbefbebaab160c6480ade2d3df120715a1",
+          "message": "Add sigmoid to torch.nn.functional (#277)\n\n* Add sigmoid to torch.nn.functional\r\n\r\n* precommit hook",
+          "timestamp": "2021-07-15T21:39:02+01:00",
+          "tree_id": "3df5a728785174cdeecf77557abd06332945f56b",
+          "url": "https://github.com/OpenMined/SyMPC/commit/090c11dbefbebaab160c6480ade2d3df120715a1"
+        },
+        "date": 1626381680657,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.5382827492790234,
+            "unit": "iter/sec",
+            "range": "stddev: 0.028566118301189596",
+            "extra": "mean: 1.8577597022000076 sec\nrounds: 5"
           }
         ]
       }
