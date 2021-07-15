@@ -245,9 +245,9 @@ def test_prime_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.parametrize("r", ["zero"])
-@pytest.mark.parametrize("x", ["zero"])
-@pytest.mark.parametrize("security", ["semi-honest"])
+@pytest.mark.parametrize("r", ["zero", "one"])
+@pytest.mark.parametrize("x", ["zero", "one"])
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_private_compare(get_clients, security, x, r) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security)
@@ -267,6 +267,4 @@ def test_private_compare(get_clients, security, x, r) -> None:
     tensor_type = get_type_from_ring(session.ring_size)
     result = Falcon.private_compare([x_p], val[r].type(tensor_type))
     expected_res = val[x] >= val[r]
-    print(result.reconstruct(decode=False))
-    print(expected_res)
     assert (result.reconstruct(decode=False) == expected_res).all()

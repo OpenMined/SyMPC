@@ -478,14 +478,13 @@ class Falcon(metaclass=Protocol):
             r_i = r >> i & 1  # bit at ith position
             u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
             w[i] = x[i] + r_i - (x[i] * r_i * 2)
-            c[i] = u[i] + 1 + sum(w[i + 1 :])
+            c[i] = u[i] + (1 - beta_p) + (beta_p * w[i]) + sum(w[i + 1 :])
 
         d = m * (math.prod(c))
 
         d_val = d.reconstruct(decode=False)  # plaintext d.
-        print(d_val)
         d_val[d_val != 0] = 1  # making all non zero values as 1.
-        print(d_val)
+
         beta_prime = d_val
 
         return beta_2 + beta_prime
