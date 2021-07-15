@@ -7,10 +7,24 @@ import torch
 
 import sympc
 from sympc.module.nn import mse_loss
-from sympc.module.nn import relu
+from sympc.module.nn import relu, sigmoid
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
+
+
+def test_sigmoid(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([-2, -1.5, 0, 1, 1.5, 2])
+    mpc_tensor = MPCTensor(secret=secret, session=session)
+
+    res = sigmoid(mpc_tensor)
+    res_expected = torch.sigmoid(secret)
+
+    assert np.allclose(res.reconstruct(), res_expected, atol=1e-1)
 
 
 def test_relu(get_clients) -> None:
