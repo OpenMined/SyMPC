@@ -19,6 +19,7 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_type_from_ring
 
 gen = csprng.create_random_device_generator()
 
@@ -81,9 +82,8 @@ class ABY3(metaclass=Protocol):
         Returns:
             List["ReplicatedSharedTensor"] : Truncated shares.
         """
-        rand_value = torch.empty(size=shape, dtype=session.tensor_type).random_(
-            generator=gen
-        )
+        tensor_type = get_type_from_ring(ring_size)
+        rand_value = torch.empty(size=shape, dtype=tensor_type).random_(generator=gen)
         base = config.encoder_base
         precision = config.encoder_precision
         scale = base ** precision
