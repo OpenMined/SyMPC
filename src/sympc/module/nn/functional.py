@@ -17,6 +17,24 @@ from sympc.tensor import ShareTensor
 from sympc.utils import parallel_execution
 
 
+def sigmoid(x: MPCTensor) -> MPCTensor:
+    """Sigmoid function.
+
+    Args:
+        x (MPCTensor): The tensor on which we apply the function
+
+    Returns:
+        An MPCTensor which represents the sigmoid applied on the input tensor
+    """
+    from sympc.approximations.sigmoid import sigmoid
+
+    sigmoid_forward = GRAD_FUNCS.get("sigmoid", None)
+    if sigmoid_forward and x.session.autograd_active:
+        return forward(x, sigmoid_forward)
+    res = sigmoid(x)
+    return res
+
+
 def relu(x: MPCTensor) -> MPCTensor:
     """Rectified linear unit function.
 
