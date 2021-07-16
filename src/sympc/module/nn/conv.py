@@ -50,6 +50,9 @@ class Conv2d(SMPCModule):
         Args:
             session (Session): the session used to identify the layer
         """
+        
+        self.additional_attributes = ["padding","dilation","groups","stride"]
+        
         self.session = session
         self.stride = 1
         self.padding = 0

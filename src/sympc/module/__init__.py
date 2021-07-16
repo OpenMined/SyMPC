@@ -29,6 +29,22 @@ MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items
 SKIP_LAYERS_NAME = {"Flatten"}
 
 
+def copy_additional_attributes(layer:torch.nn.modules,sympc_layer:sy.Module)-> sy.Module:
+    """Copy attributes from torch layer to SyMPC layer.
+    args:
+        layer: The torch layer
+        sympc_layer: sympc layer
+    Returns:
+        sympc_layer: sympc layer with additional attributes"""
+    
+    if(hasattr(sympc_layer,"additional_attributes")):
+        
+     for arg in sympc_layer.additional_attributes:
+         setattr(sympc_layer,arg,getattr(layer,arg))
+         
+    return sympc_layer
+
+
 def share(_self, session: Session) -> sy.Module:
     """Share remote state dictionary between the parties of the session.
 
@@ -51,6 +67,7 @@ def share(_self, session: Session) -> sy.Module:
         else:
             sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
             sympc_layer = sympc_type_layer(session=session)
+            sympc_layer = copy_additional_attributes(module,sympc_layer)
             sympc_layer.share_state_dict(state_dict)
             mpc_module._modules[name] = sympc_layer
 
@@ -74,7 +91,7 @@ def reconstruct(_self) -> sy.Module:
         state_dict = module.reconstruct_state_dict()
         torch_module = type(module).get_torch_module(module)
         torch_module.load_state_dict(state_dict)
-
+    
         setattr(syft_module, name, torch_module)
 
     return syft_module
