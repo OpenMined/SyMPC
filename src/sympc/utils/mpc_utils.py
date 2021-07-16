@@ -86,6 +86,7 @@ def generate_random_element(
     generator: torch.Generator,
     shape: Union[tuple, torch.Size],
     device: str = "cpu",
+    max_val: int = None,
 ) -> torch.Tensor:
     """Generate a new "random" tensor.
 
@@ -94,13 +95,19 @@ def generate_random_element(
         generator (torch.Generator): Torch Generator.
         shape (Union[tuple, torch.Size]): Shape.
         device (str): Device value. Defaults to cpu.
+        max_val (int): Max value to generate of the tensor type [0,max_val).
 
     Returns:
         torch.Tensor: Random tensor.
     """
-    return torch.empty(size=shape, dtype=tensor_type, device=device).random_(
-        generator=generator
-    )
+    if max_val is None:
+        return torch.empty(size=shape, dtype=tensor_type, device=device).random_(
+            generator=generator
+        )
+    else:
+        return torch.empty(size=shape, dtype=tensor_type, device=device).random_(
+            max_val, generator=generator
+        )
 
 
 @lru_cache()
