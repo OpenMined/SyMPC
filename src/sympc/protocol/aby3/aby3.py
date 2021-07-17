@@ -302,7 +302,7 @@ class ABY3(metaclass=Protocol):
         result: List[MPCTensor] = []
         for idx in range(ring_bits):
             s = a[idx] + b[idx] + c[idx]
-            c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + [idx])
+            c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + b[idx])
             result.append(s)
             print("full", index)
             index += 1
