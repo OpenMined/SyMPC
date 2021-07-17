@@ -570,6 +570,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         res.shares = [share >> y for share in self.shares]
         return res
 
+    def bit_extraction(self, pos: int = 0) -> "ReplicatedSharedTensor":
+        """Extracts the bit at the specified position.
+
+        Args:
+            pos (int): position to extract bit.
+
+        Returns:
+            ReplicatedSharedTensor : extracted bits at specific position.
+        """
+        shares = []
+        for share in self.shares:
+            tensor = (share >> pos) & 1
+            shares.append(tensor)
+        rst = ReplicatedSharedTensor(
+            shares=shares,
+            session_uuid=self.session_uuid,
+            config=Config(encoder_base=1, encoder_precision=0),
+            ring_size=2,
+        )
+        return rst
+
     def rmatmul(self, y):
         """Apply the "rmatmul" operation between "y" and "self".
 

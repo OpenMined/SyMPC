@@ -20,6 +20,7 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
@@ -281,3 +282,70 @@ class ABY3(metaclass=Protocol):
         arith_share = x3 + x1_2 - (x3 * x1_2 * 2)
 
         return arith_share
+
+    def full_adder(
+        a: List[MPCTensor], b: List[MPCTensor], session: Session
+    ) -> List[MPCTensor]:
+        """Perfom bit addition on MPCTensors using a full adder.
+
+        Args:
+            b (MPCTensor): MPCTensor with shares of bit.
+            session (Session): session the share belongs to.
+
+        Returns:
+            result (List[MPCTensor]): Result of the operation.
+        """
+        index = 0
+        ring_size = session.ring_size
+        ring_bits = get_nr_bits(ring_size)
+        c = [0 for idx in range(ring_bits + 1)]  # carry bits of addition.
+        result: List[MPCTensor] = []
+        for idx in range(ring_bits):
+            s = a[idx] + b[idx] + c[idx]
+            c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + [idx])
+            result.append(s)
+            print("full", index)
+            index += 1
+        return result
+
+    def bit_decomposition(x: MPCTensor, session: Session) -> List[MPCTensor]:
+        """Perfom ABY3 bit decomposition for conversion of arithmetic share to binary share.
+
+        Args:
+            session (Session): session the share belongs to.
+
+        Returns:
+            bin_share (List[MPCTensor]): Returns binary shares of each bit of the secret.
+        """
+        ring_size = session.ring_size
+        ring_bits = get_nr_bits(ring_size)
+        x1: List[MPCTensor] = []  # bit shares of shares
+        x2: List[MPCTensor] = []
+        x3: List[MPCTensor] = []
+        index = 1
+        for idx in range(ring_bits):
+            args = [[share.bit_extraction(idx), str(2)] for share in x.share_ptrs]
+
+            decompose = parallel_execution(ABY3.local_decomposition, session.parties)(
+                args
+            )
+
+            x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+
+            x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
+            x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
+            x3_sh = [ptr.resolve_pointer_type() for ptr in x3_sh]
+
+            x1_m = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
+            x2_m = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
+            x3_m = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
+            print("initial", index)
+            index += 1
+            x1.append(x1_m)
+            x2.append(x2_m)
+            x3.append(x3_m)
+
+        x1_2 = ABY3.full_adder(x1, x2, session)
+        bin_share = ABY3.full_adder(x1_2, x3, session)
+
+        return bin_share
