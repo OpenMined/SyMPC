@@ -91,7 +91,6 @@ def reconstruct(_self) -> sy.Module:
         state_dict = module.reconstruct_state_dict()
         torch_module = type(module).get_torch_module(module)
         torch_module.load_state_dict(state_dict)
-    
         setattr(syft_module, name, torch_module)
 
     return syft_module

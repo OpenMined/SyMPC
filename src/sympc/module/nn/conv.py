@@ -80,6 +80,12 @@ class Conv2d(SMPCModule):
         return res
 
     __call__ = forward
+    
+    
+    def set_additional_attributes(self,**kwargs):
+        
+        pass
+    
 
     def share_state_dict(
         self,
