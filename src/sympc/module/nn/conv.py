@@ -50,7 +50,6 @@ class Conv2d(SMPCModule):
         Args:
             session (Session): the session used to identify the layer
         """
-
         self.session = session
         self.stride = 1
         self.padding = 0
@@ -79,10 +78,20 @@ class Conv2d(SMPCModule):
 
     __call__ = forward
 
-    def set_additional_attributes(self, attributes):
+    def set_additional_attributes(self, attributes: Dict) -> None:
+        """Sets attributes of conv apart from weights.
 
+        Args:
+            attributes (Dict): Attributes with their values.
+
+        Raises:
+            ValueError: If the attribute does not exist.
+        """
         for attr in attributes.keys():
-            setattr(self, attr, attributes[attr])
+            if hasattr(self, attr):
+                setattr(self, attr, attributes[attr])
+            else:
+                raise ValueError(f"Attribute {attr} does not exist in SyMPC module.")
 
     def share_state_dict(
         self,
@@ -93,6 +102,7 @@ class Conv2d(SMPCModule):
 
         Args:
             state_dict (Dict[str, Any]): the state dict that would be shared.
+            additional_attributes (Dict[str, Any]): Attributes of conv apart from weights.
 
         Raises:
             ValueError: If kernel sizes mismatch "kernel_size_w" and "kernel_size_h"
@@ -105,18 +115,18 @@ class Conv2d(SMPCModule):
                 bias = state_dict["bias"].resolve_pointer_type()
             shape = weight.client.python.Tuple(weight.shape)
             shape = shape.get()
-            if ispointer(additional_attributes):
-                self.set_additional_attributes(
-                    additional_attributes.get().resolve_pointer_type()
-                )
-            else:
-                self.set_additional_attributes(additional_attributes)
 
         else:
             weight = state_dict["weight"]
             bias = state_dict.get("bias")
             shape = state_dict["weight"].shape
-            self.set_additional_attributes(additional_attributes)
+            
+        if ispointer(additional_attributes):
+                self.set_additional_attributes(
+                    additional_attributes.get().resolve_pointer_type()
+                )
+        else:
+                self.set_additional_attributes(additional_attributes)
 
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1

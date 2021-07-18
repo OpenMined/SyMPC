@@ -8,6 +8,7 @@ https://github.com/OpenMined/PySyft/blob/dev/src/syft/lib/torch/module.py
 # stdlib
 from collections import OrderedDict
 import copy
+from typing import Dict
 
 # third party
 import syft as sy
@@ -31,14 +32,16 @@ ADDITIONAL_ATTRIBUTES = {"Conv2d": ["padding", "dilation", "groups", "stride"]}
 SKIP_LAYERS_NAME = {"Flatten"}
 
 
-def copy_additional_attributes(layer: torch.nn.modules, layer_name) -> sy.Module:
+def copy_additional_attributes(layer: torch.nn.modules, layer_name: str) -> Dict:
     """Copy attributes from torch layer to SyMPC layer.
-    args:
-        layer: The torch layer
-        sympc_layer: sympc layer
-    Returns:
-        sympc_layer: sympc layer with additional attributes"""
 
+    Args:
+        layer (torch.nn.modules): The torch layer
+        layer_name (str): layer name
+
+    Returns:
+        additional_attributes (Dict): sympc layer with additional attributes
+    """
     additional_attributes = {}
 
     if layer_name in ADDITIONAL_ATTRIBUTES:

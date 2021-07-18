@@ -83,6 +83,7 @@ class Linear(SMPCModule):
 
         Args:
             state_dict (Dict[str, Any]): the state dict that would be shared
+            additional_attributes (Dict[str, Any]): Attributes apart from weights.
         """
         bias = None
         if ispointer(state_dict):
