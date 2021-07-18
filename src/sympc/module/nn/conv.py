@@ -120,13 +120,13 @@ class Conv2d(SMPCModule):
             weight = state_dict["weight"]
             bias = state_dict.get("bias")
             shape = state_dict["weight"].shape
-            
+
         if ispointer(additional_attributes):
-                self.set_additional_attributes(
-                    additional_attributes.get().resolve_pointer_type()
-                )
+            self.set_additional_attributes(
+                additional_attributes.get().resolve_pointer_type()
+            )
         else:
-                self.set_additional_attributes(additional_attributes)
+            self.set_additional_attributes(additional_attributes)
 
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
