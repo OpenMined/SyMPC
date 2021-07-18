@@ -50,9 +50,7 @@ class Conv2d(SMPCModule):
         Args:
             session (Session): the session used to identify the layer
         """
-        
-        self.additional_attributes = ["padding","dilation","groups","stride"]
-        
+
         self.session = session
         self.stride = 1
         self.padding = 0
@@ -80,16 +78,16 @@ class Conv2d(SMPCModule):
         return res
 
     __call__ = forward
-    
-    
-    def set_additional_attributes(self,**kwargs):
-        
-        pass
-    
+
+    def set_additional_attributes(self, attributes):
+
+        for attr in attributes.keys():
+            setattr(self, attr, attributes[attr])
 
     def share_state_dict(
         self,
         state_dict: Dict[str, Any],
+        additional_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Share the parameters of the normal Conv2d layer.
 
@@ -101,15 +99,24 @@ class Conv2d(SMPCModule):
         """
         bias = None
         if ispointer(state_dict):
+
             weight = state_dict["weight"].resolve_pointer_type()
             if "bias" in weight.client.python.List(state_dict).get():
                 bias = state_dict["bias"].resolve_pointer_type()
             shape = weight.client.python.Tuple(weight.shape)
             shape = shape.get()
+            if ispointer(additional_attributes):
+                self.set_additional_attributes(
+                    additional_attributes.get().resolve_pointer_type()
+                )
+            else:
+                self.set_additional_attributes(additional_attributes)
+
         else:
             weight = state_dict["weight"]
             bias = state_dict.get("bias")
             shape = state_dict["weight"].shape
+            self.set_additional_attributes(additional_attributes)
 
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1

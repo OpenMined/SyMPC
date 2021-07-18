@@ -26,23 +26,27 @@ MAP_TORCH_TO_SYMPC = {
 
 MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items()})
 
+ADDITIONAL_ATTRIBUTES = {"Conv2d": ["padding", "dilation", "groups", "stride"]}
+
 SKIP_LAYERS_NAME = {"Flatten"}
 
 
-def copy_additional_attributes(layer:torch.nn.modules,sympc_layer:sy.Module)-> sy.Module:
+def copy_additional_attributes(layer: torch.nn.modules, layer_name) -> sy.Module:
     """Copy attributes from torch layer to SyMPC layer.
     args:
         layer: The torch layer
         sympc_layer: sympc layer
     Returns:
         sympc_layer: sympc layer with additional attributes"""
-    
-    if(hasattr(sympc_layer,"additional_attributes")):
-        
-     for arg in sympc_layer.additional_attributes:
-         setattr(sympc_layer,arg,getattr(layer,arg))
-         
-    return sympc_layer
+
+    additional_attributes = {}
+
+    if layer_name in ADDITIONAL_ATTRIBUTES:
+
+        for arg in ADDITIONAL_ATTRIBUTES[layer_name]:
+            additional_attributes[arg] = getattr(layer, arg)
+
+    return additional_attributes
 
 
 def share(_self, session: Session) -> sy.Module:
@@ -67,8 +71,8 @@ def share(_self, session: Session) -> sy.Module:
         else:
             sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
             sympc_layer = sympc_type_layer(session=session)
-            sympc_layer = copy_additional_attributes(module,sympc_layer)
-            sympc_layer.share_state_dict(state_dict)
+            additional_attributes = copy_additional_attributes(module, name_layer)
+            sympc_layer.share_state_dict(state_dict, additional_attributes)
             mpc_module._modules[name] = sympc_layer
 
     return mpc_module

@@ -34,15 +34,15 @@ class ConvNet(sy.Module):
     def __init__(self, torch_ref, kernel_size=5):
         super(ConvNet, self).__init__(torch_ref=torch_ref)
         self.conv1 = self.torch_ref.nn.Conv2d(
-            in_channels=1, out_channels=5, kernel_size=kernel_size
+            in_channels=1, out_channels=5, kernel_size=kernel_size, stride=2
         )
-        self.fc1 = self.torch_ref.nn.Linear(2880, 10)
+        self.fc1 = self.torch_ref.nn.Linear(720, 10)
         self.fc2 = self.torch_ref.nn.Linear(10, 5)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.torch_ref.nn.functional.relu(x)
-        x = x.view(1, -1)
+        x = x.view([-1, 720])
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.torch_ref.nn.functional.relu(x)

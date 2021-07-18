@@ -77,6 +77,7 @@ class Linear(SMPCModule):
     def share_state_dict(
         self,
         state_dict: Dict[str, Any],
+        additional_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Share the parameters of the normal Linear layer.
 
