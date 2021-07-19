@@ -580,8 +580,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ReplicatedSharedTensor : extracted bits at specific position.
         """
         shares = []
+        # logical shift
+        bit_mask = torch.ones(self.shares[0].shape, dtype=self.shares[0].dtype) << pos
         for share in self.shares:
-            tensor = (share >> pos) & 1
+            tensor = share & bit_mask
             shares.append(tensor)
         rst = ReplicatedSharedTensor(
             shares=shares,

@@ -210,13 +210,14 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def local_decomposition(
-        x: ReplicatedSharedTensor, ring_size: str
-    ) -> List[ReplicatedSharedTensor]:
+        x: ReplicatedSharedTensor, ring_size: str, bitwise: bool = False
+    ) -> List[List[List[ReplicatedSharedTensor]]]:
         """Performs local decomposition to generate shares of shares.
 
         Args:
             x (ReplicatedSharedTensor) : input RSTensor.
             ring_size (str) : Ring size to generate decomposed shares in.
+            bitwise (bool): Perfom bit level decomposition on bits if set.
 
         Returns:
             List[ReplicatedSharedTensor]: Decomposed shares in the given ring size.
@@ -229,26 +230,42 @@ class ABY3(metaclass=Protocol):
 
         session = get_session(x.session_uuid)
         ring_size = int(ring_size)
+        ring_bits = get_nr_bits(session.ring_size)  # for bitwise decomposition
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
         nr_parties = session.nr_parties
 
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
-        shares = [[zero.clone(), zero.clone()] for i in range(nr_parties)]
+        # Similar to triples, we have instaces for the shares generated.
+        share_lst: List[List[List[ReplicatedSharedTensor]]] = []
 
-        shares[rank][0] = x.shares[0].clone().type(tensor_type)
+        input_rst = []
+        if bitwise:
+            for i in range(ring_bits):
+                input_rst.append(x.bit_extraction(i))
+        else:
+            input_rst.append(x)
 
-        shares[(rank + 1) % nr_parties][1] = x.shares[1].clone().type(tensor_type)
+        for share in input_rst:
+            shares = [[zero.clone(), zero.clone()] for i in range(nr_parties)]
 
-        rst_list = []
-        for i in range(nr_parties):
-            rst = x.clone()
-            rst.shares = shares[i]
-            rst.ring_size = ring_size
-            rst_list.append(rst)
+            shares[rank][0] = share.shares[0].clone().type(tensor_type)
 
-        return rst_list
+            shares[(rank + 1) % nr_parties][1] = (
+                share.shares[1].clone().type(tensor_type)
+            )
+
+            rst_sh = []
+            for i in range(nr_parties):
+                rst = x.clone()
+                rst.shares = shares[i]
+                rst.ring_size = ring_size
+                rst_sh.append(rst)
+
+            share_lst.append(rst_sh)
+
+        return share_lst
 
     @staticmethod
     def bit_injection(x: MPCTensor, session: Session, ring_size: int) -> MPCTensor:
@@ -266,7 +283,7 @@ class ABY3(metaclass=Protocol):
 
         decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
 
-        x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+        x1_sh, x2_sh, x3_sh = zip(*map(lambda x: x[0], decompose))
 
         x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
         x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
@@ -283,13 +300,15 @@ class ABY3(metaclass=Protocol):
 
         return arith_share
 
+    @staticmethod
     def full_adder(
         a: List[MPCTensor], b: List[MPCTensor], session: Session
     ) -> List[MPCTensor]:
         """Perfom bit addition on MPCTensors using a full adder.
 
         Args:
-            b (MPCTensor): MPCTensor with shares of bit.
+            a (List[MPCTensor]): MPCTensor with shares of bit.
+            b (List[MPCTensor]): MPCTensor with shares of bit.
             session (Session): session the share belongs to.
 
         Returns:
@@ -308,10 +327,12 @@ class ABY3(metaclass=Protocol):
             index += 1
         return result
 
+    @staticmethod
     def bit_decomposition(x: MPCTensor, session: Session) -> List[MPCTensor]:
         """Perfom ABY3 bit decomposition for conversion of arithmetic share to binary share.
 
         Args:
+            x (MPCTensor): Arithmetic shares of secret.
             session (Session): session the share belongs to.
 
         Returns:
@@ -322,16 +343,16 @@ class ABY3(metaclass=Protocol):
         x1: List[MPCTensor] = []  # bit shares of shares
         x2: List[MPCTensor] = []
         x3: List[MPCTensor] = []
+
+        args = [[share, str(2), True] for share in x.share_ptrs]
+
+        decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+
+        x_sh = list(zip(*decompose))
+
         index = 1
         for idx in range(ring_bits):
-            args = [[share.bit_extraction(idx), str(2)] for share in x.share_ptrs]
-
-            decompose = parallel_execution(ABY3.local_decomposition, session.parties)(
-                args
-            )
-
-            x1_sh, x2_sh, x3_sh = list(zip(*decompose))
-
+            x1_sh, x2_sh, x3_sh = zip(*x_sh[idx])
             x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
             x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
             x3_sh = [ptr.resolve_pointer_type() for ptr in x3_sh]
@@ -339,11 +360,12 @@ class ABY3(metaclass=Protocol):
             x1_m = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
             x2_m = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
             x3_m = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
-            print("initial", index)
-            index += 1
+
             x1.append(x1_m)
             x2.append(x2_m)
             x3.append(x3_m)
+            print(index)
+            index += 1
 
         x1_2 = ABY3.full_adder(x1, x2, session)
         bin_share = ABY3.full_adder(x1_2, x3, session)
