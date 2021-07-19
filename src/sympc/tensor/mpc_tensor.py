@@ -685,7 +685,20 @@ class MPCTensor(metaclass=SyMPCTensor):
             else:
                 raise TypeError("Invalid Share Class")
 
-        elif op_str in {"sub", "add", "xor"}:
+        elif op_str == "xor":
+            if self.session.ring_size == 2:
+                op = getattr(operator, op_str)
+                shares = [
+                    op(*share_tuple)
+                    for share_tuple in zip(self.share_ptrs, y.share_ptrs)
+                ]
+                result = MPCTensor(
+                    shares=shares, shape=self.shape, session=self.session
+                )
+            else:
+                return self + y - (self * y * 2)
+
+        elif op_str in {"sub", "add"}:
 
             op = getattr(operator, op_str)
             shares = [
@@ -1134,16 +1147,16 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
-    def xor(self, other: Union["MPCTensor", torch.Tensor, int]) -> "MPCTensor":
+    def xor(self, y: Union["MPCTensor", torch.Tensor, int]) -> "MPCTensor":
         """XOR operator.
 
         Args:
-            other (Union["MPCTensor", torch.Tensor, int]): MPCTensor to find xor.
+            y (Union["MPCTensor", torch.Tensor, int]): MPCTensor to find xor.
 
         Returns:
             MPCTensor: Result of the xor.
         """
-        return self.__apply_op(other, "xor")
+        return self.__apply_op(y, "xor")
 
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
