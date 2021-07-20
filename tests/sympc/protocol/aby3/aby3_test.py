@@ -49,7 +49,7 @@ def test_invalid_parties_trunc(get_clients) -> None:
     session = Session(parties=parties)
 
     with pytest.raises(ValueError):
-        ABY3.truncate(None, session)
+        ABY3.truncate(None, session, 2 ** 32, None)
 
 
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
@@ -64,7 +64,7 @@ def test_truncation_algorithm1(get_clients, base, precision) -> None:
 
     x_mpc = MPCTensor(secret=x, session=session)
 
-    result = ABY3.truncate(x_mpc, session)
+    result = ABY3.truncate(x_mpc, session, session.ring_size, session.config)
 
     fp_encoder = FixedPointEncoder(
         base=session.config.encoder_base, precision=session.config.encoder_precision
@@ -75,15 +75,6 @@ def test_truncation_algorithm1(get_clients, base, precision) -> None:
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-def test_invalid_parties(get_clients) -> None:
-    parties = get_clients(2)
-    session = Session(parties=parties)
-    SessionManager.setup_mpc(session)
-    x = MPCTensor(secret=1, session=session)
-    with pytest.raises(ValueError):
-        ABY3.truncate(x, session)
-
-
 def test_invalid_mpc_pointer(get_clients) -> None:
     parties = get_clients(3)
     session = Session(parties=parties)
@@ -91,4 +82,4 @@ def test_invalid_mpc_pointer(get_clients) -> None:
     x = MPCTensor(secret=1, session=session)
     # passing sharetensor pointer
     with pytest.raises(ValueError):
-        ABY3.truncate(x, session)
+        ABY3.truncate(x, session, 2 ** 32, None)

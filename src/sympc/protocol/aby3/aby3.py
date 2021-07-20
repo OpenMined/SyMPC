@@ -12,11 +12,14 @@ from typing import Tuple
 import torch
 import torchcsprng as csprng
 
+from sympc.config import Config
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_type_from_ring
 
 gen = csprng.create_random_device_generator()
 
@@ -61,38 +64,49 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def truncation_algorithm1(
-        ptr_list: List[torch.Tensor], shape: torch.Size, session: Session
+        ptr_list: List[torch.Tensor],
+        shape: torch.Size,
+        session: Session,
+        ring_size: int,
+        config: Config,
     ) -> List[ReplicatedSharedTensor]:
         """Performs the ABY3 truncation algorithm1.
 
         Args:
             ptr_list (List[torch.Tensor]): Tensors to truncate
-            shape(torch.Size) : shape of tensor values
-            session(Session) : session the tensor belong to
+            shape (torch.Size) : shape of tensor values
+            session (Session) : session the tensor belong to
+            ring_size (int): Ring size of the underlying tensors.
+            config (Config): The configuration(base,precision) of the underlying tensors.
 
         Returns:
             List["ReplicatedSharedTensor"] : Truncated shares.
         """
-        rand_value = torch.empty(size=shape, dtype=session.tensor_type).random_(
-            generator=gen
-        )
-        base = session.config.encoder_base
-        precision = session.config.encoder_precision
+        tensor_type = get_type_from_ring(ring_size)
+        rand_value = torch.empty(size=shape, dtype=tensor_type).random_(generator=gen)
+        base = config.encoder_base
+        precision = config.encoder_precision
         scale = base ** precision
         x1, x2, x3 = ptr_list
         x1_trunc = x1 >> precision if base == 2 else x1 // scale
         x_trunc = (x2 + x3) >> precision if base == 2 else (x2 + x3) // scale
         shares = [x1_trunc, x_trunc - rand_value, rand_value]
-        ptr_list = ReplicatedSharedTensor.distribute_shares(shares, session)
+        ptr_list = ReplicatedSharedTensor.distribute_shares(
+            shares, session, ring_size, config
+        )
         return ptr_list
 
     @staticmethod
-    def truncate(x: MPCTensor, session: Session) -> MPCTensor:
+    def truncate(
+        x: MPCTensor, session: Session, ring_size: int, config: Config
+    ) -> MPCTensor:
         """Perfoms the ABY3 truncation algorithm.
 
         Args:
             x (MPCTensor): input tensor
             session (Session) : session of the input tensor.
+            ring_size (int): Ring size of the underlying tensor.
+            config (Config) : The configuration(base,precision) of the underlying tensor.
 
         Returns:
             MPCTensor: truncated MPCTensor.
@@ -109,15 +123,36 @@ class ABY3(metaclass=Protocol):
         # RSPointer - public ops, Tensor Pointer - Private ops
         ptr_list = []
         ptr_name = x.share_ptrs[0].__name__
+
+        # TODO:Shoud be concised,lot of branching done,to improve communication efficiency.
+
         if ptr_name == "ReplicatedSharedTensorPointer":
-            ptr_list.append(x.share_ptrs[0].get_shares()[0].get_copy())
-            ptr_list.extend(x.share_ptrs[1].get_copy().shares)
+
+            if ring_size in {2, PRIME_NUMBER}:
+                share_ptrs = x.share_ptrs
+            else:
+                ptr_list.append(x.share_ptrs[0].get_shares()[0].get_copy())
+                ptr_list.extend(x.share_ptrs[1].get_copy().shares)
+                share_ptrs = ABY3.truncation_algorithm1(
+                    ptr_list, x.shape, session, ring_size, config
+                )
+
         elif ptr_name == "TensorPointer":
             ptr_list = [share.get_copy() for share in x.share_ptrs]
+
+            if ring_size in {2, PRIME_NUMBER}:
+                share_ptrs = ReplicatedSharedTensor.distribute_shares(
+                    ptr_list, session, ring_size, config
+                )
+
+            else:
+
+                share_ptrs = ABY3.truncation_algorithm1(
+                    ptr_list, x.shape, session, ring_size, config
+                )
         else:
             raise ValueError("{ptr_name} not supported.")
 
-        share_ptrs = ABY3.truncation_algorithm1(ptr_list, x.shape, session)
         result = MPCTensor(shares=share_ptrs, session=session, shape=x.shape)
 
         return result
