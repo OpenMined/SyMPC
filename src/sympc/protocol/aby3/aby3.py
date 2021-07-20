@@ -23,7 +23,6 @@ from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
-
 gen = csprng.create_random_device_generator()
 
 
