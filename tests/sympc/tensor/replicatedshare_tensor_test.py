@@ -595,4 +595,3 @@ def test_ops_prime_public_xor(get_clients, security, bit) -> None:
     expected_res = secret ^ value
 
     assert (result.reconstruct(decode=False) == expected_res).all()
-
