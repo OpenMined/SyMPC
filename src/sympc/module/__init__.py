@@ -27,7 +27,9 @@ MAP_TORCH_TO_SYMPC = {
 
 MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items()})
 
-ADDITIONAL_ATTRIBUTES = {"Conv2d": ["padding", "dilation", "groups", "stride"]}
+ADDITIONAL_ATTRIBUTES = {
+    "Conv2d": ["padding", "dilation", "groups", "stride", "in_channels", "out_channels"]
+}
 
 SKIP_LAYERS_NAME = {"Flatten"}
 

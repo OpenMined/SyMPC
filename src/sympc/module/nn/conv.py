@@ -51,6 +51,8 @@ class Conv2d(SMPCModule):
             session (Session): the session used to identify the layer
         """
         self.session = session
+        self.in_channels = None
+        self.out_channels = None
         self.stride = 1
         self.padding = 0
         self.dilation = 1
@@ -104,8 +106,6 @@ class Conv2d(SMPCModule):
             state_dict (Dict[str, Any]): the state dict that would be shared.
             additional_attributes (Dict[str, Any]): Attributes of conv apart from weights.
 
-        Raises:
-            ValueError: If kernel sizes mismatch "kernel_size_w" and "kernel_size_h"
         """
         bias = None
         if ispointer(state_dict):
@@ -130,6 +130,7 @@ class Conv2d(SMPCModule):
 
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
+
         (
             self.out_channels,
             self.in_channels,
@@ -137,13 +138,7 @@ class Conv2d(SMPCModule):
             kernel_size_h,
         ) = shape
 
-        if kernel_size_w != kernel_size_h:
-            raise ValueError(
-                f"Kernel sizes mismatch {kernel_size_w} and {kernel_size_h}"
-            )
-
-        self.kernel_size = kernel_size_w
-
+        self.kernel_size = (kernel_size_w, kernel_size_h)
         self.weight = MPCTensor(secret=weight, session=self.session, shape=shape)
 
         if bias is not None:
@@ -182,6 +177,10 @@ class Conv2d(SMPCModule):
             in_channels=conv_module.in_channels,
             out_channels=conv_module.out_channels,
             kernel_size=conv_module.kernel_size,
+            stride=conv_module.stride,
+            padding=conv_module.padding,
+            dilation=conv_module.dilation,
+            groups=conv_module.groups,
             bias=bias,
         )
         return module
