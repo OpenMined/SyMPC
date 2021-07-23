@@ -4,7 +4,6 @@ Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
-import operator
 from typing import Any
 from typing import Dict
 from typing import List
@@ -13,6 +12,7 @@ from typing import Tuple
 # third party
 import torch
 
+from sympc.config import Config
 from sympc.protocol import ABY3
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
@@ -23,6 +23,8 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import parallel_execution
+
+shares_sum = ReplicatedSharedTensor.shares_sum
 
 
 class Falcon(metaclass=Protocol):
@@ -94,7 +96,7 @@ class Falcon(metaclass=Protocol):
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
-            result(MPCTensor): Result of the operation.
+            result (MPCTensor): Result of the operation.
 
         Raises:
             ValueError: Raised when number of parties are not three.
@@ -105,14 +107,22 @@ class Falcon(metaclass=Protocol):
 
         result = None
 
+        ring_size = int(x.share_ptrs[0].get_ring_size().get_copy())
+        conf_dict = x.share_ptrs[0].get_config().get_copy()
+        config = Config(**conf_dict)
+
         if session.protocol.security_type == "semi-honest":
-            result = Falcon.mul_semi_honest(x, y, session, op_str, **kwargs_)
+            result = Falcon.mul_semi_honest(
+                x, y, session, op_str, ring_size, config, **kwargs_
+            )
         elif session.protocol.security_type == "malicious":
-            result = Falcon.mul_malicious(x, y, session, op_str, **kwargs_)
+            result = Falcon.mul_malicious(
+                x, y, session, op_str, ring_size, config, **kwargs_
+            )
         else:
             raise ValueError("Invalid security_type for Falcon multiplication")
 
-        result = ABY3.truncate(result, session)
+        result = ABY3.truncate(result, session, ring_size, config)
 
         return result
 
@@ -122,7 +132,9 @@ class Falcon(metaclass=Protocol):
         y: MPCTensor,
         session: Session,
         op_str: str,
-        truncate: bool = True,
+        ring_size: int,
+        config: Config,
+        reshare: bool = False,
         **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
         """Falcon semihonest multiplication.
@@ -134,7 +146,9 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
-            truncate (bool) : Applies truncation on the result if set.
+            ring_size (int) : Ring size of the underlying tensors.
+            config (Config): The configuration(base,precision) of the underlying tensor.
+            reshare (bool) : Convert 3-out-3 to 2-out-3 if set.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
@@ -151,14 +165,15 @@ class Falcon(metaclass=Protocol):
 
         result = MPCTensor(shares=z_shares_ptrs, session=x.session)
 
-        if not truncate:
+        if reshare:
             z_shares = [share.get() for share in z_shares_ptrs]
 
             # Convert 3-3 shares to 2-3 shares by resharing
             reshared_shares = ReplicatedSharedTensor.distribute_shares(
-                z_shares, x.session
+                z_shares, x.session, ring_size, config
             )
             result = MPCTensor(shares=reshared_shares, session=x.session)
+
         result.shape = MPCTensor._get_shape(op_str, x.shape, y.shape)  # for prrs
         return result
 
@@ -177,12 +192,13 @@ class Falcon(metaclass=Protocol):
             eps (torch.Tensor) :masked value of x
             delta (torch.Tensor): masked value of y
             op_str (str): Operator string.
-            kwargs(Dict[Any, Any]): Keywords arguments for the operator.
+            kwargs (Dict[Any, Any]): Keywords arguments for the operator.
 
         Returns:
             ReplicatedSharedTensor : Result of the verification.
         """
         session = get_session(z_sh.session_uuid)
+        ring_size = z_sh.ring_size
 
         crypto_store = session.crypto_store
         eps_shape = tuple(eps.shape)
@@ -194,7 +210,7 @@ class Falcon(metaclass=Protocol):
 
         a_share, b_share, c_share = primitives
 
-        op = getattr(operator, op_str)
+        op = ReplicatedSharedTensor.get_op(ring_size, op_str)
 
         eps_delta = op(eps, delta, **kwargs)
         eps_b = b_share.clone()
@@ -209,10 +225,14 @@ class Falcon(metaclass=Protocol):
         rst_share = c_share + delta_a + eps_b
 
         if session.rank == 0:
-            rst_share.shares[0] = rst_share.shares[0] + eps_delta
+            rst_share.shares[0] = shares_sum(
+                [rst_share.shares[0], eps_delta], ring_size
+            )
 
         if session.rank == 2:
-            rst_share.shares[1] = rst_share.shares[1] + eps_delta
+            rst_share.shares[1] = shares_sum(
+                [rst_share.shares[1], eps_delta], ring_size
+            )
 
         result = z_sh - rst_share
 
@@ -250,6 +270,8 @@ class Falcon(metaclass=Protocol):
         y: MPCTensor,
         session: Session,
         op_str: str,
+        ring_size: int,
+        config: Config,
         **kwargs_: Dict[Any, Any],
     ) -> MPCTensor:
         """Falcon malicious multiplication.
@@ -259,6 +281,8 @@ class Falcon(metaclass=Protocol):
             y (MPCTensor): Another secret
             session (Session): Session the tensors belong to
             op_str (str): Operation string.
+            ring_size (int) : Ring size of the underlying tensor.
+            config (Config): The configuration(base,precision) of the underlying tensor.
             kwargs_ (Dict[Any, Any]): Kwargs for some operations like conv2d
 
         Returns:
@@ -271,7 +295,7 @@ class Falcon(metaclass=Protocol):
         shape_y = tuple(y.shape)
 
         result = Falcon.mul_semi_honest(
-            x, y, session, op_str, truncate=False, **kwargs_
+            x, y, session, op_str, ring_size, config, reshare=True, **kwargs_
         )
 
         args = [list(sh) + [op_str] for sh in zip(x.share_ptrs, y.share_ptrs)]
@@ -286,6 +310,8 @@ class Falcon(metaclass=Protocol):
                     "a_shape": shape_x,
                     "b_shape": shape_y,
                     "nr_parties": session.nr_parties,
+                    "ring_size": ring_size,
+                    "config": config,
                     **kwargs_,
                 },
                 p_kwargs={"a_shape": shape_x, "b_shape": shape_y},
@@ -338,9 +364,12 @@ class Falcon(metaclass=Protocol):
         session = get_session(x.session_uuid)
         z_value = Falcon.multiplication_protocol(x, y, op_str, **kwargs)
         shape = MPCTensor._get_shape(op_str, x.shape, y.shape)
-        przs_mask = session.przs_generate_random_share(shape=shape)
+        przs_mask = session.przs_generate_random_share(
+            shape=shape, ring_size=str(x.ring_size)
+        )
         # Add PRZS Mask to z  value
-        share = z_value + przs_mask.get_shares()[0]
+        op = ReplicatedSharedTensor.get_op(x.ring_size, "add")
+        share = op(z_value, przs_mask.get_shares()[0])
         return share
 
     @staticmethod
@@ -356,16 +385,19 @@ class Falcon(metaclass=Protocol):
             x (ReplicatedSharedTensor): Secret
             y (ReplicatedSharedTensor): Another secret
             op_str (str): Operator string.
-            kwargs(Dict[Any, Any]): Keywords arguments for the operator.
+            kwargs (Dict[Any, Any]): Keywords arguments for the operator.
 
         Returns:
             shares (ReplicatedSharedTensor): results in terms of ReplicatedSharedTensor.
         """
-        op = getattr(operator, op_str)
+        op = ReplicatedSharedTensor.get_op(x.ring_size, op_str)
 
-        z_value = (
-            op(x.shares[0], y.shares[0], **kwargs)
-            + op(x.shares[1], y.shares[0], **kwargs)
-            + op(x.shares[0], y.shares[1], **kwargs)
+        z_value = shares_sum(
+            [
+                op(x.shares[0], y.shares[0], **kwargs),
+                op(x.shares[1], y.shares[0], **kwargs),
+                op(x.shares[0], y.shares[1], **kwargs),
+            ],
+            x.ring_size,
         )
         return z_value
