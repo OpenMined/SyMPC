@@ -349,6 +349,48 @@ class GradPow(GradFunc):
         x, y = ctx["x"], ctx["y"]
 
         return x ** (y - 1) * y * grad
+    
+class GradDiv(GradFunc):
+    """The multiplication gradient function."""
+
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
+        """Perform the feedforward and compute the result for the multiplication operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): 1st operand for the multiplication operation
+            y (Any): 2nd operand for the multiplication operation
+
+        Returns:
+            x * y (MPCTensor): The result of the multiplication
+
+        Raises:
+            TypeError: If y is not an Integer.
+        """
+        if not isinstance(y, int):
+            raise TypeError(
+                f"Expected data type for power is Integer but received {type(y)}"
+            )
+
+        ctx["x"] = x
+        ctx["y"] = y
+        return x/y
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the multiplication operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
+        """
+        x, y = ctx["x"], ctx["y"]
+
+        return (-1) * (x)/(y**2) * grad
 
 
 class GradMatMul(GradFunc):
@@ -774,6 +816,7 @@ GRAD_FUNCS: Dict[str, GradFunc] = {
     "sub": GradSub,
     "add": GradAdd,
     "sum": GradSum,
+    "truediv": GradDiv,
     "sigmoid": GradSigmoid,
     "flatten": GradFlatten,
     "conv2d": GradConv2d,

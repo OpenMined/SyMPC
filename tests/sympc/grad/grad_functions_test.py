@@ -9,6 +9,7 @@ import torch
 import sympc
 from sympc.grads.grad_functions import GradAdd
 from sympc.grads.grad_functions import GradConv2d
+from sympc.grads.grad_functions import GradDiv
 from sympc.grads.grad_functions import GradFlatten
 from sympc.grads.grad_functions import GradFunc
 from sympc.grads.grad_functions import GradMatMul
@@ -840,3 +841,37 @@ def test_grad_computation_matmul_edgecase(get_clients):
 
     assert output == mpc_output.get()
     assert (w_grad == w.grad.get()).all()
+
+def test_grad_div_forward(get_clients) -> None:
+    # We need Function Secret Sharing (only for 2 parties) for
+    # comparing
+    parties = get_clients(2)
+    x = torch.Tensor([-7, 0, 12])
+
+    x_mpc = x.share(parties=parties)
+
+    ctx = {}
+    res_mpc = GradReLU.forward(ctx, x_mpc)
+
+    assert "mask" in ctx
+
+    res = res_mpc.reconstruct()
+    expected = x.relu()
+
+    assert np.allclose(res, expected, rtol=1e-3)
+
+
+def test_grad_div_backward(get_clients) -> None:
+    parties = get_clients(2)
+    grad = torch.tensor([0, -1.453, 0.574, -0.89])
+
+    grad_mpc = grad.share(parties=parties)
+    mask = torch.tensor([0, 0, 1, 0])
+
+    ctx = {"mask": mask}
+
+    res_mpc = GradReLU.backward(ctx, grad_mpc)
+
+    res = res_mpc.reconstruct()
+    expected = grad * mask
+    assert np.allclose(res, expected, rtol=1e-3)

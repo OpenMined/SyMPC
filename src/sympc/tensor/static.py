@@ -234,10 +234,10 @@ def max_mpc(
     """
     argmax_mpc = helper_argmax(x, dim=dim, keepdim=keepdim, one_hot=True)
     max_mpc = argmax_mpc * x
+
     if dim is None:
         res = max_mpc.sum()
     else:
-
         if not one_hot:
             shape = argmax_mpc.shape
             size = [1 for _ in range(len(shape))]

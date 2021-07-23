@@ -30,7 +30,7 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
-METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
+METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone","reshape"}
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
 
 PRIME_NUMBER = 67  # Global constant for prime order rings.
@@ -61,7 +61,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
+    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone","reshape"}
     PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(
