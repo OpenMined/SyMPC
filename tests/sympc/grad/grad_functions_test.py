@@ -814,3 +814,29 @@ def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> 
 
     res = res_mpc.reconstruct()
     assert np.allclose(res, expected_grad, rtol=1e-3)
+    
+def test_grad_computation_matmul_edgecase(get_clients):
+
+    # Pytorch computation
+    x_secret = torch.tensor([2.0, 3.0])
+    w_secret = torch.tensor([4.0, 6.0], requires_grad=True)
+
+    output = (x_secret.t()) @ (w_secret)
+    output.backward()
+
+    w_grad = w_secret.grad
+
+    # SyMPC computation
+    parties = get_clients(2)
+    session = Session(parties=parties)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x = MPCTensor(secret=x_secret, session=session)
+    w = MPCTensor(secret=w_secret, session=session, requires_grad=True)
+
+    mpc_output = (x.t()) @ (w)
+    mpc_output.backward()
+
+    assert output == mpc_output.get()
+    assert (w_grad == w.grad.get()).all()

@@ -55,6 +55,7 @@ class Conv2d(SMPCModule):
         self.padding = 0
         self.dilation = 1
         self.groups = 1
+        self._parameters = None
 
     def forward(self, x: MPCTensor) -> MPCTensor:
         """Do a feedforward through the layer.
@@ -101,6 +102,7 @@ class Conv2d(SMPCModule):
             weight = state_dict["weight"]
             bias = state_dict.get("bias")
             shape = state_dict["weight"].shape
+            
 
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
@@ -119,11 +121,23 @@ class Conv2d(SMPCModule):
         self.kernel_size = kernel_size_w
 
         self.weight = MPCTensor(secret=weight, session=self.session, shape=shape)
+        self._parameters = OrderedDict({"weight": self.weight})
 
         if bias is not None:
             self.bias = MPCTensor(
                 secret=bias, session=self.session, shape=(self.out_channels,)
             )
+            self._parameters["bias"] = self.bias
+            
+    def parameters(self, recurse: bool = False) -> MPCTensor:
+        """Get the parameters of the Linear module.
+        Args:
+            recurse (bool): For the moment not used. TODO
+        Yields:
+            Each parameter of the module
+        """
+        for param in self._parameters.values():
+            yield param
 
     def reconstruct_state_dict(self) -> Dict[str, Any]:
         """Reconstruct the shared state dict.

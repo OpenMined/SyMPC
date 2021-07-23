@@ -390,15 +390,31 @@ class GradMatMul(GradFunc):
         y_grad = grad.clone()
 
         if len(x.shape) < 2:
-            x = x.unsqueeze(0)
-            x_grad = x_grad.unsqueeze(0)
+            if len(x.shape) == 0:
+                x = x.unsqueeze(0)
+            else:
+                x = x.unsqueeze(0)
+
+            if len(x_grad.shape) == 0:
+                x_grad = x_grad.unsqueeze(0)
+            else:
+                x_grad = x_grad.unsqueeze(1)
 
         if len(y.shape) < 2:
             y = y.unsqueeze(1)
-            y_grad = y_grad.unsqueeze(1)
 
-        x_grad = x_grad @ y.t()
-        y_grad = x.t() @ y_grad
+            if len(y_grad.shape) == 0:
+                y_grad = y_grad.unsqueeze(0)
+            else:
+                y_grad = y_grad.unsqueeze(1)
+
+        x_grad = (x_grad) @ (y.t())
+        y_grad = (x.t()) @ (y_grad)
+
+        if x.shape != x_grad.shape:
+            x = x.squeeze()
+        if y.shape != y_grad.shape:
+            y = y.squeeze()
 
         if x.shape != x_grad.shape or y.shape != y_grad.shape:
             raise ValueError(
@@ -733,7 +749,12 @@ def forward(
 
     _self.session.autograd_active = False
     ctx = {}
-    res = grad_fn.forward(ctx, _self, *args, **kwargs)
+    
+    
+    if(str(grad_fn)=="<class 'sympc.grads.grad_functions.GradSum'>"):
+       res = grad_fn.forward(ctx, _self)
+    else:
+       res = grad_fn.forward(ctx, _self, *args, **kwargs)
     _self.session.autograd_active = True
 
     res.requires_grad = requires_grad
