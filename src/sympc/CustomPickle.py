@@ -1,5 +1,4 @@
 # stdlib
-# stdlib
 import copyreg
 import sys
 from typing import Any
@@ -16,7 +15,6 @@ from syft.proto.core.pointer.pointer_pb2 import Pointer as Pointer_PB
 from .session import Session
 from .session import SessionManager
 
-SessionPointer = ""
 
 
 def unpickle_pointer_data(data: Any) -> Tuple:
@@ -39,14 +37,32 @@ def pickle_vm_obj(obj: Any) -> Tuple:
     return unpickle_vm_data, (obj._object2proto().SerializeToString(),)
 
 
-# def custom_pickle():
-client_vm = sy.VirtualMachine(name="alice").get_root_client()
-session_t = Session(parties=[client_vm])
-SessionManager.setup_mpc(session_t)
-pointer = session_t.send(client_vm)
 
-sys.modules["syft.proxy.sympc.session"] = sys.modules["sympc.CustomPickle"]
-SessionPointer=type(pointer)
+def custom_pickle(x: Any)-> None:
+    session = x.session
+    sess_pointer = type(session.session_ptrs[0])
+    tensor_pointer = type(x.share_ptrs[0])
+    client_vm = type(session.parties[0])
 
-copyreg.pickle(type(pointer), pickle_pointer_obj)
-copyreg.pickle(type(client_vm), pickle_vm_obj)
+    sys.modules["syft.proxy.sympc.session"] = sys.modules["sympc.CustomPickle"]
+    sys.modules["syft.proxy.sympc.tensor.replicatedshare_tensor"] = sys.modules["sympc.CustomPickle"]
+    sys.modules["syft.proxy.sympc.tensor.share_tensor"] = sys.modules["sympc.CustomPickle"]
+
+    global SessionPointer
+    global ReplicatedSharedTensorPointer
+    global ShareTensorPointer
+
+    SessionPointer= sess_pointer
+
+    tensor_name = tensor_pointer.__name__
+
+    if(tensor_name == "ReplicatedSharedTensorPointer"):
+        ReplicatedSharedTensorPointer=tensor_pointer
+    elif(tensor_name == "ShareTensorPointer"):
+        ShareTensorPointer = tensor_pointer
+    else:
+        raise ValueError(f"Invalid Pointer Type{tensor_name} for pickling.")
+
+
+    copyreg.pickle(sess_pointer, pickle_pointer_obj)
+    copyreg.pickle(client_vm, pickle_vm_obj)
