@@ -45,7 +45,8 @@ session_t = Session(parties=[client_vm])
 SessionManager.setup_mpc(session_t)
 pointer = session_t.send(client_vm)
 
-sys.modules["syft.proxy.sympc.sessio"] = sys.modules["sympc.CustomPickle"]
+sys.modules["syft.proxy.sympc.session"] = sys.modules["sympc.CustomPickle"]
+SessionPointer=type(pointer)
 
 copyreg.pickle(type(pointer), pickle_pointer_obj)
 copyreg.pickle(type(client_vm), pickle_vm_obj)
