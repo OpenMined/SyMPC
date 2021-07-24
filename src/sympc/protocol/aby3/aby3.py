@@ -4,6 +4,7 @@ ABY3 : A Mixed Protocol Framework for Machine Learning.
 https://eprint.iacr.org/2018/403.pdf
 """
 # stdlib
+import multiprocessing as mp
 from typing import Any
 from typing import List
 from typing import Tuple
@@ -25,6 +26,37 @@ from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
+
+manager = mp.Manager()
+
+"""For multiprocessing,the process is forked,so we create shared
+objects using Manager class"""
+s = manager.list()  # sum
+g = manager.list()  # generate signal
+p = manager.list()  # propogate signal
+
+# For multiprocessing we create a global variable,due to pickling.
+# Each input of a parallel function is pickled
+# TODO : Fix pickle error, and move variable to local scope
+global x
+global y
+x = []
+y = []
+
+
+def sgp(idx: int) -> Tuple[MPCTensor]:
+    """Compute sum,generate,propogate signals for the tensor bits.
+
+    Args:
+        idx (int): List index for operation
+
+    Returns:
+        result (Tuple[MPCTensor]): Returns the sum,generate,propogate of input tensor bits.
+    """
+    s[idx] = x[idx] + y[idx]  # XOR
+    g[idx] = x[idx] * y[idx]  # AND
+    p[idx] = s[idx] + g[idx]  # OR GATE
+    print("passed")
 
 
 class ABY3(metaclass=Protocol):
@@ -300,6 +332,43 @@ class ABY3(metaclass=Protocol):
 
         return arith_share
 
+    # @staticmethod
+    # def sgp(idx : int)-> Tuple[MPCTensor]:
+    #    """Compute sum,generate,propogate signals for the tensor bits.
+    #
+    #    Args:
+    #        idx (int): List index for operation
+    #
+    #    Returns:
+    #        result (Tuple[MPCTensor]): Returns the sum,generate,propogate of input tensor bits.
+    #    """
+    #    s[idx] = x[idx]+ y[idx] #XOR
+    #    g[idx] = x[idx]*y[idx] #AND
+    #    p[idx] = s[idx]+g[idx] #OR GATE
+    #    print("passed")
+    # print(ABY3.s[idx].reconstruct(decode=False))
+    # result = (s,g,p)
+
+    # return result
+
+    def gh(session):
+        zero = torch.tensor([0], dtype=torch.bool)
+        lst_0 = ReplicatedSharedTensor.distribute_shares(
+            [zero, zero, zero], session, ring_size=2
+        )
+        b_0 = MPCTensor(shares=lst_0, session=session, shape=zero.shape)
+        args = []
+        for i in range(64):
+            x.append(b_0)
+            y.append(b_0)
+            s.append(0)
+            g.append(0)
+            p.append(0)
+            args.append([i])
+        t = parallel_execution(sgp, cpu_bound=True)(args)
+
+        return b_0
+
     @staticmethod
     def full_adder(
         a: List[MPCTensor], b: List[MPCTensor], session: Session
@@ -321,7 +390,8 @@ class ABY3(metaclass=Protocol):
         result: List[MPCTensor] = []
         for idx in range(ring_bits):
             s = a[idx] + b[idx] + c[idx]
-            c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + b[idx])
+            # c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + b[idx])
+            c[idx + 1] = (a[idx] + c[idx] + 1) * (b[idx] + c[idx]) + b[idx]
             result.append(s)
             print("full", index)
             index += 1
