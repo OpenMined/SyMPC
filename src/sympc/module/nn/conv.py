@@ -51,6 +51,8 @@ class Conv2d(SMPCModule):
             session (Session): the session used to identify the layer
         """
         self.session = session
+        self.in_channels = None
+        self.out_channels = None
         self.stride = 1
         self.padding = 0
         self.dilation = 1
@@ -79,32 +81,57 @@ class Conv2d(SMPCModule):
 
     __call__ = forward
 
+    def set_additional_attributes(self, attributes: Dict) -> None:
+        """Sets attributes of conv apart from weights.
+
+        Args:
+            attributes (Dict): Attributes with their values.
+
+        Raises:
+            ValueError: If the attribute does not exist.
+        """
+        for attr in attributes.keys():
+            if hasattr(self, attr):
+                setattr(self, attr, attributes[attr])
+            else:
+                raise ValueError(f"Attribute {attr} does not exist in SyMPC module.")
+
     def share_state_dict(
         self,
         state_dict: Dict[str, Any],
+        additional_attributes: Optional[Dict[str, Any]] = None,
     ) -> None:
         """Share the parameters of the normal Conv2d layer.
 
         Args:
             state_dict (Dict[str, Any]): the state dict that would be shared.
+            additional_attributes (Dict[str, Any]): Attributes of conv apart from weights.
 
-        Raises:
-            ValueError: If kernel sizes mismatch "kernel_size_w" and "kernel_size_h"
         """
         bias = None
         if ispointer(state_dict):
+
             weight = state_dict["weight"].resolve_pointer_type()
             if "bias" in weight.client.python.List(state_dict).get():
                 bias = state_dict["bias"].resolve_pointer_type()
             shape = weight.client.python.Tuple(weight.shape)
             shape = shape.get()
+
         else:
             weight = state_dict["weight"]
             bias = state_dict.get("bias")
             shape = state_dict["weight"].shape
 
+        if ispointer(additional_attributes):
+            self.set_additional_attributes(
+                additional_attributes.get().resolve_pointer_type()
+            )
+        else:
+            self.set_additional_attributes(additional_attributes)
+
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
+
         (
             self.out_channels,
             self.in_channels,
@@ -112,13 +139,7 @@ class Conv2d(SMPCModule):
             kernel_size_h,
         ) = shape
 
-        if kernel_size_w != kernel_size_h:
-            raise ValueError(
-                f"Kernel sizes mismatch {kernel_size_w} and {kernel_size_h}"
-            )
-
-        self.kernel_size = kernel_size_w
-
+        self.kernel_size = (kernel_size_w, kernel_size_h)
         self.weight = MPCTensor(secret=weight, session=self.session, shape=shape)
         self._parameters = OrderedDict({"weight": self.weight})
 
@@ -171,6 +192,10 @@ class Conv2d(SMPCModule):
             in_channels=conv_module.in_channels,
             out_channels=conv_module.out_channels,
             kernel_size=conv_module.kernel_size,
+            stride=conv_module.stride,
+            padding=conv_module.padding,
+            dilation=conv_module.dilation,
+            groups=conv_module.groups,
             bias=bias,
         )
         return module
