@@ -262,6 +262,9 @@ def max_pool2d(
     Raises:
         ValueError: if the kernel size is bigger than the input
     """
+    if x.session.nr_parties != 2:
+        raise ValueError("Maxpool currently has support for only two parties.")
+
     max_pool2d_forward = GRAD_FUNCS.get("max_pool2d", None)
     if max_pool2d_forward and x.session.autograd_active:
         return forward(
