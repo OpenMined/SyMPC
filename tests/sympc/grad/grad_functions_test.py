@@ -9,7 +9,6 @@ import torch
 import sympc
 from sympc.grads.grad_functions import GradAdd
 from sympc.grads.grad_functions import GradConv2d
-from sympc.grads.grad_functions import GradDiv
 from sympc.grads.grad_functions import GradFlatten
 from sympc.grads.grad_functions import GradFunc
 from sympc.grads.grad_functions import GradMatMul
@@ -815,7 +814,7 @@ def test_grad_maxpool_2d_backward(get_clients, kernel_size, stride, padding) -> 
 
     res = res_mpc.reconstruct()
     assert np.allclose(res, expected_grad, rtol=1e-3)
-    
+
 
 def test_grad_div_forward(get_clients) -> None:
     # We need Function Secret Sharing (only for 2 parties) for

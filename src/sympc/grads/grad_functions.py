@@ -349,7 +349,8 @@ class GradPow(GradFunc):
         x, y = ctx["x"], ctx["y"]
 
         return x ** (y - 1) * y * grad
-    
+
+
 class GradDiv(GradFunc):
     """The Division gradient function."""
 
@@ -375,7 +376,7 @@ class GradDiv(GradFunc):
 
         ctx["x"] = x
         ctx["y"] = y
-        return x/y
+        return x / y
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
@@ -389,11 +390,11 @@ class GradDiv(GradFunc):
             (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
         """
         x, y = ctx["x"], ctx["y"]
-        
-        grad_x = grad*(1/y)
-        grad_y = (-1) * (x)/(y**2) * grad
 
-        return grad_x,grad_y
+        grad_x = grad * (1 / y)
+        grad_y = (-1) * (x) / (y ** 2) * grad
+
+        return grad_x, grad_y
 
 
 class GradMatMul(GradFunc):
@@ -402,10 +403,12 @@ class GradMatMul(GradFunc):
     @staticmethod
     def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
         """Perform the feedforward and compute the result for the matrix multiplication operation.
+
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
             x (MPCTensor): 1st operand for the matrix multiplication operation
             y (Any): 2nd operand for the matrix multiplication operation
+
         Returns:
             x @ y (MPCTensor): The result of the matrix multiplication
         """
@@ -416,11 +419,14 @@ class GradMatMul(GradFunc):
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
         """Perform the backward pass for the matrix multiplication operation.
+
         Args:
             ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
             grad (MPCTensor): The gradient that came from the child nodes
+
         Returns:
             (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
+
         Raises:
             ValueError: if gradient shape does not match X and Y shape
         """
@@ -773,7 +779,7 @@ def forward(
 
     _self.session.autograd_active = False
     ctx = {}
-    
+
     res = grad_fn.forward(ctx, _self, *args, **kwargs)
     _self.session.autograd_active = True
 

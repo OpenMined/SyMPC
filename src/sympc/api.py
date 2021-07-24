@@ -250,7 +250,7 @@ replicated_shared_tensor_attrs = [
     (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.reshape",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
-    )
+    ),
 ]
 
 allowed_external_attrs = [

@@ -102,7 +102,6 @@ class Conv2d(SMPCModule):
             weight = state_dict["weight"]
             bias = state_dict.get("bias")
             shape = state_dict["weight"].shape
-            
 
         # Weight shape (out_channel, in_channels/groups, kernel_size_w, kernel_size_h)
         # we have groups == 1
@@ -128,11 +127,13 @@ class Conv2d(SMPCModule):
                 secret=bias, session=self.session, shape=(self.out_channels,)
             )
             self._parameters["bias"] = self.bias
-            
+
     def parameters(self, recurse: bool = False) -> MPCTensor:
         """Get the parameters of the Linear module.
+
         Args:
             recurse (bool): For the moment not used. TODO
+
         Yields:
             Each parameter of the module
         """
