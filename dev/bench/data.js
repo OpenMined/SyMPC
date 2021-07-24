@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1626742937453,
+  "lastUpdate": 1627126128408,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1364,6 +1364,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.037288274905730674",
             "extra": "mean: 2.1745803195999995 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "5a5f44223196cb2a4fecf199eb87aa10c95a43a6",
+          "message": "Allow additional attributes from torch modules into SyMPC modules (#280)\n\n* init conv2d\r\n\r\n* Some chamges\r\n\r\n* moved additional attributes to module level\r\n\r\n* Added docs and precommit\r\n\r\n* Precommit hook\r\n\r\n* Added a test to check for attribute",
+          "timestamp": "2021-07-24T16:56:07+05:30",
+          "tree_id": "fda258ecb463d9885cf463b44a51f774fa47d488",
+          "url": "https://github.com/OpenMined/SyMPC/commit/5a5f44223196cb2a4fecf199eb87aa10c95a43a6"
+        },
+        "date": 1627126127836,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.48284135349101326,
+            "unit": "iter/sec",
+            "range": "stddev: 0.05101482509644849",
+            "extra": "mean: 2.071073640999998 sec\nrounds: 5"
           }
         ]
       }
