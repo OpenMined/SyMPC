@@ -351,19 +351,19 @@ class GradPow(GradFunc):
         return x ** (y - 1) * y * grad
     
 class GradDiv(GradFunc):
-    """The multiplication gradient function."""
+    """The Division gradient function."""
 
     @staticmethod
     def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
-        """Perform the feedforward and compute the result for the multiplication operation.
+        """Perform the feedforward and compute the result for the division operation.
 
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
-            x (MPCTensor): 1st operand for the multiplication operation
-            y (Any): 2nd operand for the multiplication operation
+            x (MPCTensor): 1st operand for the division operation
+            y (Any): 2nd operand for the divison operation
 
         Returns:
-            x * y (MPCTensor): The result of the multiplication
+            x / y (MPCTensor): The result of the division
 
         Raises:
             TypeError: If y is not an Integer.
@@ -379,7 +379,7 @@ class GradDiv(GradFunc):
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
-        """Perform the backward pass for the multiplication operation.
+        """Perform the backward pass for the division operation.
 
         Args:
             ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
@@ -389,8 +389,11 @@ class GradDiv(GradFunc):
             (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
         """
         x, y = ctx["x"], ctx["y"]
+        
+        grad_x = grad*(1/y)
+        grad_y = (-1) * (x)/(y**2) * grad
 
-        return (-1) * (x)/(y**2) * grad
+        return grad_x,grad_y
 
 
 class GradMatMul(GradFunc):
@@ -399,12 +402,10 @@ class GradMatMul(GradFunc):
     @staticmethod
     def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
         """Perform the feedforward and compute the result for the matrix multiplication operation.
-
         Args:
             ctx (Dict[str, Any]): Context used to save information needed in the backward pass
             x (MPCTensor): 1st operand for the matrix multiplication operation
             y (Any): 2nd operand for the matrix multiplication operation
-
         Returns:
             x @ y (MPCTensor): The result of the matrix multiplication
         """
@@ -415,14 +416,11 @@ class GradMatMul(GradFunc):
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> Tuple[MPCTensor]:
         """Perform the backward pass for the matrix multiplication operation.
-
         Args:
             ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
             grad (MPCTensor): The gradient that came from the child nodes
-
         Returns:
             (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
-
         Raises:
             ValueError: if gradient shape does not match X and Y shape
         """
@@ -432,31 +430,15 @@ class GradMatMul(GradFunc):
         y_grad = grad.clone()
 
         if len(x.shape) < 2:
-            if len(x.shape) == 0:
-                x = x.unsqueeze(0)
-            else:
-                x = x.unsqueeze(0)
-
-            if len(x_grad.shape) == 0:
-                x_grad = x_grad.unsqueeze(0)
-            else:
-                x_grad = x_grad.unsqueeze(1)
+            x = x.unsqueeze(0)
+            x_grad = x_grad.unsqueeze(0)
 
         if len(y.shape) < 2:
             y = y.unsqueeze(1)
+            y_grad = y_grad.unsqueeze(1)
 
-            if len(y_grad.shape) == 0:
-                y_grad = y_grad.unsqueeze(0)
-            else:
-                y_grad = y_grad.unsqueeze(1)
-
-        x_grad = (x_grad) @ (y.t())
-        y_grad = (x.t()) @ (y_grad)
-
-        if x.shape != x_grad.shape:
-            x = x.squeeze()
-        if y.shape != y_grad.shape:
-            y = y.squeeze()
+        x_grad = x_grad @ y.t()
+        y_grad = x.t() @ y_grad
 
         if x.shape != x_grad.shape or y.shape != y_grad.shape:
             raise ValueError(
@@ -792,11 +774,7 @@ def forward(
     _self.session.autograd_active = False
     ctx = {}
     
-    
-    if(str(grad_fn)=="<class 'sympc.grads.grad_functions.GradSum'>"):
-       res = grad_fn.forward(ctx, _self)
-    else:
-       res = grad_fn.forward(ctx, _self, *args, **kwargs)
+    res = grad_fn.forward(ctx, _self, *args, **kwargs)
     _self.session.autograd_active = True
 
     res.requires_grad = requires_grad
