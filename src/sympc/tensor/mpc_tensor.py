@@ -1140,6 +1140,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __matmul__ = wrapper_getattribute(matmul)
     __rmatmul__ = wrapper_getattribute(rmatmul)
     __truediv__ = wrapper_getattribute(truediv)
+    __rtruediv__ = wrapper_getattribute(truediv)
     __pow__ = wrapper_getattribute(pow)
     __le__ = wrapper_getattribute(le)
     __ge__ = wrapper_getattribute(ge)

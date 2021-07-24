@@ -9,6 +9,7 @@ import torch
 import sympc
 from sympc.grads.grad_functions import GradAdd
 from sympc.grads.grad_functions import GradConv2d
+from sympc.grads.grad_functions import GradDiv
 from sympc.grads.grad_functions import GradFlatten
 from sympc.grads.grad_functions import GradFunc
 from sympc.grads.grad_functions import GradMatMul
@@ -820,17 +821,17 @@ def test_grad_div_forward(get_clients) -> None:
     # We need Function Secret Sharing (only for 2 parties) for
     # comparing
     parties = get_clients(2)
-    x = torch.Tensor([-7, 0, 12])
+    x = torch.tensor([2.0, 3.0])
+    y = torch.tensor([6.0, 4.0])
 
     x_mpc = x.share(parties=parties)
+    y_mpc = y.share(parties=parties)
 
     ctx = {}
-    res_mpc = GradReLU.forward(ctx, x_mpc)
-
-    assert "mask" in ctx
+    res_mpc = GradDiv.forward(ctx, x_mpc, y_mpc)
 
     res = res_mpc.reconstruct()
-    expected = x.relu()
+    expected = x / y
 
     assert np.allclose(res, expected, rtol=1e-3)
 

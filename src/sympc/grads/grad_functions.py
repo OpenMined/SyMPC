@@ -365,15 +365,7 @@ class GradDiv(GradFunc):
 
         Returns:
             x / y (MPCTensor): The result of the division
-
-        Raises:
-            TypeError: If y is not an Integer.
         """
-        if not isinstance(y, int):
-            raise TypeError(
-                f"Expected data type for power is Integer but received {type(y)}"
-            )
-
         ctx["x"] = x
         ctx["y"] = y
         return x / y
@@ -391,8 +383,8 @@ class GradDiv(GradFunc):
         """
         x, y = ctx["x"], ctx["y"]
 
-        grad_x = grad * (1 / y)
-        grad_y = (-1) * (x) / (y ** 2) * grad
+        grad_x = grad * (x / (y * x))
+        grad_y = ((-1) * (x)) / ((y ** 2) * grad)
 
         return grad_x, grad_y
 
