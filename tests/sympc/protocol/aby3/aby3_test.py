@@ -139,4 +139,4 @@ def test_bit_injection_session_ring(get_clients, security_type, x1, x2, x3) -> N
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
 
     assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
-    assert ring_size == ring0
+    assert ring_size == ring

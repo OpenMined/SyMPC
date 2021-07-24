@@ -22,4 +22,5 @@ __all__ = [
     "decompose",
     "RING_SIZE_TO_TYPE",
     "get_nr_bits",
+
 ]

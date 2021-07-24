@@ -286,6 +286,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             # For rsub in MPCTensor which multiplies it with (-1)
             y = y % PRIME_NUMBER if x.ring_size == PRIME_NUMBER else y
 
+
             y = ReplicatedSharedTensor(
                 session_uuid=x.session_uuid,
                 shares=[y],

@@ -25,6 +25,7 @@ from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
+
 gen = csprng.create_random_device_generator()
 
 manager = mp.Manager()
