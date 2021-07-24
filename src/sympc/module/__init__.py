@@ -8,6 +8,7 @@ https://github.com/OpenMined/PySyft/blob/dev/src/syft/lib/torch/module.py
 # stdlib
 from collections import OrderedDict
 import copy
+from typing import Dict
 
 # third party
 import syft as sy
@@ -26,7 +27,31 @@ MAP_TORCH_TO_SYMPC = {
 
 MAP_TORCH_TO_SYMPC.update({f"{k}Pointer": v for k, v in MAP_TORCH_TO_SYMPC.items()})
 
+ADDITIONAL_ATTRIBUTES = {
+    "Conv2d": ["padding", "dilation", "groups", "stride", "in_channels", "out_channels"]
+}
+
 SKIP_LAYERS_NAME = {"Flatten"}
+
+
+def copy_additional_attributes(layer: torch.nn.modules, layer_name: str) -> Dict:
+    """Copy attributes from torch layer to SyMPC layer.
+
+    Args:
+        layer (torch.nn.modules): The torch layer
+        layer_name (str): layer name
+
+    Returns:
+        additional_attributes (Dict): sympc layer with additional attributes
+    """
+    additional_attributes = {}
+
+    if layer_name in ADDITIONAL_ATTRIBUTES:
+
+        for arg in ADDITIONAL_ATTRIBUTES[layer_name]:
+            additional_attributes[arg] = getattr(layer, arg)
+
+    return additional_attributes
 
 
 def share(_self, session: Session) -> sy.Module:
@@ -51,7 +76,8 @@ def share(_self, session: Session) -> sy.Module:
         else:
             sympc_type_layer = MAP_TORCH_TO_SYMPC[name_layer]
             sympc_layer = sympc_type_layer(session=session)
-            sympc_layer.share_state_dict(state_dict)
+            additional_attributes = copy_additional_attributes(module, name_layer)
+            sympc_layer.share_state_dict(state_dict, additional_attributes)
             mpc_module._modules[name] = sympc_layer
 
     return mpc_module
@@ -74,7 +100,6 @@ def reconstruct(_self) -> sy.Module:
         state_dict = module.reconstruct_state_dict()
         torch_module = type(module).get_torch_module(module)
         torch_module.load_state_dict(state_dict)
-
         setattr(syft_module, name, torch_module)
 
     return syft_module
