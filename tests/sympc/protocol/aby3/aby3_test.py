@@ -12,6 +12,7 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_nr_bits
 
 
 def test_share_class() -> None:
@@ -140,3 +141,27 @@ def test_bit_injection_session_ring(get_clients, security_type, x1, x2, x3) -> N
 
     assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
     assert ring_size == ring0
+
+
+@pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
+def test_bit_decomposition_ttp(get_clients, security_type) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security_type)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    secret = torch.tensor([[-1, 12], [-32, 45], [98, -5624]])
+    x = MPCTensor(secret=secret, session=session)
+    b_sh = ABY3.bit_decomposition_ttp(x, session)
+    ring_size = x.session.ring_size
+    tensor_type = x.session.tensor_type
+    ring_bits = get_nr_bits(ring_size)
+
+    val = 1
+    expected_res = 0
+    for i in range(ring_bits):
+        if i != ring_bits - 1:
+            expected_res += b_sh[i].reconstruct(decode=False).type(tensor_type) * val
+        else:
+            expected_res += b_sh[i].reconstruct(decode=False).type(tensor_type) * (-val)
+        val *= 2
+    assert (expected_res == x.reconstruct(decode=False)).all()

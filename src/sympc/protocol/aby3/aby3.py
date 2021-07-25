@@ -314,7 +314,6 @@ class ABY3(metaclass=Protocol):
         Returns:
             result (List[MPCTensor]): Result of the operation.
         """
-        index = 0
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
         c = [0 for idx in range(ring_bits + 1)]  # carry bits of addition.
@@ -323,8 +322,6 @@ class ABY3(metaclass=Protocol):
             s = a[idx] + b[idx] + c[idx]
             c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + b[idx])
             result.append(s)
-            print("full", index)
-            index += 1
         return result
 
     @staticmethod
@@ -350,7 +347,6 @@ class ABY3(metaclass=Protocol):
 
         x_sh = list(zip(*decompose))
 
-        index = 1
         for idx in range(ring_bits):
             x1_sh, x2_sh, x3_sh = zip(*x_sh[idx])
             x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
@@ -364,10 +360,44 @@ class ABY3(metaclass=Protocol):
             x1.append(x1_m)
             x2.append(x2_m)
             x3.append(x3_m)
-            print(index)
-            index += 1
 
         x1_2 = ABY3.full_adder(x1, x2, session)
         bin_share = ABY3.full_adder(x1_2, x3, session)
 
         return bin_share
+
+    @staticmethod
+    def bit_decomposition_ttp(x: MPCTensor, session: Session) -> List[MPCTensor]:
+        """Perfom ABY3 bit decomposition using orchestrator as ttp.
+
+        Args:
+            x (MPCTensor): Arithmetic shares of secret.
+            session (Session): session the share belongs to.
+
+        Returns:
+            b_sh (List[MPCTensor]): Returns binary shares of each bit of the secret.
+
+        TODO: We should modify to use parallel prefix adder, which involves pickling Syft VM's
+        """
+        # Decoding is not done as they are shares of PRRS.
+        tensor = x.reconstruct(decode=False)
+        b_sh: List[MPCTensor] = []  # binary shares of bits
+        ring_size = session.ring_size
+        shares_sum = ReplicatedSharedTensor.shares_sum
+        ring_bits = get_nr_bits(ring_size)
+
+        for idx in range(ring_bits):
+            bit_mask = torch.ones(tensor.shape, dtype=tensor.dtype) << idx
+            secret = (tensor & bit_mask).type(torch.bool)
+            r1 = torch.empty(size=tensor.shape, dtype=torch.bool).random_(generator=gen)
+            r2 = torch.empty(size=tensor.shape, dtype=torch.bool).random_(generator=gen)
+            r3 = shares_sum([secret, r1, r2], ring_size=2)
+            shares = [r1, r2, r3]
+            config = Config(encoder_base=1, encoder_precision=0)
+            sh_ptr = ReplicatedSharedTensor.distribute_shares(
+                shares=shares, session=session, ring_size=2, config=config
+            )
+            b_mpc = MPCTensor(shares=sh_ptr, session=session, shape=tensor.shape)
+            b_sh.append(b_mpc)
+
+        return b_sh
