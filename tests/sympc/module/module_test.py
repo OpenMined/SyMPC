@@ -34,15 +34,19 @@ class ConvNet(sy.Module):
     def __init__(self, torch_ref, kernel_size=5):
         super(ConvNet, self).__init__(torch_ref=torch_ref)
         self.conv1 = self.torch_ref.nn.Conv2d(
-            in_channels=1, out_channels=5, kernel_size=kernel_size
+            in_channels=1,
+            out_channels=5,
+            kernel_size=kernel_size,
+            stride=2,
+            padding=(2, 1),
         )
-        self.fc1 = self.torch_ref.nn.Linear(2880, 10)
+        self.fc1 = self.torch_ref.nn.Linear(910, 10)
         self.fc2 = self.torch_ref.nn.Linear(10, 5)
 
     def forward(self, x):
         x = self.conv1(x)
         x = self.torch_ref.nn.functional.relu(x)
-        x = x.view(1, -1)
+        x = x.view([-1, 910])
         x = self.fc1(x)
         x = self.fc2(x)
         x = self.torch_ref.nn.functional.relu(x)
@@ -73,19 +77,6 @@ def test_run_linear_model(get_clients: Callable[[int], List[Any]]):
     res = res_mpc.reconstruct()
     expected = expected.detach().numpy()
     assert np.allclose(res, expected, atol=1e-3)
-
-
-def test_exception_conv2d_kernel_mismatch(get_clients):
-
-    clients = get_clients(2)
-
-    model = ConvNet(torch, kernel_size=(5, 4))
-    # Setup the session for the computation
-    session = Session(parties=clients)
-    SessionManager.setup_mpc(session)
-
-    with pytest.raises(ValueError):
-        model.share(session=session)
 
 
 @pytest.mark.order(1)
@@ -151,3 +142,38 @@ def test_reconstruct_shared_model(
         assert MAP_TORCH_TO_SYMPC[name_module].eq_close(
             module_expected, module_res, atol=1e-4
         )
+
+
+def test_additional_attributes(get_clients):
+    class ConvNet_attr(sy.Module):
+        def __init__(self, torch_ref):
+            super(ConvNet_attr, self).__init__(torch_ref=torch_ref)
+            self.conv1 = self.torch_ref.nn.Conv2d(
+                in_channels=2,
+                out_channels=6,
+                kernel_size=(3, 5),
+                stride=(2, 1),
+                padding=(2, 1),
+                groups=1,
+                dilation=2,
+            )
+
+        def forward(self, x):
+            x = self.conv1(x)
+            return x
+
+    model = ConvNet_attr(torch)
+
+    clients = get_clients(2)
+
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    mpc_model = model.share(session=session)
+    model = mpc_model.reconstruct()
+
+    assert model.conv1.kernel_size == (3, 5)
+    assert model.conv1.padding == (2, 1)
+    assert model.conv1.stride == (2, 1)
+    assert model.conv1.groups == 1
+    assert model.conv1.dilation == (2, 2)
