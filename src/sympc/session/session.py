@@ -342,3 +342,19 @@ class Session:
         session.ring_size = self.ring_size
 
         return session
+
+parties_cache: List = []
+def parties_global(x: Any ,remove: bool = True) -> Any:
+    global parties_cache
+    if remove:
+        parties_cache = x.session.parties
+        x.session.parties=""
+        for sh in x.share_ptrs:
+            sh.client=""
+
+    else:
+        x.session.parties = parties_cache
+        for i,sh in enumerate(x.share_ptrs):
+            sh.client = parties_cache[i]
+        
+    return x

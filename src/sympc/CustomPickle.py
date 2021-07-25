@@ -42,7 +42,7 @@ def custom_pickle(x: Any)-> None:
     session = x.session
     sess_pointer = type(session.session_ptrs[0])
     tensor_pointer = type(x.share_ptrs[0])
-    client_vm = type(session.parties[0])
+    #client_vm = type(session.parties[0])
 
     sys.modules["syft.proxy.sympc.session"] = sys.modules["sympc.CustomPickle"]
     sys.modules["syft.proxy.sympc.tensor.replicatedshare_tensor"] = sys.modules["sympc.CustomPickle"]
@@ -65,4 +65,4 @@ def custom_pickle(x: Any)-> None:
 
 
     copyreg.pickle(sess_pointer, pickle_pointer_obj)
-    copyreg.pickle(client_vm, pickle_vm_obj)
+    #copyreg.pickle(client_vm, pickle_vm_obj)

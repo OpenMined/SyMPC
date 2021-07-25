@@ -24,6 +24,8 @@ from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
+from sympc.CustomPickle import custom_pickle
+from sympc.session import parties_global
 
 
 gen = csprng.create_random_device_generator()
@@ -35,29 +37,6 @@ objects using Manager class"""
 s = manager.list()  # sum
 g = manager.list()  # generate signal
 p = manager.list()  # propogate signal
-
-# For multiprocessing we create a global variable,due to pickling.
-# Each input of a parallel function is pickled
-# TODO : Fix pickle error, and move variable to local scope
-global x
-global y
-x = []
-y = []
-
-
-def sgp(idx: int) -> Tuple[MPCTensor]:
-    """Compute sum,generate,propogate signals for the tensor bits.
-
-    Args:
-        idx (int): List index for operation
-
-    Returns:
-        result (Tuple[MPCTensor]): Returns the sum,generate,propogate of input tensor bits.
-    """
-    s[idx] = x[idx] + y[idx]  # XOR
-    g[idx] = x[idx] * y[idx]  # AND
-    p[idx] = s[idx] + g[idx]  # OR GATE
-    print("passed")
 
 
 class ABY3(metaclass=Protocol):
@@ -333,24 +312,29 @@ class ABY3(metaclass=Protocol):
 
         return arith_share
 
-    # @staticmethod
-    # def sgp(idx : int)-> Tuple[MPCTensor]:
-    #    """Compute sum,generate,propogate signals for the tensor bits.
-    #
-    #    Args:
-    #        idx (int): List index for operation
-    #
-    #    Returns:
-    #        result (Tuple[MPCTensor]): Returns the sum,generate,propogate of input tensor bits.
-    #    """
-    #    s[idx] = x[idx]+ y[idx] #XOR
-    #    g[idx] = x[idx]*y[idx] #AND
-    #    p[idx] = s[idx]+g[idx] #OR GATE
-    #    print("passed")
-    # print(ABY3.s[idx].reconstruct(decode=False))
-    # result = (s,g,p)
+    @staticmethod
+    def sgp(x: MPCTensor, y: MPCTensor,idx : int)-> None:
+        """Compute sum,generate,propogate signals for the tensor bits.
 
-    # return result
+        Args:
+            x (MPCTensor): input tensor
+            y (MPCTensor): input tensor
+            idx (int): List index for operation
+
+        """
+        print(idx)
+        for i in range(64):
+            print(" ")
+        x = parties_global(x,remove=False)
+        y = parties_global(y,remove=False)
+
+        st = x+ y #XOR
+        gt = x*y #AND
+        pt = st+gt #OR GATE
+        s[idx] = parties_global(st)
+        g[idx] = parties_global(gt)
+        p[idx] = parties_global(pt)
+        print("passed")
 
     def gh(session):
         zero = torch.tensor([0], dtype=torch.bool)
@@ -358,15 +342,19 @@ class ABY3(metaclass=Protocol):
             [zero, zero, zero], session, ring_size=2
         )
         b_0 = MPCTensor(shares=lst_0, session=session, shape=zero.shape)
+        b_0 = parties_global(b_0)
         args = []
+        x=[]
+        y=[]
+        custom_pickle(b_0)
         for i in range(64):
             x.append(b_0)
             y.append(b_0)
             s.append(0)
             g.append(0)
             p.append(0)
-            args.append([i])
-        t = parallel_execution(sgp, cpu_bound=True)(args)
+        args = [ [x[i],y[i],i] for i in range(64) ]
+        t = parallel_execution(ABY3.sgp, cpu_bound=True)(args)
 
         return b_0
 

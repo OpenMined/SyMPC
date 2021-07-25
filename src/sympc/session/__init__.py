@@ -3,6 +3,7 @@
 from typing import Dict
 
 from .session import Session
+from .session import parties_global
 from .session_manager import SessionManager
 from .session_utils import get_session
 from .session_utils import set_session
@@ -12,4 +13,4 @@ from .session_utils import set_session
 # this is needed in the case we have VirtualMachines since we share the same workspace
 CURRENT_SESSION: Dict[str, Session] = {}
 
-__all__ = ["Session", "SessionManager", "get_session", "set_session"]
+__all__ = ["Session", "SessionManager", "get_session", "set_session","parties_global"]
