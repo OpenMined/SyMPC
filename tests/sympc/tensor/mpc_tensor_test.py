@@ -753,3 +753,37 @@ def test_prime_xor(get_clients, security, bit) -> None:
     expected_res = secret_x ^ secret_b
 
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("bit", [[30, -30, 1], [25, 27, -52]])
+def test_session_ring_xor(get_clients, security, bit) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = session.ring_size
+    tensor_type = session.tensor_type
+    config = Config(encoder_base=1, encoder_precision=0)
+    x_sh1 = torch.tensor([[927021, 3701]], dtype=tensor_type)
+    x_sh2 = torch.tensor([[805274, 401]], dtype=tensor_type)
+    x_sh3 = torch.tensor([[-1732294, -4102]], dtype=tensor_type)
+    bit_sh_1, bit_sh_2, bit_sh_3 = bit
+    b_sh1 = torch.tensor([bit_sh_1], dtype=tensor_type)
+    b_sh2 = torch.tensor([bit_sh_2], dtype=tensor_type)
+    b_sh3 = torch.tensor([bit_sh_3], dtype=tensor_type)
+    shares_x = [x_sh1, x_sh2, x_sh3]
+    shares_b = [b_sh1, b_sh2, b_sh3]
+    rst_list_x = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_x, session=session, ring_size=ring_size, config=config
+    )
+    rst_list_b = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_b, session=session, ring_size=ring_size, config=config
+    )
+    x = MPCTensor(shares=rst_list_x, session=session, shape=x_sh1.shape)
+    b = MPCTensor(shares=rst_list_b, session=session, shape=b_sh1.shape)
+    secret_x = ReplicatedSharedTensor.shares_sum(shares_x, ring_size)
+    secret_b = ReplicatedSharedTensor.shares_sum(shares_b, ring_size)
+    result = operator.xor(x, b)
+    expected_res = secret_x ^ secret_b
+    assert (result.reconstruct(decode=False) == expected_res).all()
