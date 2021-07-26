@@ -686,15 +686,9 @@ class MPCTensor(metaclass=SyMPCTensor):
                 raise TypeError("Invalid Share Class")
 
         elif op_str == "xor":
-            if self.session.ring_size == 2:
-                op = getattr(operator, op_str)
-                shares = [
-                    op(*share_tuple)
-                    for share_tuple in zip(self.share_ptrs, y.share_ptrs)
-                ]
-                result = MPCTensor(
-                    shares=shares, shape=self.shape, session=self.session
-                )
+            ring_size = int(self.share_ptrs[0].get_ring_size().get_copy())
+            if ring_size == 2:
+                return self + y
             else:
                 return self + y - (self * y * 2)
 
