@@ -12,6 +12,7 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import parallel_execution
 
 
 def test_share_class() -> None:
@@ -140,3 +141,51 @@ def test_bit_injection_session_ring(get_clients, security_type, x1, x2, x3) -> N
 
     assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
     assert ring_size == ring0
+
+
+@pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
+def test_local_decomposition(get_clients, security_type):
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security_type)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    one = torch.tensor([1], dtype=torch.bool)
+    zero = torch.tensor([0], dtype=torch.bool)
+    shares = [one, one, one]
+    ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=one.shape)
+    ring_size = session.ring_size
+    args = [[share, str(ring_size)] for share in x.share_ptrs]
+
+    decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+
+    x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+
+    x1_sh = [ptr.get_copy().shares for ptr in x1_sh]
+    x2_sh = [ptr.get_copy().shares for ptr in x2_sh]
+    x3_sh = [ptr.get_copy().shares for ptr in x3_sh]
+
+    tensor_type = x.session.tensor_type
+    one = one.type(tensor_type)
+    zero = zero.type(tensor_type)
+
+    exp_x1 = [[one, zero], [zero, zero], [zero, one]]
+    exp_x2 = [[zero, one], [one, zero], [zero, zero]]
+    exp_x3 = [[zero, zero], [zero, one], [one, zero]]
+
+    assert x1_sh == exp_x1
+    assert x2_sh == exp_x2
+    assert x3_sh == exp_x3
+
+
+def test_bit_injection_exception(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    x = MPCTensor(secret=1, session=session)
+
+    with pytest.raises(ValueError):
+        ABY3.bit_injection(x, session, 2 ** 64)
