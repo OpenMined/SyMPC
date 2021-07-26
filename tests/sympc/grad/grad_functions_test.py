@@ -839,16 +839,16 @@ def test_grad_div_forward(get_clients) -> None:
 def test_grad_div_backward(get_clients) -> None:
     parties = get_clients(2)
 
-    grad = torch.tensor([1, 2])
+    grad = torch.tensor([1, 1, 1, 1])
 
     session = Session(parties=parties)
     session.autograd_active = True
     SessionManager.setup_mpc(session)
 
-    x_secret = torch.tensor([2.0, 3.0])
+    x_secret = torch.tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
     x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
 
-    y_secret = torch.tensor([9.0, 8.0])
+    y_secret = torch.tensor([2.0, 3.0, 4.0, 5.0], requires_grad=True)
     y = MPCTensor(secret=y_secret, session=session, requires_grad=True)
 
     grad_mpc = MPCTensor(secret=grad, session=session, requires_grad=True)
@@ -857,11 +857,38 @@ def test_grad_div_backward(get_clients) -> None:
 
     grad_x, grad_y = GradDiv.backward(ctx, grad_mpc)
 
-    expected_grad_x = grad * (x_secret / (y_secret * x_secret))
-    expected_grad_y = ((-1) * (x_secret)) / ((y_secret ** 2) * grad)
+    z = (x_secret / y_secret).sum()
+    z.backward()
+
+    expected_grad_x = x_secret.grad
+    expected_grad_y = y_secret.grad
 
     res_x = grad_x.reconstruct()
     res_y = grad_y.reconstruct()
 
-    assert np.allclose(res_x, expected_grad_x, rtol=1e-1)
-    assert np.allclose(res_y, expected_grad_y, rtol=1e-1)
+    assert np.allclose(res_x, expected_grad_x, rtol=1e-2)
+    assert np.allclose(res_y, expected_grad_y, rtol=1e-2)
+
+
+def test_grad_multipleops_backward(get_clients) -> None:
+    parties = get_clients(2)
+
+    session = Session(parties=parties)
+    session.autograd_active = True
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
+
+    a_plain = x_secret ** 2
+    b_plain = ((x_secret + a_plain) / 2).sum()
+    b_plain.backward()
+    expected_grad_x = x_secret.grad
+
+    a = x ** 2
+    b = ((x + a) / 2).sum()
+    b.backward()
+    res = x.grad.get()
+
+    # result=[1.5000, 2.5012, 3.4966, 4.5703]) & expected=tensor([1.5000, 2.5000, 3.5000, 4.5000]. 
+    assert np.allclose(res, expected_grad_x, rtol=1e-1)

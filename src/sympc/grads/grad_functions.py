@@ -368,7 +368,10 @@ class GradDiv(GradFunc):
         """
         ctx["x"] = x
         ctx["y"] = y
-        return x / y
+
+        ctx["result"] = x / y
+
+        return ctx["result"]
 
     @staticmethod
     def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
