@@ -386,7 +386,8 @@ class GradDiv(GradFunc):
         """
         x, y = ctx["x"], ctx["y"]
 
-        grad_x = grad * (x / (y * x))
+        grad_x = grad * (1 / y)
+        grad_y = (-1) * grad * (ctx["result"] / y)
         grad_y = ((-1) * (x)) / ((y ** 2) * grad)
 
         return grad_x, grad_y

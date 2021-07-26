@@ -853,7 +853,7 @@ def test_grad_div_backward(get_clients) -> None:
 
     grad_mpc = MPCTensor(secret=grad, session=session, requires_grad=True)
 
-    ctx = {"x": x, "y": y}
+    ctx = {"x": x, "y": y, "result": x / y}
 
     grad_x, grad_y = GradDiv.backward(ctx, grad_mpc)
 
