@@ -890,5 +890,5 @@ def test_grad_multipleops_backward(get_clients) -> None:
     b.backward()
     res = x.grad.get()
 
-    # result=[1.5000, 2.5012, 3.4966, 4.5703]) & expected=tensor([1.5000, 2.5000, 3.5000, 4.5000]. 
+    # result=[1.5000, 2.5012, 3.4966, 4.5703]) & expected=tensor([1.5000, 2.5000, 3.5000, 4.5000].
     assert np.allclose(res, expected_grad_x, rtol=1e-1)
