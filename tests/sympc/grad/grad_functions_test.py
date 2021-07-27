@@ -705,6 +705,7 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
 ]
 
 
+@pytest.mark.skip
 def test_grad_maxpool_2d_forward_value_error_kernel_gt_input(get_clients) -> None:
     parties = get_clients(2)
 

@@ -135,15 +135,14 @@ class GradAdd(GradFunc):
         Returns:
             x + y (MPCTensor): The result of the addition
         """
-        if hasattr(x, "shape"):
-            ctx["x_shape"] = x.shape
-        else:
-            ctx["x_shape"] = 1
+        if not hasattr(x, "shape"):
+            x = torch.tensor(x)
 
-        if hasattr(y, "shape"):
-            ctx["y_shape"] = y.shape
-        else:
-            ctx["y_shape"] = 1
+        if not hasattr(y, "shape"):
+            y = torch.tensor(y)
+
+        ctx["x_shape"] = x.shape
+        ctx["y_shape"] = y.shape
 
         return x + y
 
