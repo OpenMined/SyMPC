@@ -867,27 +867,3 @@ def test_grad_div_backward(get_clients) -> None:
 
     assert np.allclose(res_x, expected_grad_x, rtol=1e-2)
     assert np.allclose(res_y, expected_grad_y, rtol=1e-2)
-
-
-def test_grad_multipleops_backward(get_clients) -> None:
-    parties = get_clients(2)
-
-    session = Session(parties=parties)
-    session.autograd_active = True
-    SessionManager.setup_mpc(session)
-
-    x_secret = torch.tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
-    x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
-
-    a_plain = x_secret ** 2
-    b_plain = ((x_secret + a_plain) / 2).sum()
-    b_plain.backward()
-    expected_grad_x = x_secret.grad
-
-    a = x ** 2
-    b = ((x + a) / 2).sum()
-    b.backward()
-    res = x.grad.get()
-
-    # result=[1.5000, 2.5012, 3.4966, 4.5703]) & expected=tensor([1.5000, 2.5000, 3.5000, 4.5000].
-    assert np.allclose(res, expected_grad_x, rtol=1e-1)

@@ -666,4 +666,4 @@ def test_mpctensor_reciprocal(get_clients):
     expected_res = 1 / (x_secret)
     mpc_result = 1 / (x)
 
-    assert mpc_result.reconstruct() == expected_res
+    assert np.allclose(mpc_result.reconstruct(), expected_res, rtol=1e-3)
