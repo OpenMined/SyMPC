@@ -570,6 +570,29 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         res.shares = [share >> y for share in self.shares]
         return res
 
+    def bit_extraction(self, pos: int = 0) -> "ReplicatedSharedTensor":
+        """Extracts the bit at the specified position.
+
+        Args:
+            pos (int): position to extract bit.
+
+        Returns:
+            ReplicatedSharedTensor : extracted bits at specific position.
+        """
+        shares = []
+        # logical shift
+        bit_mask = torch.ones(self.shares[0].shape, dtype=self.shares[0].dtype) << pos
+        for share in self.shares:
+            tensor = share & bit_mask
+            shares.append(tensor)
+        rst = ReplicatedSharedTensor(
+            shares=shares,
+            session_uuid=self.session_uuid,
+            config=Config(encoder_base=1, encoder_precision=0),
+            ring_size=2,
+        )
+        return rst
+
     def rmatmul(self, y):
         """Apply the "rmatmul" operation between "y" and "self".
 
@@ -581,16 +604,26 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         raise NotImplementedError
 
-    def xor(self, y):
+    def xor(
+        self, y: Union[int, torch.Tensor, "ReplicatedSharedTensor"]
+    ) -> "ReplicatedSharedTensor":
         """Apply the "xor" operation between "self" and "y".
 
         Args:
-            y: self^y
+            y: public bit
+
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
 
         Raises:
-            NotImplementedError: Raised when implementation not present
+            ValueError : If ring size is invalid.
         """
-        raise NotImplementedError
+        if self.ring_size == 2:
+            return self + y
+        elif self.ring_size in RING_SIZE_TO_TYPE:
+            return self + y - (self * y * 2)
+        else:
+            raise ValueError(f"The ring_size {self.ring_size} is not supported.")
 
     def lt(self, y):
         """Lower than operator.

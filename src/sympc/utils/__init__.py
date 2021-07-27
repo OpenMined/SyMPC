@@ -5,6 +5,7 @@ from .mpc_utils import count_wraps
 from .mpc_utils import decompose
 from .mpc_utils import generate_random_element
 from .mpc_utils import get_new_generator
+from .mpc_utils import get_nr_bits
 from .mpc_utils import get_type_from_ring
 from .utils import islocal
 from .utils import ispointer
@@ -20,4 +21,5 @@ __all__ = [
     "get_type_from_ring",
     "decompose",
     "RING_SIZE_TO_TYPE",
+    "get_nr_bits",
 ]

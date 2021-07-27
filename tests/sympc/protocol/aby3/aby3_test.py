@@ -12,6 +12,8 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_nr_bits
+from sympc.utils import parallel_execution
 
 
 def test_share_class() -> None:
@@ -86,57 +88,127 @@ def test_invalid_mpc_pointer(get_clients) -> None:
         ABY3.truncate(x, session, 2 ** 32, None)
 
 
-@pytest.mark.parametrize("x1", ["zero", "one"])
-@pytest.mark.parametrize("x2", ["zero", "one"])
-@pytest.mark.parametrize("x3", ["zero", "one"])
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
-def test_bit_injection_prime(get_clients, security_type, x1, x2, x3) -> None:
+def test_bit_injection_prime(get_clients, security_type) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security_type)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     ring_size = PRIME_NUMBER
 
-    val = {
-        "one": torch.tensor([1], dtype=torch.bool),
-        "zero": torch.tensor([0], dtype=torch.bool),
-    }
+    bin_sh = torch.tensor([[1, 1], [0, 0]], dtype=torch.bool)
 
-    shares = [val[x1], val[x2], val[x3]]  # All possible combinations
+    shares = [bin_sh, bin_sh, bin_sh]  # All possible combinations
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    x = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=bin_sh.shape)
 
     xbit = ABY3.bit_injection(x, session, ring_size)
 
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
+    result = xbit.reconstruct(decode=False)
+    exp_res = x.reconstruct(decode=False).type(torch.uint8)
 
-    assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
+    assert (result == exp_res).all()
     assert ring_size == ring0
 
 
-@pytest.mark.parametrize("x1", ["zero", "one"])
-@pytest.mark.parametrize("x2", ["zero", "one"])
-@pytest.mark.parametrize("x3", ["zero", "one"])
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
-def test_bit_injection_session_ring(get_clients, security_type, x1, x2, x3) -> None:
+def test_bit_injection_session_ring(get_clients, security_type) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security_type)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     ring_size = session.ring_size
 
-    val = {
-        "one": torch.tensor([1], dtype=torch.bool),
-        "zero": torch.tensor([0], dtype=torch.bool),
-    }
+    bin_sh = torch.tensor([[1, 1], [0, 0]], dtype=torch.bool)
 
-    shares = [val[x1], val[x2], val[x3]]  # All possible combinations
+    shares = [bin_sh, bin_sh, bin_sh]  # All possible combinations
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    x = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=bin_sh.shape)
 
     xbit = ABY3.bit_injection(x, session, ring_size)
 
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
+    result = xbit.reconstruct(decode=False)
+    exp_res = x.reconstruct(decode=False).type(session.tensor_type)
 
-    assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
+    assert (result == exp_res).all()
     assert ring_size == ring0
+
+
+@pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
+def test_local_decomposition(get_clients, security_type):
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security_type)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    one = torch.tensor([1], dtype=torch.bool)
+    zero = torch.tensor([0], dtype=torch.bool)
+    shares = [one, one, one]
+    ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=one.shape)
+    ring_size = session.ring_size
+    args = [[share, str(ring_size)] for share in x.share_ptrs]
+
+    decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+
+    x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+
+    x1_sh = [ptr.get_copy().shares for ptr in x1_sh]
+    x2_sh = [ptr.get_copy().shares for ptr in x2_sh]
+    x3_sh = [ptr.get_copy().shares for ptr in x3_sh]
+
+    tensor_type = x.session.tensor_type
+    one = one.type(tensor_type)
+    zero = zero.type(tensor_type)
+
+    exp_x1 = [[one, zero], [zero, zero], [zero, one]]
+    exp_x2 = [[zero, one], [one, zero], [zero, zero]]
+    exp_x3 = [[zero, zero], [zero, one], [one, zero]]
+
+    assert x1_sh == exp_x1
+    assert x2_sh == exp_x2
+    assert x3_sh == exp_x3
+
+
+def test_bit_injection_exception(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    x = MPCTensor(secret=1, session=session)
+
+    with pytest.raises(ValueError):
+        ABY3.bit_injection(x, session, 2 ** 64)
+
+
+def test_local_decomposition_exception() -> None:
+    x = ReplicatedSharedTensor()
+    with pytest.raises(ValueError):
+        ABY3.local_decomposition(x, "2")
+
+
+@pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
+def test_bit_decomposition_ttp(get_clients, security_type) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security_type)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    secret = torch.tensor([[-1, 12], [-32, 45], [98, -5624]])
+    x = MPCTensor(secret=secret, session=session)
+    b_sh = ABY3.bit_decomposition_ttp(x, session)
+    ring_size = x.session.ring_size
+    tensor_type = x.session.tensor_type
+    ring_bits = get_nr_bits(ring_size)
+
+    val = 1
+    expected_res = 0
+    for i in range(ring_bits):
+        if i != ring_bits - 1:
+            expected_res += b_sh[i].reconstruct(decode=False).type(tensor_type) * val
+        else:
+            expected_res += b_sh[i].reconstruct(decode=False).type(tensor_type) * (-val)
+        val *= 2
+    assert (expected_res == x.reconstruct(decode=False)).all()
