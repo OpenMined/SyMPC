@@ -153,7 +153,7 @@ def test_local_decomposition(get_clients, security_type):
 
     decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
 
-    x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+    x1_sh, x2_sh, x3_sh = zip(*map(lambda x: x[0], decompose))
 
     x1_sh = [ptr.get_copy().shares for ptr in x1_sh]
     x2_sh = [ptr.get_copy().shares for ptr in x2_sh]
