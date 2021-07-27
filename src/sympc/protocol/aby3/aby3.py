@@ -282,9 +282,6 @@ class ABY3(metaclass=Protocol):
         x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
         x3 = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
 
-        # TODO : should be modified to use XOR after XOR PR gets merged.
-        x1_2 = x1 + x2 - (x1 * x2 * 2)
-
-        arith_share = x3 + x1_2 - (x3 * x1_2 * 2)
+        arith_share = x1 ^ x2 ^ x3
 
         return arith_share
