@@ -657,6 +657,7 @@ def test_get_shape_none() -> None:
     with pytest.raises(ValueError):
         MPCTensor._get_shape("mul", None, None)
 
+
 @pytest.mark.parametrize("bit", [0, 1])
 def test_bin_public_xor(get_clients, bit) -> None:
     clients = get_clients(3)
@@ -787,7 +788,7 @@ def test_session_ring_xor(get_clients, security, bit) -> None:
     expected_res = secret_x ^ secret_b
     assert (result.reconstruct(decode=False) == expected_res).all()
 
- 
+
 def test_mpctensor_reciprocal(get_clients):
     clients = get_clients(2)
     session = Session(parties=clients)
