@@ -87,59 +87,51 @@ def test_invalid_mpc_pointer(get_clients) -> None:
         ABY3.truncate(x, session, 2 ** 32, None)
 
 
-@pytest.mark.parametrize("x1", ["zero", "one"])
-@pytest.mark.parametrize("x2", ["zero", "one"])
-@pytest.mark.parametrize("x3", ["zero", "one"])
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
-def test_bit_injection_prime(get_clients, security_type, x1, x2, x3) -> None:
+def test_bit_injection_prime(get_clients, security_type) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security_type)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     ring_size = PRIME_NUMBER
 
-    val = {
-        "one": torch.tensor([1], dtype=torch.bool),
-        "zero": torch.tensor([0], dtype=torch.bool),
-    }
+    bin_sh = torch.tensor([[1, 1], [0, 0]], dtype=torch.bool)
 
-    shares = [val[x1], val[x2], val[x3]]  # All possible combinations
+    shares = [bin_sh, bin_sh, bin_sh]  # All possible combinations
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    x = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=bin_sh.shape)
 
     xbit = ABY3.bit_injection(x, session, ring_size)
 
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
+    result = xbit.reconstruct(decode=False)
+    exp_res = x.reconstruct(decode=False).type(torch.uint8)
 
-    assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
+    assert (result == exp_res).all()
     assert ring_size == ring0
 
 
-@pytest.mark.parametrize("x1", ["zero", "one"])
-@pytest.mark.parametrize("x2", ["zero", "one"])
-@pytest.mark.parametrize("x3", ["zero", "one"])
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
-def test_bit_injection_session_ring(get_clients, security_type, x1, x2, x3) -> None:
+def test_bit_injection_session_ring(get_clients, security_type) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security_type)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     ring_size = session.ring_size
 
-    val = {
-        "one": torch.tensor([1], dtype=torch.bool),
-        "zero": torch.tensor([0], dtype=torch.bool),
-    }
+    bin_sh = torch.tensor([[1, 1], [0, 0]], dtype=torch.bool)
 
-    shares = [val[x1], val[x2], val[x3]]  # All possible combinations
+    shares = [bin_sh, bin_sh, bin_sh]  # All possible combinations
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
-    x = MPCTensor(shares=ptr_lst, session=session, shape=val["one"].shape)
+    x = MPCTensor(shares=ptr_lst, session=session, shape=bin_sh.shape)
 
     xbit = ABY3.bit_injection(x, session, ring_size)
 
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
+    result = xbit.reconstruct(decode=False)
+    exp_res = x.reconstruct(decode=False).type(session.tensor_type)
 
-    assert x.reconstruct(decode=False) == xbit.reconstruct(decode=False)
+    assert (result == exp_res).all()
     assert ring_size == ring0
 
 
