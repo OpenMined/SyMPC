@@ -653,3 +653,17 @@ def test_ops_different_share_class(get_clients) -> None:
 def test_get_shape_none() -> None:
     with pytest.raises(ValueError):
         MPCTensor._get_shape("mul", None, None)
+
+
+def test_mpctensor_reciprocal(get_clients):
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.Tensor([1, 2, 3, 4])
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected_res = 1 / (x_secret)
+    mpc_result = 1 / (x)
+
+    assert mpc_result.reconstruct() == expected_res

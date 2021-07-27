@@ -839,8 +839,6 @@ def test_grad_div_forward(get_clients) -> None:
 def test_grad_div_backward(get_clients) -> None:
     parties = get_clients(2)
 
-    grad = torch.tensor([1, 1, 1, 1])
-
     session = Session(parties=parties)
     session.autograd_active = True
     SessionManager.setup_mpc(session)
@@ -851,14 +849,15 @@ def test_grad_div_backward(get_clients) -> None:
     y_secret = torch.tensor([2.0, 3.0, 4.0, 5.0], requires_grad=True)
     y = MPCTensor(secret=y_secret, session=session, requires_grad=True)
 
+    z = (x_secret / y_secret).sum()
+    z.backward()
+
+    grad = torch.tensor([1, 1, 1, 1])
     grad_mpc = MPCTensor(secret=grad, session=session, requires_grad=True)
 
     ctx = {"x": x, "y": y, "result": x / y}
 
     grad_x, grad_y = GradDiv.backward(ctx, grad_mpc)
-
-    z = (x_secret / y_secret).sum()
-    z.backward()
 
     expected_grad_x = x_secret.grad
     expected_grad_y = y_secret.grad
