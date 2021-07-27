@@ -539,3 +539,59 @@ def test_exception_get_op() -> None:
 
     with pytest.raises(ValueError):
         ReplicatedSharedTensor.get_op(28, "add")
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("bit", [0, 1])
+def test_ops_bin_public_xor(get_clients, security, bit) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = 2
+
+    sh = torch.tensor([[0, 1, 0], [1, 0, 1]], dtype=torch.bool)
+    shares = [sh, sh, sh]
+    rst_list = ReplicatedSharedTensor.distribute_shares(
+        shares=shares, session=session, ring_size=ring_size
+    )
+    tensor = MPCTensor(shares=rst_list, session=session)
+    tensor.shape = sh.shape
+
+    secret = ReplicatedSharedTensor.shares_sum(shares, ring_size)
+
+    value = torch.tensor([bit], dtype=torch.bool)
+
+    result = operator.xor(tensor, value)
+    expected_res = secret ^ value
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("bit", [0, 1])
+def test_ops_prime_public_xor(get_clients, security, bit) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = PRIME_NUMBER
+
+    sh1 = torch.tensor([[17, 44], [8, 20]], dtype=torch.uint8)
+    sh2 = torch.tensor([[8, 51], [27, 52]], dtype=torch.uint8)
+    sh3 = torch.tensor([[42, 40], [32, 63]], dtype=torch.uint8)
+    shares = [sh1, sh2, sh3]
+    rst_list = ReplicatedSharedTensor.distribute_shares(
+        shares=shares, session=session, ring_size=ring_size
+    )
+    tensor = MPCTensor(shares=rst_list, session=session)
+    tensor.shape = sh1.shape
+
+    secret = ReplicatedSharedTensor.shares_sum(shares, ring_size)
+
+    value = torch.tensor([bit], dtype=torch.uint8)
+
+    result = operator.xor(tensor, value)
+    expected_res = secret ^ value
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
