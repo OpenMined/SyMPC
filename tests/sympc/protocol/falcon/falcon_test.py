@@ -270,11 +270,25 @@ def test_select_shares(get_clients, security) -> None:
     assert (result == z.reconstruct()).all()
 
 
-def test_select_shares_invalid_ring(get_clients) -> None:
+def test_select_shares_exception_ring(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon()
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
     val = MPCTensor(secret=1, session=session)
+    with pytest.raises(ValueError):
+        Falcon.select_shares(val, val, val)
+
+
+def test_select_shares_exception_shape(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    val = MPCTensor(secret=1, session=session)
+    rst = val.share_ptrs[0].get_copy()
+    rst.ring_size = 2
+    val.share_ptrs[0] = rst.send(parties[0])
+    val.shape = None
     with pytest.raises(ValueError):
         Falcon.select_shares(val, val, val)
