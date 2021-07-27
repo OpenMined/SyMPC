@@ -278,7 +278,14 @@ class ABY3(metaclass=Protocol):
 
         Returns:
             arith_share (MPCTensor): Arithmetic shares of bit in input ring size.
+
+        Raises:
+            ValueError: If input tensor is not binary shared.
         """
+        inp_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
+        if inp_ring != 2:
+            raise ValueError("Bit injection works only for binary rings")
+
         args = [[share, str(ring_size)] for share in x.share_ptrs]
 
         decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
@@ -293,10 +300,7 @@ class ABY3(metaclass=Protocol):
         x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
         x3 = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
 
-        # TODO : should be modified to use XOR after XOR PR gets merged.
-        x1_2 = x1 + x2 - (x1 * x2 * 2)
-
-        arith_share = x3 + x1_2 - (x3 * x1_2 * 2)
+        arith_share = x1 ^ x2 ^ x3
 
         return arith_share
 
