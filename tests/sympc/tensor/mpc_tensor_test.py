@@ -7,10 +7,13 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.protocol import Falcon
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
 from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
+from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor import ShareTensor
 
 
@@ -653,3 +656,134 @@ def test_ops_different_share_class(get_clients) -> None:
 def test_get_shape_none() -> None:
     with pytest.raises(ValueError):
         MPCTensor._get_shape("mul", None, None)
+
+
+@pytest.mark.parametrize("bit", [0, 1])
+def test_bin_public_xor(get_clients, bit) -> None:
+    clients = get_clients(3)
+    falcon = Protocol.registered_protocols["Falcon"]()
+    session = Session(parties=clients, protocol=falcon)
+    session.config = Config(encoder_base=1, encoder_precision=0)
+    SessionManager.setup_mpc(session)
+
+    x = torch.tensor([[1, 0], [0, 1]], dtype=torch.bool)
+    b = torch.tensor([bit], dtype=torch.bool)
+
+    x_share = MPCTensor(secret=x, session=session)
+    result = operator.xor(x_share, b)
+    expected_res = x ^ b
+
+    assert (result.reconstruct() == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("bit", [0, 1])
+def test_bin_xor(get_clients, bit, security) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    session.ring_size = 2
+    SessionManager.setup_mpc(session)
+    ring_size = 2
+
+    sh_x = torch.tensor([[0, 1, 0], [1, 0, 1]], dtype=torch.bool)
+    shares_x = [sh_x, sh_x, sh_x]
+    rst_list_x = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_x, session=session, ring_size=ring_size
+    )
+    x = MPCTensor(shares=rst_list_x, session=session)
+    x.shape = sh_x.shape
+
+    sh_b = torch.tensor([bit], dtype=torch.bool)
+    shares_b = [sh_b, sh_b, sh_b]
+    rst_list_b = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_b, session=session, ring_size=ring_size
+    )
+    b = MPCTensor(shares=rst_list_b, session=session)
+    b.shape = sh_b.shape
+
+    secret_x = ReplicatedSharedTensor.shares_sum(shares_x, ring_size)
+    secret_b = ReplicatedSharedTensor.shares_sum(shares_b, ring_size)
+
+    result = operator.xor(x, b)
+    expected_res = secret_x ^ secret_b
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("bit", [[17, 7, 43], [17, 8, 43]])
+def test_prime_xor(get_clients, security, bit) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    session.ring_size = PRIME_NUMBER
+    SessionManager.setup_mpc(session)
+    ring_size = PRIME_NUMBER
+
+    x_sh1 = torch.tensor([[17, 44], [8, 20]], dtype=torch.uint8)
+    x_sh2 = torch.tensor([[8, 51], [27, 52]], dtype=torch.uint8)
+    x_sh3 = torch.tensor([[42, 40], [32, 63]], dtype=torch.uint8)
+
+    bit_sh_1, bit_sh_2, bit_sh_3 = bit
+
+    b_sh1 = torch.tensor([bit_sh_1], dtype=torch.uint8)
+    b_sh2 = torch.tensor([bit_sh_2], dtype=torch.uint8)
+    b_sh3 = torch.tensor([bit_sh_3], dtype=torch.uint8)
+
+    shares_x = [x_sh1, x_sh2, x_sh3]
+    shares_b = [b_sh1, b_sh2, b_sh3]
+
+    rst_list_x = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_x, session=session, ring_size=ring_size
+    )
+    rst_list_b = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_b, session=session, ring_size=ring_size
+    )
+
+    x = MPCTensor(shares=rst_list_x, session=session)
+    b = MPCTensor(shares=rst_list_b, session=session)
+    x.shape = x_sh1.shape
+    b.shape = b_sh1.shape
+
+    secret_x = ReplicatedSharedTensor.shares_sum(shares_x, ring_size)
+    secret_b = ReplicatedSharedTensor.shares_sum(shares_b, ring_size)
+
+    result = operator.xor(x, b)
+    expected_res = secret_x ^ secret_b
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+@pytest.mark.parametrize("bit", [[30, -30, 1], [25, 27, -52]])
+def test_session_ring_xor(get_clients, security, bit) -> None:
+    parties = get_clients(3)
+    protocol = Falcon(security)
+    session = Session(protocol=protocol, parties=parties)
+    SessionManager.setup_mpc(session)
+    ring_size = session.ring_size
+    tensor_type = session.tensor_type
+    config = Config(encoder_base=1, encoder_precision=0)
+    x_sh1 = torch.tensor([[927021, 3701]], dtype=tensor_type)
+    x_sh2 = torch.tensor([[805274, 401]], dtype=tensor_type)
+    x_sh3 = torch.tensor([[-1732294, -4102]], dtype=tensor_type)
+    bit_sh_1, bit_sh_2, bit_sh_3 = bit
+    b_sh1 = torch.tensor([bit_sh_1], dtype=tensor_type)
+    b_sh2 = torch.tensor([bit_sh_2], dtype=tensor_type)
+    b_sh3 = torch.tensor([bit_sh_3], dtype=tensor_type)
+    shares_x = [x_sh1, x_sh2, x_sh3]
+    shares_b = [b_sh1, b_sh2, b_sh3]
+    rst_list_x = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_x, session=session, ring_size=ring_size, config=config
+    )
+    rst_list_b = ReplicatedSharedTensor.distribute_shares(
+        shares=shares_b, session=session, ring_size=ring_size, config=config
+    )
+    x = MPCTensor(shares=rst_list_x, session=session, shape=x_sh1.shape)
+    b = MPCTensor(shares=rst_list_b, session=session, shape=b_sh1.shape)
+    secret_x = ReplicatedSharedTensor.shares_sum(shares_x, ring_size)
+    secret_b = ReplicatedSharedTensor.shares_sum(shares_b, ring_size)
+    result = operator.xor(x, b)
+    expected_res = secret_x ^ secret_b
+    assert (result.reconstruct(decode=False) == expected_res).all()
