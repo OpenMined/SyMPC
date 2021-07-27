@@ -698,6 +698,13 @@ class MPCTensor(metaclass=SyMPCTensor):
             else:
                 raise TypeError("Invalid Share Class")
 
+        elif op_str == "xor":
+            ring_size = int(self.share_ptrs[0].get_ring_size().get_copy())
+            if ring_size == 2:
+                return self + y
+            else:
+                return self + y - (self * y * 2)
+
         elif op_str in {"sub", "add"}:
 
             op = getattr(operator, op_str)
@@ -732,7 +739,7 @@ class MPCTensor(metaclass=SyMPCTensor):
         if op_str in {"mul", "matmul"}:
             shares = [op(share, y) for share in self.share_ptrs]
 
-        elif op_str in {"add", "sub"}:
+        elif op_str in {"add", "sub", "xor"}:
             shares = list(self.share_ptrs)
             # Only the rank 0 party has to add the element
             if self.session.protocol.share_class == ShareTensor:
@@ -763,8 +770,12 @@ class MPCTensor(metaclass=SyMPCTensor):
         else:
             op = getattr(operator, op_str)
 
-        x = torch.empty(size=x_shape)
-        y = torch.empty(size=y_shape)
+        if op_str == "xor":
+            x = torch.empty(size=x_shape, dtype=torch.bool)
+            y = torch.empty(size=y_shape, dtype=torch.bool)
+        else:
+            x = torch.empty(size=x_shape)
+            y = torch.empty(size=y_shape)
 
         res = op(x, y, **kwargs_)
         return res.shape
@@ -1143,6 +1154,17 @@ class MPCTensor(metaclass=SyMPCTensor):
         other = self.__check_or_convert(other, self.session)
         return 1 - self.eq(other)
 
+    def xor(self, y: Union["MPCTensor", torch.Tensor, int]) -> "MPCTensor":
+        """XOR operator.
+
+        Args:
+            y (Union["MPCTensor", torch.Tensor, int]): MPCTensor to find xor.
+
+        Returns:
+            MPCTensor: Result of the xor.
+        """
+        return self.__apply_op(y, "xor")
+
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
     __sub__ = wrapper_getattribute(sub)
@@ -1161,6 +1183,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __gt__ = wrapper_getattribute(gt)
     __eq__ = wrapper_getattribute(eq)
     __ne__ = wrapper_getattribute(ne)
+    __xor__ = wrapper_getattribute(xor)
 
 
 PARTIES_TO_SESSION: Dict[Any, Session] = {}
