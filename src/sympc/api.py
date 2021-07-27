@@ -203,6 +203,10 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__xor__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__setitem__",
         "syft.lib.python._SyNone",
     ),
