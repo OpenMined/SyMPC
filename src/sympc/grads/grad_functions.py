@@ -135,8 +135,15 @@ class GradAdd(GradFunc):
         Returns:
             x + y (MPCTensor): The result of the addition
         """
-        ctx["x_shape"] = x.shape
-        ctx["y_shape"] = y.shape
+        if hasattr(x, "shape"):
+            ctx["x_shape"] = x.shape
+        else:
+            ctx["x_shape"] = 1
+
+        if hasattr(y, "shape"):
+            ctx["y_shape"] = y.shape
+        else:
+            ctx["y_shape"] = 1
 
         return x + y
 
@@ -384,11 +391,10 @@ class GradDiv(GradFunc):
         Returns:
             (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
         """
-        x, y = ctx["x"], ctx["y"]
+        y = ctx["y"]
 
         grad_x = grad * (1 / y)
-        grad_y = (-1) * grad * (ctx["result"] / y)
-        grad_y = ((-1) * (x)) / ((y ** 2) * grad)
+        grad_y = (-1) * (grad_x * ctx["result"])
 
         return grad_x, grad_y
 

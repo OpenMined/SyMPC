@@ -576,6 +576,18 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         return result
 
+    def rtruediv(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+        """Apply recriprocal of MPCTensor.
+
+        Args:
+            y (Union["MPCTensor", torch.Tensor, float, int]): Numerator.
+
+        Returns:
+            MPCTensor: Result of the operation.
+        """
+        reciprocal = APPROXIMATIONS["reciprocal"]
+        return reciprocal(self) * y
+
     def truediv(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
         """Apply the "div" operation between "self" and "y".
 
@@ -592,6 +604,7 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         # TODO: Implement support for more than two parties.
         if is_private:
+
             if len(self.session.session_ptrs) > 2:
                 raise ValueError(
                     "Private division currently works with a maximum of two parties only."
@@ -1140,7 +1153,7 @@ class MPCTensor(metaclass=SyMPCTensor):
     __matmul__ = wrapper_getattribute(matmul)
     __rmatmul__ = wrapper_getattribute(rmatmul)
     __truediv__ = wrapper_getattribute(truediv)
-    __rtruediv__ = wrapper_getattribute(truediv)
+    __rtruediv__ = wrapper_getattribute(rtruediv)
     __pow__ = wrapper_getattribute(pow)
     __le__ = wrapper_getattribute(le)
     __ge__ = wrapper_getattribute(ge)
