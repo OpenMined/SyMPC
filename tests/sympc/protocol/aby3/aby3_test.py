@@ -181,3 +181,9 @@ def test_bit_injection_exception(get_clients) -> None:
 
     with pytest.raises(ValueError):
         ABY3.bit_injection(x, session, 2 ** 64)
+
+
+def test_local_decomposition_exception() -> None:
+    x = ReplicatedSharedTensor()
+    with pytest.raises(ValueError):
+        ABY3.local_decomposition(x, "2")
