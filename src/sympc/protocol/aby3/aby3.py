@@ -264,8 +264,8 @@ class ABY3(metaclass=Protocol):
         Raises:
             ValueError: If input tensor is not binary shared.
         """
-        inp_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
-        if inp_ring != 2:
+        input_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
+        if input_ring != 2:
             raise ValueError("Bit injection works only for binary rings")
 
         args = [[share, str(ring_size)] for share in x.share_ptrs]
