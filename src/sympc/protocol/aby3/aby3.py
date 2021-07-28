@@ -217,7 +217,7 @@ class ABY3(metaclass=Protocol):
         Args:
             x (ReplicatedSharedTensor) : input RSTensor.
             ring_size (str) : Ring size to generate decomposed shares in.
-            bitwise (bool): Perfom bit level decomposition on bits if set.
+            bitwise (bool): Perform bit level decomposition on bits if set.
 
         Returns:
             List[ReplicatedSharedTensor]: Decomposed shares in the given ring size.
@@ -230,14 +230,14 @@ class ABY3(metaclass=Protocol):
 
         session = get_session(x.session_uuid)
         ring_size = int(ring_size)
-        ring_bits = get_nr_bits(session.ring_size)  # for bitwise decomposition
+        ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
         nr_parties = session.nr_parties
 
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
-        # Similar to triples, we have instaces for the shares generated.
+        # Similar to triples, we have instances for the shares generated.
         share_lst: List[List[List[ReplicatedSharedTensor]]] = []
 
         input_rst = []
@@ -269,7 +269,7 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def bit_injection(x: MPCTensor, session: Session, ring_size: int) -> MPCTensor:
-        """Perfom ABY3 bit injection for conversion of binary share to arithmetic share.
+        """Perform ABY3 bit injection for conversion of binary share to arithmetic share.
 
         Args:
             x (MPCTensor) : MPCTensor with shares of bit.
@@ -282,8 +282,8 @@ class ABY3(metaclass=Protocol):
         Raises:
             ValueError: If input tensor is not binary shared.
         """
-        inp_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
-        if inp_ring != 2:
+        input_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
+        if input_ring != 2:
             raise ValueError("Bit injection works only for binary rings")
 
         args = [[share, str(ring_size)] for share in x.share_ptrs]
@@ -308,7 +308,7 @@ class ABY3(metaclass=Protocol):
     def full_adder(
         a: List[MPCTensor], b: List[MPCTensor], session: Session
     ) -> List[MPCTensor]:
-        """Perfom bit addition on MPCTensors using a full adder.
+        """Perform bit addition on MPCTensors using a full adder.
 
         Args:
             a (List[MPCTensor]): MPCTensor with shares of bit.
@@ -317,10 +317,12 @@ class ABY3(metaclass=Protocol):
 
         Returns:
             result (List[MPCTensor]): Result of the operation.
+
+        TODO: Should modify ripple carry adder to parallel prefix adder.
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
-        c = [0 for idx in range(ring_bits + 1)]  # carry bits of addition.
+        c = [0 for _ in range(ring_bits + 1)]  # carry bits of addition.
         result: List[MPCTensor] = []
         for idx in range(ring_bits):
             s = a[idx] + b[idx] + c[idx]
@@ -330,7 +332,7 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def bit_decomposition(x: MPCTensor, session: Session) -> List[MPCTensor]:
-        """Perfom ABY3 bit decomposition for conversion of arithmetic share to binary share.
+        """Perform ABY3 bit decomposition for conversion of arithmetic share to binary share.
 
         Args:
             x (MPCTensor): Arithmetic shares of secret.
@@ -338,6 +340,9 @@ class ABY3(metaclass=Protocol):
 
         Returns:
             bin_share (List[MPCTensor]): Returns binary shares of each bit of the secret.
+
+        TODO : Should be modified to use parallel prefix adder when multiprocessing
+        functionality is integrated.
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
@@ -372,7 +377,7 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def bit_decomposition_ttp(x: MPCTensor, session: Session) -> List[MPCTensor]:
-        """Perfom ABY3 bit decomposition using orchestrator as ttp.
+        """Perform ABY3 bit decomposition using orchestrator as ttp.
 
         Args:
             x (MPCTensor): Arithmetic shares of secret.

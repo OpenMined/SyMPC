@@ -98,7 +98,7 @@ def test_bit_injection_prime(get_clients, security_type) -> None:
 
     bin_sh = torch.tensor([[1, 1], [0, 0]], dtype=torch.bool)
 
-    shares = [bin_sh, bin_sh, bin_sh]  # All possible combinations
+    shares = [bin_sh, bin_sh, bin_sh]
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
     x = MPCTensor(shares=ptr_lst, session=session, shape=bin_sh.shape)
 
@@ -122,7 +122,7 @@ def test_bit_injection_session_ring(get_clients, security_type) -> None:
 
     bin_sh = torch.tensor([[1, 1], [0, 0]], dtype=torch.bool)
 
-    shares = [bin_sh, bin_sh, bin_sh]  # All possible combinations
+    shares = [bin_sh, bin_sh, bin_sh]
     ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
     x = MPCTensor(shares=ptr_lst, session=session, shape=bin_sh.shape)
 
