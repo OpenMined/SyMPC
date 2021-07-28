@@ -320,7 +320,7 @@ class ABY3(metaclass=Protocol):
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
-        c = [0 for idx in range(ring_bits + 1)]  # carry bits of addition.
+        c = [0 for _ in range(ring_bits + 1)]  # carry bits of addition.
         result: List[MPCTensor] = []
         for idx in range(ring_bits):
             s = a[idx] + b[idx] + c[idx]
