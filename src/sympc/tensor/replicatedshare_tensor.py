@@ -32,6 +32,13 @@ from .tensor import SyMPCTensor
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
 METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone", "repeat"}
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
+SIGNED_MAP = {
+    "bool": "bool",
+    "uint8": "int8",
+    "uint16": "int16",
+    "uint32": "int32",
+    "uint64": "int64",
+}
 
 PRIME_NUMBER = 67  # Global constant for prime order rings.
 
@@ -1029,6 +1036,36 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             res = method
 
         return res
+
+    def to_numpy(self, dtype: str) -> "ReplicatedSharedTensor":
+        """Converts the underlying tensor shares to numpy array.
+
+        Args:
+            dtype (str) : The data type to convert the tensor to.
+
+        Returns:
+            ReplicatedSharedTensor: converted RSTensor object.
+        """
+        rst = self.clone()
+        for idx, share in enumerate(self.shares):
+            rst.shares[idx] = share.numpy().astype(dtype)
+
+        return rst
+
+    def from_numpy(self) -> "ReplicatedSharedTensor":
+        """Converts the underlying tensor to torch tensor.
+
+        Returns:
+            ReplicatedSharedTensor: converted RSTensor object.
+        """
+        rst = self.clone()
+        dtype = str(rst.shares[0].dtype)
+        # Convert unsigned to signed as torch supports only signed.
+        dtype = SIGNED_MAP.get(dtype, dtype)
+        for idx, share in enumerate(self.shares):
+            rst.shares[idx] = torch.from_numpy(share.astype(dtype))
+
+        return rst
 
     __add__ = add
     __radd__ = add

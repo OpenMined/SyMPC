@@ -12,7 +12,9 @@ from typing import Tuple
 from typing import Union
 
 # third party
+import numpy as np
 import torch
+import torchcsprng as csprng
 
 from sympc.config import Config
 from sympc.protocol import ABY3
@@ -28,6 +30,14 @@ from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import parallel_execution
 
 shares_sum = ReplicatedSharedTensor.shares_sum
+gen = csprng.create_random_device_generator()
+UNSIGNED_MAP = {
+    torch.bool: "torch.bool",
+    torch.int8: "uint8",
+    torch.int16: "uint16",
+    torch.int32: "uint32",
+    torch.int64: "uint64",
+}
 
 
 class Falcon(metaclass=Protocol):
@@ -488,3 +498,97 @@ class Falcon(metaclass=Protocol):
         beta_prime = d_val
 
         return beta_2 + beta_prime
+
+    @staticmethod
+    def wrap2(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """Computes wrap on the input numpy array.
+
+        Args:
+            a (np.ndarray): Input numpy array
+            b (np.ndarray): Input numpy array.
+
+        Returns:
+            result (np.ndarray): Boolean array ,True if there is a carry.
+
+        Raises:
+            ValueError: If the input values is not a numpy array.
+            ValueError: If signed numpy array are provided as input.
+
+        wrap2 calucaties the carry bit on addition of two values a+b.
+        """
+        if not isinstance(a, np.ndarray) or not isinstance(b, np.ndarray):
+            raise ValueError("Input value must be a numpy array for wrap2.")
+
+        if a.dtype.kind == "i" or b.dtype.kind == "i":
+            raise ValueError("Wrap2 works only for signed numbers.")
+
+        max_val = np.iinfo(a.dtype).max
+
+        return a > max_val - b
+
+    @staticmethod
+    def wrap3(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> np.ndarray:
+        """Computes wrap on the input numpy array.
+
+        Args:
+            a (np.ndarray): Input numpy array
+            b (np.ndarray): Input numpy array.
+            c (np.ndarray): Input numpy array.
+
+        Returns:
+            result (np.ndarray): Modulo reduction of the exact wrap function.
+
+        Raises:
+            ValueError: If the input values is not a numpy array.
+            ValueError: If signed numpy array are provided as input.
+
+        wrap3 calucaties the carry bit on addition of three values a+b+c(mod 2).
+        """
+        if not isinstance(a, np.ndarray) or not isinstance(b, np.ndarray):
+            raise ValueError("Input value must be a numpy array for wrap3.")
+
+        if a.dtype.kind == "i" or b.dtype.kind == "i" or c.dtype.kind == "i":
+            raise ValueError("Wrap3 works only for signed numbers.")
+
+        return Falcon.wrap2(a, b) ^ Falcon.wrap2(a + b, c)
+
+    @staticmethod
+    def wrap(a: MPCTensor) -> MPCTensor:
+        """Falcon Wrap functionality which computes wrap on underlying shares.
+
+        Args:
+            a (MPCTensor) : input tensor to compute wrap.
+
+        Returns:
+            wrap_sh (MPCTensor): bit shares of wrap of the input tensor.
+
+        Raises:
+            ValueError : If the input tensor shape is None.
+        """
+        shape = a.shape
+        if shape is None:
+            raise ValueError("Input MPCTensor for Wrap must have valid shape")
+        session = a.session
+        tensor_type = a.session.tensor_type
+        dtype = UNSIGNED_MAP[tensor_type]
+
+        # Generate random numbers
+        x1, x2, x3 = [
+            torch.empty(size=shape, dtype=tensor_type)
+            .random_(generator=gen)
+            .numpy()
+            .astype(dtype)
+            for i in range(3)
+        ]
+        # x = shares_sum([x1, x2, x3], session.ring_size)
+
+        # wrap_x = Falcon.wrap3(x1, x2, x3)
+
+        config = Config(encoder_precision=0, encoder_base=1)
+        share_ptrs = ReplicatedSharedTensor.distribute_shares(
+            [x1, x2, x3], session, session.ring_size, config
+        )
+
+        wrap_sh = MPCTensor(shares=share_ptrs, session=session, shape=shape)
+
+        return wrap_sh
