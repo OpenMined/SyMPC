@@ -30,6 +30,7 @@ class Conv2d(SMPCModule):
         "padding",
         "dilation",
         "groups",
+        "_parameters",
     ]
 
     in_channels: int
@@ -41,6 +42,7 @@ class Conv2d(SMPCModule):
     groups: int
     weight: List[MPCTensor]
     bias: Optional[MPCTensor]
+    _parameters: OrderedDict
 
     def __init__(self, session: Session) -> None:
         """Initialize Conv2d layer.
