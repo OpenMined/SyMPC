@@ -107,7 +107,8 @@ class ABY3(metaclass=Protocol):
         x_trunc = (x2 + x3) >> precision if base == 2 else (x2 + x3) // scale
         shares = [x1_trunc, x_trunc - rand_value, rand_value]
 
-        shares = list(map(lambda x: x.astype(dtype), shares))
+        if isinstance(ptr_list[0], np.ndarray):
+            shares = list(map(lambda x: x.astype(dtype), shares))
 
         ptr_list = ReplicatedSharedTensor.distribute_shares(
             shares, session, ring_size, config
