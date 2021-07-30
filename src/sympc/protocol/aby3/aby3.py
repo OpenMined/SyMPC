@@ -9,6 +9,7 @@ from typing import List
 from typing import Tuple
 
 # third party
+import numpy as np
 import torch
 import torchcsprng as csprng
 
@@ -90,10 +91,24 @@ class ABY3(metaclass=Protocol):
         base = config.encoder_base
         precision = config.encoder_precision
         scale = base ** precision
+
         x1, x2, x3 = ptr_list
+        # TODO: UNSIGNED Truncation does not work for numpy, should be modified.
+        dtype = ptr_list[0].dtype
+        if isinstance(ptr_list[0], np.ndarray):
+            if dtype.kind == "u":
+                sdtype = str(dtype)[1::]
+                x1, x2, x3 = x1.astype(sdtype), x2.astype(sdtype), x3.astype(sdtype)
+                rand_value = rand_value.numpy().astype(sdtype)
+            else:
+                rand_value = rand_value.numpy().astype(dtype)
+
         x1_trunc = x1 >> precision if base == 2 else x1 // scale
         x_trunc = (x2 + x3) >> precision if base == 2 else (x2 + x3) // scale
         shares = [x1_trunc, x_trunc - rand_value, rand_value]
+
+        shares = list(map(lambda x: x.astype(dtype), shares))
+
         ptr_list = ReplicatedSharedTensor.distribute_shares(
             shares, session, ring_size, config
         )

@@ -229,6 +229,14 @@ class Falcon(metaclass=Protocol):
         eps_b = b_share.clone()
         delta_a = a_share.clone()
 
+        if isinstance(z_sh.shares[0], np.ndarray):
+            dtype = str(z_sh.shares[0].dtype)
+            eps_b, delta_a, c_share = (
+                eps_b.to_numpy(dtype),
+                delta_a.to_numpy(dtype),
+                c_share.to_numpy(dtype),
+            )
+
         # prevent re-encoding as the values are encoded.
         # TODO: should be improved.
         for i in range(2):
@@ -382,7 +390,12 @@ class Falcon(metaclass=Protocol):
         )
         # Add PRZS Mask to z  value
         op = ReplicatedSharedTensor.get_op(x.ring_size, "add")
-        share = op(z_value, przs_mask.get_shares()[0])
+        przs_mask = przs_mask.get_shares()[0]
+
+        if isinstance(z_value, np.ndarray):
+            przs_mask = przs_mask.numpy().astype(z_value.dtype)
+
+        share = op(z_value, przs_mask)
 
         return share
 

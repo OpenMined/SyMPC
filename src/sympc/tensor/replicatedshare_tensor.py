@@ -15,6 +15,7 @@ from typing import Union
 from uuid import UUID
 
 # third party
+import numpy as np
 import torch
 
 import sympc
@@ -308,6 +309,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             raise ValueError("Both RSTensors should have equal number of shares.")
         elif x.ring_size != y.ring_size:
             raise ValueError("Both RSTensors should have same ring_size")
+
+        if isinstance(x.shares[0], np.ndarray) and not isinstance(
+            y.shares[0], np.ndarray
+        ):
+            y = y.to_numpy(str(x.shares[0].dtype))
 
         session_uuid = x.session_uuid
 
@@ -887,7 +893,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         for share_index in range(party_rank, party_rank + nshares):
             share = shares[share_index % (nshares + 1)]
 
-            if isinstance(share, torch.Tensor):
+            if isinstance(share, torch.Tensor) or isinstance(share, np.ndarray):
                 party_shares.append(share)
 
             elif isinstance(share, ShareTensor):
