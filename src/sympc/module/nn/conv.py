@@ -21,7 +21,7 @@ from .smpc_module import SMPCModule
 class Conv2d(SMPCModule):
     """Convolutional 2D."""
 
-    __slots__ = [
+    __slots__ = (
         "session",
         "weight",
         "bias",
@@ -31,7 +31,7 @@ class Conv2d(SMPCModule):
         "dilation",
         "groups",
         "_parameters",
-    ]
+    )
 
     in_channels: int
     out_channels: int
