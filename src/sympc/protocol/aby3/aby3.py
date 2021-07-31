@@ -295,7 +295,7 @@ class ABY3(metaclass=Protocol):
         x2_sh = []
         x3_sh = []
 
-        for sh in decompose:
+        for sh in list(map(lambda x: x[0].resolve_pointer_type(), decompose)):
             x1_sh.append(sh[0].resolve_pointer_type())
             x2_sh.append(sh[1].resolve_pointer_type())
             x3_sh.append(sh[2].resolve_pointer_type())
