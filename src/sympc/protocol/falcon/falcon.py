@@ -339,7 +339,12 @@ class Falcon(metaclass=Protocol):
             )
             mask = parallel_execution(Falcon.falcon_mask, session.parties)(args)
 
-        eps_shares, delta_shares = zip(*mask)
+        # zip on pointers is compute intensive
+        eps_shares, delta_shares = [mask[0][0], mask[1][0], mask[2][0]], [
+            mask[0][1],
+            mask[1][1],
+            mask[2][1],
+        ]
 
         eps = MPCTensor(shares=eps_shares, session=session)
         delta = MPCTensor(shares=delta_shares, session=session)

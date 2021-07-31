@@ -306,11 +306,15 @@ class ABY3(metaclass=Protocol):
 
         decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
 
-        x1_sh, x2_sh, x3_sh = zip(*map(lambda x: x[0], decompose))
+        # Using zip for grouping on pointers is compute intensive.
+        x1_sh = []
+        x2_sh = []
+        x3_sh = []
 
-        x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
-        x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
-        x3_sh = [ptr.resolve_pointer_type() for ptr in x3_sh]
+        for sh in map(lambda x: x[0].resolve_pointer_type(), decompose):
+            x1_sh.append(sh[0].resolve_pointer_type())
+            x2_sh.append(sh[1].resolve_pointer_type())
+            x3_sh.append(sh[2].resolve_pointer_type())
 
         x1 = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
         x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
