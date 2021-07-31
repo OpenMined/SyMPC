@@ -487,9 +487,12 @@ class Falcon(metaclass=Protocol):
         session = x[0].session
         ptr_list: List = []
         for session_ptr in session.session_ptrs:
-            ptr_list.append(
-                session_ptr.prrs_generate_random_share(shape=shape, ring_size=str(2))
+            sh_ptr = session_ptr.prrs_generate_random_share(
+                shape=shape, ring_size=str(2)
             )
+            if isinstance(x[0], np.ndarray):
+                sh_ptr = sh_ptr.to_numpy("bool_")
+            ptr_list.append(sh_ptr)
 
         beta_2 = MPCTensor(
             shares=ptr_list, session=session, shape=shape

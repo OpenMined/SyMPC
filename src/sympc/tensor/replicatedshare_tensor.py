@@ -171,79 +171,129 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         return dataclasses.asdict(self.config)
 
     @staticmethod
-    def addmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def addmodprime(
+        x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
+    ) -> Union[torch.Tensor, np.ndarray]:
         """Computes addition(x+y) modulo PRIME_NUMBER constant.
 
         Args:
-            x (torch.Tensor): input tensor
-            y (torch.tensor): input tensor
+            x (Union[torch.Tensor,np.ndarray]): input tensor
+            y (Union[torch.Tensor,np.ndarray]): input tensor
 
         Returns:
-            value (torch.Tensor): Result of the operation.
+            value (Union[torch.Tensor,np.ndarray]): Result of the operation.
 
         Raises:
-            ValueError : If either of the tensors datatype is not torch.uint8
+            ValueError : If either of the tensors datatype is not uint8 type.
+            ValueError: If input tensor does not match a tensor type.
         """
-        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
-            raise ValueError(
-                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
-            )
+        if isinstance(x, torch.Tensor):
+            if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+                raise ValueError(
+                    f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+                )
+        elif isinstance(x, np.ndarray):
+            if x.dtype != np.uint8 or y.dtype != np.uint8:
+                raise ValueError(
+                    f"Both numpy tensors x:{x.dtype} y:{y.dtype} should be of np.uint8 dtype"
+                )
+        else:
+            raise ValueError("Invalid input")
 
         return (x + y) % PRIME_NUMBER
 
     @staticmethod
-    def submodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def submodprime(
+        x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
+    ) -> Union[torch.Tensor, np.ndarray]:
         """Computes subtraction(x-y) modulo PRIME_NUMBER constant.
 
         Args:
-            x (torch.Tensor): input tensor
-            y (torch.tensor): input tensor
+            x (Union[torch.Tensor,np.ndarray]): input tensor
+            y (Union[torch.Tensor,np.ndarray]): input tensor
 
         Returns:
-            value (torch.Tensor): Result of the operation.
+            value (Union[torch.Tensor,np.ndarray]): Result of the operation.
 
         Raises:
-            ValueError : If either of the tensors datatype is not torch.uint8
+            ValueError : If either of the tensors datatype is not uint8 type.
+            ValueError: If input tensor does not match a tensor type.
         """
-        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
-            raise ValueError(
-                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
-            )
+        if isinstance(x, torch.Tensor):
+            if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+                raise ValueError(
+                    f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+                )
 
-        # Typecasting is done, as underflow returns a positive number,as it is unsigned.
-        x = x.to(torch.int8)
-        y = y.to(torch.int8)
+            # Typecasting is done, as underflow returns a positive number,as it is unsigned.
+            x = x.to(torch.int8)
+            y = y.to(torch.int8)
 
-        result = (x - y) % PRIME_NUMBER
+            result = (x - y) % PRIME_NUMBER
+            result = result.to(torch.uint8)
 
-        return result.to(torch.uint8)
+        elif isinstance(x, np.ndarray):
+            if x.dtype != np.uint8 or y.dtype != np.uint8:
+                raise ValueError(
+                    f"Both numpy tensors x:{x.dtype} y:{y.dtype} should be of np.uint8 dtype"
+                )
+            # Typecasting is done, as underflow returns a positive number,as it is unsigned.
+            x = x.astype(np.int8)
+            y = y.astype(np.int8)
+
+            result = (x - y) % PRIME_NUMBER
+            result = result.astype(np.uint8)
+
+        else:
+            raise ValueError("Invalid input")
+
+        return result
 
     @staticmethod
-    def mulmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def mulmodprime(
+        x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
+    ) -> Union[torch.Tensor, np.ndarray]:
         """Computes multiplication(x*y) modulo PRIME_NUMBER constant.
 
         Args:
-            x (torch.Tensor): input tensor
-            y (torch.tensor): input tensor
+            x (Union[torch.Tensor,np.ndarray]): input tensor
+            y (Union[torch.Tensor,np.ndarray]): input tensor
 
         Returns:
-            value (torch.Tensor): Result of the operation.
+            value (Union[torch.Tensor,np.ndarray]): Result of the operation.
 
         Raises:
-            ValueError : If either of the tensors datatype is not torch.uint8
+            ValueError : If either of the tensors datatype is not uint8 type.
+            ValueError: If input tensor does not match a tensor type.
         """
-        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
-            raise ValueError(
-                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
-            )
+        if isinstance(x, torch.Tensor):
+            if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+                raise ValueError(
+                    f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+                )
+            # We typecast as multiplication result in 2n bits ,which causes overflow.
+            x = x.to(torch.int16)
+            y = y.to(torch.int16)
 
-        # We typecast as multiplication result in 2n bits ,which causes overflow.
-        x = x.to(torch.int16)
-        y = y.to(torch.int16)
+            result = (x * y) % PRIME_NUMBER
+            result = result.to(torch.uint8)
 
-        result = (x * y) % PRIME_NUMBER
+        elif isinstance(x, np.ndarray):
+            if x.dtype != np.uint8 or y.dtype != np.uint8:
+                raise ValueError(
+                    f"Both numpy tensors x:{x.dtype} y:{y.dtype} should be of np.uint8 dtype"
+                )
+            # We typecast as multiplication result in 2n bits ,which causes overflow.
+            x = x.astype(np.int16)
+            y = y.astype(np.int16)
 
-        return result.to(torch.uint8)
+            result = (x * y) % PRIME_NUMBER
+            result = result.astype(np.uint8)
+
+        else:
+            raise ValueError("Invalid input")
+
+        return result
 
     @staticmethod
     def get_op(ring_size: int, op_str: str) -> Callable[..., Any]:
