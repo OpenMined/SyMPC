@@ -566,6 +566,64 @@ class Falcon(metaclass=Protocol):
         return Falcon.wrap2(a, b) ^ Falcon.wrap2(a + b, c)
 
     @staticmethod
+    def wrap_preprocess(a: MPCTensor, session: Session) -> List:
+        """Generates Preprocess values for wrap function.
+
+        Args:
+            a (MPCTensor): input tensor
+            session (Session) : session the tensors belong to
+
+        Returns:
+            x,x_p,x_wrap (List) : Returns a random shares in session ring, prime ring, wrap of it.
+
+        Raises:
+            ValueError : If the input tensor shape is None.
+        """
+        shape = a.shape
+        if shape is None:
+            raise ValueError("Input MPCTensor for Wrap must have valid shape")
+        tensor_type = session.tensor_type
+        dtype = UNSIGNED_MAP[tensor_type]
+        ring_size = session.ring_size
+
+        ptr_list: List = []
+        for session_ptr in session.session_ptrs:
+            ptr_list.append(
+                session_ptr.prrs_generate_random_share(
+                    shape=shape, ring_size=str(ring_size)
+                )
+            )
+
+        x = MPCTensor(shares=ptr_list, session=session, shape=shape)
+        x_b = ABY3.bit_decomposition_ttp(x, session)  # bit sharing
+        x_p: List = []  # bit sharing in Zp
+        index = 1
+        for idx in range(len(x_b)):
+            p_sh = ABY3.bit_injection(x_b[idx], session, PRIME_NUMBER)
+            p_sh.to_numpy("uint8")
+            x_p.append(p_sh)
+            print(index)
+            index += 1
+
+        x.to_numpy(dtype)
+        x1 = x.share_ptrs[0].get_copy().shares[0]
+        x2, x3 = x.share_ptrs[1].get_copy().shares
+
+        x_wrap = Falcon.wrap3(x1, x2, x3)
+
+        # numpy random generator generate by shape only for float types.
+        r1 = torch.empty(size=shape, dtype=torch.bool).random_(generator=gen).numpy()
+        r2 = torch.empty(size=shape, dtype=torch.bool).random_(generator=gen).numpy()
+        r3 = x_wrap ^ r1 ^ r2
+
+        x_wrap_sh: List[np.ndarray] = [r1, r2, r3]
+        share_ptrs = ReplicatedSharedTensor.distribute_shares(x_wrap_sh, session, 2)
+
+        alpha = MPCTensor(shares=share_ptrs, session=session, shape=shape)
+
+        return x, x_p, alpha
+
+    @staticmethod
     def wrap(a: MPCTensor) -> MPCTensor:
         """Falcon Wrap functionality which computes wrap on underlying shares.
 
@@ -574,34 +632,25 @@ class Falcon(metaclass=Protocol):
 
         Returns:
             wrap_sh (MPCTensor): bit shares of wrap of the input tensor.
-
-        Raises:
-            ValueError : If the input tensor shape is None.
         """
-        shape = a.shape
-        if shape is None:
-            raise ValueError("Input MPCTensor for Wrap must have valid shape")
         session = a.session
-        tensor_type = a.session.tensor_type
-        dtype = UNSIGNED_MAP[tensor_type]
 
-        # Generate random numbers
-        x1, x2, x3 = [
-            torch.empty(size=shape, dtype=tensor_type)
-            .random_(generator=gen)
-            .numpy()
-            .astype(dtype)
-            for i in range(3)
-        ]
-        # x = shares_sum([x1, x2, x3], session.ring_size)
+        x, x_p, alpha = Falcon.wrap_preprocess(a, session)
 
-        # wrap_x = Falcon.wrap3(x1, x2, x3)
+        r = x + a
 
-        config = Config(encoder_precision=0, encoder_base=1)
-        share_ptrs = ReplicatedSharedTensor.distribute_shares(
-            [x1, x2, x3], session, session.ring_size, config
-        )
+        # TODO : change to get shares by reconstruct,malicious returns all_shares
+        r1 = r.share_ptrs[0].get_copy().shares[0]
+        r2, r3 = r.share_ptrs[0].get_copy().shares
 
-        wrap_sh = MPCTensor(shares=share_ptrs, session=session, shape=shape)
+        beta = ""
+
+        delta = Falcon.wrap3(r1, r2, r3)
+
+        r_public = r1 + r2 + r3
+
+        eta = Falcon.private_compare(x_p, r_public + 1)
+
+        wrap_sh = beta + delta - eta - alpha
 
         return wrap_sh
