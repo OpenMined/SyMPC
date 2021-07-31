@@ -344,12 +344,22 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             # For rsub in MPCTensor which multiplies it with (-1)
             y = y % PRIME_NUMBER if x.ring_size == PRIME_NUMBER else y
 
+            if isinstance(y, np.ndarray):
+                # use the encoding of torch tensor
+                # TODO:should have separate encoding for numpy.
+                y = torch.from_numpy(y.astype(SIGNED_MAP[str(y.dtype)]))
+
             y = ReplicatedSharedTensor(
                 session_uuid=x.session_uuid,
                 shares=[y],
                 ring_size=x.ring_size,
                 config=x.config,
             )
+
+            if isinstance(x.shares[0], np.ndarray) and isinstance(
+                y.shares[0], torch.Tensor
+            ):
+                y.shares[0] = y.shares[0].numpy().astype(x.shares[0].dtype)
 
         elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
             raise ValueError(

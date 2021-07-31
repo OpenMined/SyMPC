@@ -490,8 +490,6 @@ class Falcon(metaclass=Protocol):
             sh_ptr = session_ptr.prrs_generate_random_share(
                 shape=shape, ring_size=str(2)
             )
-            if isinstance(x[0], np.ndarray):
-                sh_ptr = sh_ptr.to_numpy("bool_")
             ptr_list.append(sh_ptr)
 
         beta_2 = MPCTensor(
@@ -501,6 +499,9 @@ class Falcon(metaclass=Protocol):
             beta_2, session, PRIME_NUMBER
         )  # shares of random bit in Zp.
         m = Falcon._random_prime_group(session, shape)
+        beta_2.to_numpy("bool_")
+        beta_p.to_numpy("uint8")
+        m.to_numpy("uint8")
 
         u = [0 for i in range(len(x))]
         w = [0 for i in range(len(x))]
