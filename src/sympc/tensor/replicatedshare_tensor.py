@@ -1073,6 +1073,39 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return rst
 
+    def wrap_rst(self, other) -> "ReplicatedSharedTensor":
+        """Applies wrap2 on the shares.
+
+        Args:
+            other (ReplicatedSharedTensor): tensor to wrap on.
+
+        Returns:
+            result (ReplicatedSharedTensor): Wrap of the tensor in binary.
+
+        Raises:
+            ValueError: If the input tensors are not numpy array.
+        """
+        from sympc.protocol import Falcon
+
+        if not (
+            isinstance(self.shares[0], np.ndarray)
+            and isinstance(other.shares[0], np.ndarray)
+        ):
+            raise ValueError("Input tensor to wrap should be a numpy array.")
+        shares = []
+
+        for x_share, y_share in zip(self.shares, other.shares):
+            shares.append(Falcon.wrap2(x_share, y_share))
+
+        config = Config(encoder_base=1, encoder_precision=0)
+        result = ReplicatedSharedTensor(
+            ring_size=2,
+            session_uuid=self.session_uuid,
+            config=config,
+        )
+        result.shares = shares
+        return result
+
     __add__ = add
     __radd__ = add
     __sub__ = sub

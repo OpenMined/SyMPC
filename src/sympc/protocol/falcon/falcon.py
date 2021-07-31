@@ -626,7 +626,9 @@ class Falcon(metaclass=Protocol):
 
         alpha = MPCTensor(shares=share_ptrs, session=session, shape=shape)
 
-        return x, x_p, alpha
+        a.to_numpy(dtype)
+
+        return a, x, x_p, alpha
 
     @staticmethod
     def wrap(a: MPCTensor) -> MPCTensor:
@@ -640,7 +642,7 @@ class Falcon(metaclass=Protocol):
         """
         session = a.session
 
-        x, x_p, alpha = Falcon.wrap_preprocess(a, session)
+        a, x, x_p, alpha = Falcon.wrap_preprocess(a, session)
 
         r = x + a
 
@@ -648,7 +650,11 @@ class Falcon(metaclass=Protocol):
         r1 = r.share_ptrs[0].get_copy().shares[0]
         r2, r3 = r.share_ptrs[0].get_copy().shares
 
-        beta = ""
+        share_ptrs = []
+        for a_sh, x_sh in zip(a.share_ptrs, x.share_ptrs):
+            share_ptrs.append(a_sh.wrap_rst(x_sh))
+
+        beta = MPCTensor(shares=share_ptrs, session=session, shape=a.shape)
 
         delta = Falcon.wrap3(r1, r2, r3)
 
