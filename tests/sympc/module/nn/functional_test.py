@@ -77,7 +77,7 @@ POSSIBLE_CONFIGS_MAXPOOL_2D = [
 ]
 
 
-@pytest.mark.order(12)
+@pytest.mark.order(11)
 @pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
 def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     clients = get_clients(2)
@@ -107,7 +107,7 @@ def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     assert np.allclose(res.reconstruct(), res_expected, atol=1e-4)
 
 
-@pytest.mark.order(14)
+@pytest.mark.order(15)
 def test_max_pool2d_raises_value_error_kernel_gt_input(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
