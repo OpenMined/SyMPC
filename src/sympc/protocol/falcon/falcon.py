@@ -499,9 +499,10 @@ class Falcon(metaclass=Protocol):
             beta_2, session, PRIME_NUMBER
         )  # shares of random bit in Zp.
         m = Falcon._random_prime_group(session, shape)
-        beta_2.to_numpy("bool_")
-        beta_p.to_numpy("uint8")
-        m.to_numpy("uint8")
+        if isinstance(r, np.ndarray):
+            beta_2.to_numpy("bool_")
+            beta_p.to_numpy("uint8")
+            m.to_numpy("uint8")
 
         u = [0 for i in range(len(x))]
         w = [0 for i in range(len(x))]
@@ -606,13 +607,11 @@ class Falcon(metaclass=Protocol):
         x = MPCTensor(shares=ptr_list, session=session, shape=shape)
         x_b = ABY3.bit_decomposition_ttp(x, session)  # bit sharing
         x_p: List = []  # bit sharing in Zp
-        index = 1
+
         for idx in range(len(x_b)):
             p_sh = ABY3.bit_injection(x_b[idx], session, PRIME_NUMBER)
             p_sh.to_numpy("uint8")
             x_p.append(p_sh)
-            print(index)
-            index += 1
 
         x.to_numpy(dtype)
         x1 = x.share_ptrs[0].get_copy().shares[0]
@@ -630,9 +629,7 @@ class Falcon(metaclass=Protocol):
 
         alpha = MPCTensor(shares=share_ptrs, session=session, shape=shape)
 
-        a.to_numpy(dtype)
-
-        return a, x, x_p, alpha
+        return x, x_p, alpha
 
     @staticmethod
     def wrap(a: MPCTensor) -> MPCTensor:
@@ -646,13 +643,13 @@ class Falcon(metaclass=Protocol):
         """
         session = a.session
 
-        a, x, x_p, alpha = Falcon.wrap_preprocess(a, session)
+        x, x_p, alpha = Falcon.wrap_preprocess(a, session)
 
         r = x + a
 
         # TODO : change to get shares by reconstruct,malicious returns all_shares
         r1 = r.share_ptrs[0].get_copy().shares[0]
-        r2, r3 = r.share_ptrs[0].get_copy().shares
+        r2, r3 = r.share_ptrs[1].get_copy().shares
 
         share_ptrs = []
         for a_sh, x_sh in zip(a.share_ptrs, x.share_ptrs):
@@ -664,7 +661,15 @@ class Falcon(metaclass=Protocol):
 
         r_public = r1 + r2 + r3
 
+        # val = 0
+        # res=0
+        # for i in x_p:
+        #    res+=(i.reconstruct(decode=False).astype(np.uint64)*(2**val))
+        #    val+=1
+        # print("x_p ",res)
+        # print("r_p ",r_public+1)
         eta = Falcon.private_compare(x_p, r_public + 1)
+        # print(eta.reconstruct(decode=False))
 
         wrap_sh = beta + delta - eta - alpha
 

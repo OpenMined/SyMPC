@@ -268,3 +268,22 @@ def test_private_compare(get_clients, security, x, r) -> None:
     result = Falcon.private_compare([x_p], val[r].type(tensor_type))
     expected_res = val[x] >= val[r]
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+def test_wrap(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[45.12, 82.12], [-12.5, 32.5]])
+    x = MPCTensor(secret=secret, session=session)
+    x.to_numpy("uint64")
+    result = Falcon.wrap(x)
+
+    x1 = x.share_ptrs[0].get_copy().shares[0]
+    x2, x3 = x.share_ptrs[1].get_copy().shares
+
+    expected_res = Falcon.wrap3(x1, x2, x3)
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
