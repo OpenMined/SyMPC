@@ -1,8 +1,5 @@
 """function used to calculate reciprocal of a given tensor."""
 
-# third party
-import torch
-
 from sympc.approximations.exponential import exp
 from sympc.approximations.log import log
 from sympc.approximations.utils import modulus
@@ -34,7 +31,7 @@ def reciprocal(self, method: str = "NR", nr_iters: int = 10):
 
     if method == "nr":
         new_self = modulus(self)
-        result = 3 * exp(0.5 - new_self) + torch.tensor(0.003)
+        result = 3 * exp(0.5 - new_self) + 0.003
         for i in range(nr_iters):
             result = 2 * result - result * result * new_self
         return result * sign(self)

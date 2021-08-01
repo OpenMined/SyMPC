@@ -849,8 +849,8 @@ def test_grad_div_backward(get_clients) -> None:
     y_secret = torch.tensor([2.0, 3.0, 4.0, 5.0], requires_grad=True)
     y = MPCTensor(secret=y_secret, session=session, requires_grad=True)
 
-    z = (x_secret / y_secret).sum()
-    z.backward()
+    z = x_secret / y_secret
+    z.backward(torch.tensor([1, 1, 1, 1]))
 
     grad = torch.tensor([1, 1, 1, 1])
     grad_mpc = MPCTensor(secret=grad, session=session, requires_grad=True)

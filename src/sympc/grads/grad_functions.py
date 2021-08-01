@@ -173,6 +173,9 @@ class GradSum(GradFunc):
         Returns:
             sum(x) (MPCTensor): The summation of all the elements from the input
         """
+        if isinstance(x, (list, int, float)):
+            x = torch.tensor(x)
+
         ctx["x_shape"] = x.shape
         total_sum = x.sum()
         return total_sum

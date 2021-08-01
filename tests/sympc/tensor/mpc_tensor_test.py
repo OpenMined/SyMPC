@@ -789,7 +789,7 @@ def test_session_ring_xor(get_clients, security, bit) -> None:
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-def test_mpctensor_reciprocal(get_clients):
+def test_reciprocal(get_clients):
     clients = get_clients(2)
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)

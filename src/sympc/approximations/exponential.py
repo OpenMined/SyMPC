@@ -1,8 +1,5 @@
 """function used to calculate exp of a given tensor."""
 
-# third party
-import torch
-
 
 def exp(value, iterations=8):
     r"""Approximates the exponential function using a limit approximation.
@@ -20,4 +17,4 @@ def exp(value, iterations=8):
     Returns:
         MPCTensor: the calculated exponential of the given tensor
     """
-    return (torch.tensor(1) + value / 2 ** iterations) ** (2 ** iterations)
+    return (1 + value / 2 ** iterations) ** (2 ** iterations)
