@@ -60,7 +60,6 @@ def test_argmax_dim(dim, keepdim, get_clients) -> None:
     assert (res == expected).all(), f"Expected argmax to be {expected}"
 
 
-@pytest.mark.order(5)
 def test_max_multiple_max(get_clients) -> None:
     clients = get_clients(2)
     session = Session(parties=clients)
@@ -89,7 +88,7 @@ def test_max(get_clients) -> None:
     assert res == expected, f"Expected argmax to be {expected}"
 
 
-@pytest.mark.order(6)
+@pytest.mark.order(5)
 @pytest.mark.parametrize("dim, keepdim", itertools.product([0, 1, 2], [True, False]))
 def test_max_dim(dim, keepdim, get_clients) -> None:
     clients = get_clients(2)

@@ -105,7 +105,7 @@ def test_bit_injection_prime(get_clients, security_type) -> None:
 
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
     result = xbit.reconstruct(decode=False)
-    exp_res = x.reconstruct(decode=False).type(torch.uint8)
+    exp_res = bin_sh.type(torch.uint8)
 
     assert (result == exp_res).all()
     assert ring_size == ring0
@@ -129,7 +129,7 @@ def test_bit_injection_session_ring(get_clients, security_type) -> None:
 
     ring0 = int(xbit.share_ptrs[0].get_ring_size().get_copy())
     result = xbit.reconstruct(decode=False)
-    exp_res = x.reconstruct(decode=False).type(session.tensor_type)
+    exp_res = bin_sh.type(session.tensor_type)
 
     assert (result == exp_res).all()
     assert ring_size == ring0
