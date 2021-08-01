@@ -24,6 +24,7 @@ from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
+NR_PARTIES = 3  # constant for aby3 protocols
 
 
 class ABY3(metaclass=Protocol):
@@ -83,7 +84,13 @@ class ABY3(metaclass=Protocol):
 
         Returns:
             List["ReplicatedSharedTensor"] : Truncated shares.
+
+        Raises:
+            ValueError: If the exactly three parties are not involved in the computation.
         """
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 truncation_algorithm1 requires 3 parties")
+
         tensor_type = get_type_from_ring(ring_size)
         rand_value = torch.empty(size=shape, dtype=tensor_type).random_(generator=gen)
         base = config.encoder_base
@@ -222,11 +229,15 @@ class ABY3(metaclass=Protocol):
 
         Raises:
             ValueError: If RSTensor does not have session uuid.
+            ValueError: If the exactly three parties are not involved in the computation.
         """
         if x.session_uuid is None:
             raise ValueError("Input RSTensor should have session_uuid")
 
         session = get_session(x.session_uuid)
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 local_decomposition algorithm requires 3 parties")
+
         ring_size = int(ring_size)
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
@@ -263,10 +274,14 @@ class ABY3(metaclass=Protocol):
 
         Raises:
             ValueError: If input tensor is not binary shared.
+            ValueError: If the exactly three parties are not involved in the computation.
         """
         input_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
         if input_ring != 2:
             raise ValueError("Bit injection works only for binary rings")
+
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 bit_injection requires 3 parties")
 
         args = [[share, str(ring_size)] for share in x.share_ptrs]
 
