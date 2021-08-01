@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1627322540786,
+  "lastUpdate": 1627827649124,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1426,6 +1426,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.034734481864908524",
             "extra": "mean: 2.1385777459999984 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "hershdhillon23@gmail.com",
+            "name": "Hersh Dhillon",
+            "username": "hershd23"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "38b81177093942e20f56f91a0a669725dfdda8ba",
+          "message": "Reordered flaky tests and ordered all the tests sequentially (#289)",
+          "timestamp": "2021-08-01T15:18:05+01:00",
+          "tree_id": "dc418a47dd748f818937826b2c9d3c47b852f1f6",
+          "url": "https://github.com/OpenMined/SyMPC/commit/38b81177093942e20f56f91a0a669725dfdda8ba"
+        },
+        "date": 1627827648493,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.47554586950709193,
+            "unit": "iter/sec",
+            "range": "stddev: 0.032289577146766335",
+            "extra": "mean: 2.102846568799998 sec\nrounds: 5"
           }
         ]
       }
