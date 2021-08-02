@@ -510,8 +510,8 @@ class Falcon(metaclass=Protocol):
         for i in range(len(x) - 1, -1, -1):
             r_i = r >> i & 1  # bit at ith position
             u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
-            w[i] = x[i] + r_i - (x[i] * r_i * 2)
-            c[i] = u[i] + (1 - beta_p) + (beta_p * w[i]) + sum(w[i + 1 :])
+            w[i] = x[i] ^ r_i
+            c[i] = u[i] + 1 + sum(w[i + 1 :])
 
         d = m * (math.prod(c))
 
