@@ -663,15 +663,7 @@ class Falcon(metaclass=Protocol):
 
         r_public = r1 + r2 + r3
 
-        # val = 0
-        # res=0
-        # for i in x_p:
-        #    res+=(i.reconstruct(decode=False).astype(np.uint64)*(2**val))
-        #    val+=1
-        # print("x_p ",res)
-        # print("r_p ",r_public+1)
         eta = Falcon.private_compare(x_p, r_public + 1)
-        # print(eta.reconstruct(decode=False))
 
         wrap_sh = beta + delta - eta - alpha
 
