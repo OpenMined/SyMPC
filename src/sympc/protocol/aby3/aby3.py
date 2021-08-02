@@ -15,13 +15,16 @@ import torchcsprng as csprng
 from sympc.config import Config
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
+from sympc.session import get_session
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import get_type_from_ring
+from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
+NR_PARTIES = 3  # constant for aby3 protocols
 
 
 class ABY3(metaclass=Protocol):
@@ -117,7 +120,7 @@ class ABY3(metaclass=Protocol):
 
         TODO :Switch to trunc2 algorithm  as it is communication efficient.
         """
-        if session.nr_parties != 3:
+        if session.nr_parties != NR_PARTIES:
             raise ValueError("Share truncation algorithm 1 works only for 3 parites.")
 
         # RSPointer - public ops, Tensor Pointer - Private ops
@@ -204,3 +207,93 @@ class ABY3(metaclass=Protocol):
         r_mpc = MPCTensor(shares=r, session=session, shape=x.shape)
         rPrime_mpc = MPCTensor(shares=rPrime, session=session, shape=x.shape)
         return r_mpc, rPrime_mpc
+
+    @staticmethod
+    def local_decomposition(
+        x: ReplicatedSharedTensor, ring_size: str
+    ) -> List[ReplicatedSharedTensor]:
+        """Performs local decomposition to generate shares of shares.
+
+        Args:
+            x (ReplicatedSharedTensor) : input RSTensor.
+            ring_size (str) : Ring size to generate decomposed shares in.
+
+        Returns:
+            List[ReplicatedSharedTensor]: Decomposed shares in the given ring size.
+
+        Raises:
+            ValueError: If RSTensor does not have session uuid.
+            ValueError: If the exactly three parties are not involved in the computation.
+        """
+        if x.session_uuid is None:
+            raise ValueError("Input RSTensor should have session_uuid")
+
+        session = get_session(x.session_uuid)
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 local_decomposition algorithm requires 3 parties")
+
+        ring_size = int(ring_size)
+        tensor_type = get_type_from_ring(ring_size)
+        rank = session.rank
+
+        zero = torch.zeros(x.shares[0].shape).type(tensor_type)
+
+        shares = [[zero.clone(), zero.clone()] for i in range(NR_PARTIES)]
+
+        shares[rank][0] = x.shares[0].clone().type(tensor_type)
+
+        shares[(rank + 1) % NR_PARTIES][1] = x.shares[1].clone().type(tensor_type)
+
+        rst_list = []
+        for i in range(NR_PARTIES):
+            rst = x.clone()
+            rst.shares = shares[i]
+            rst.ring_size = ring_size
+            rst_list.append(rst)
+
+        return rst_list
+
+    @staticmethod
+    def bit_injection(x: MPCTensor, session: Session, ring_size: int) -> MPCTensor:
+        """Perfom ABY3 bit injection for conversion of binary share to arithmetic share.
+
+        Args:
+            x (MPCTensor) : MPCTensor with shares of bit.
+            session (Session): session the share belongs to.
+            ring_size (int) : Ring size of arithmetic share to convert.
+
+        Returns:
+            arith_share (MPCTensor): Arithmetic shares of bit in input ring size.
+
+        Raises:
+            ValueError: If input tensor is not binary shared.
+            ValueError: If the exactly three parties are not involved in the computation.
+        """
+        input_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
+        if input_ring != 2:
+            raise ValueError("Bit injection works only for binary rings")
+
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 bit_injection requires 3 parties")
+
+        args = [[share, str(ring_size)] for share in x.share_ptrs]
+
+        decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+
+        # Using zip for grouping on pointers is compute intensive.
+        x1_sh = []
+        x2_sh = []
+        x3_sh = []
+
+        for sh in decompose:
+            x1_sh.append(sh[0].resolve_pointer_type())
+            x2_sh.append(sh[1].resolve_pointer_type())
+            x3_sh.append(sh[2].resolve_pointer_type())
+
+        x1 = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
+        x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
+        x3 = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
+
+        arith_share = x1 ^ x2 ^ x3
+
+        return arith_share

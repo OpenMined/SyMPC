@@ -76,7 +76,9 @@ def mul_master(
         )
         mask = parallel_execution(spdz_mask, session.parties)(args)
 
-    eps_shares, delta_shares = zip(*mask)
+    # zip on pointers is compute intensive
+    eps_shares = [mask[idx][0] for idx in range(session.nr_parties)]
+    delta_shares = [mask[idx][1] for idx in range(session.nr_parties)]
 
     eps = MPCTensor(shares=eps_shares, session=session)
     delta = MPCTensor(shares=delta_shares, session=session)

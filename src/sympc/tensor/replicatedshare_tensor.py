@@ -283,6 +283,8 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: if both RSTensor have different ring_sizes
         """
         if not isinstance(y, ReplicatedSharedTensor):
+            # For rsub in MPCTensor which multiplies it with (-1)
+            y = y % PRIME_NUMBER if x.ring_size == PRIME_NUMBER else y
 
             y = ReplicatedSharedTensor(
                 session_uuid=x.session_uuid,
