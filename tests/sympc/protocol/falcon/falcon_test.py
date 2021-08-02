@@ -245,10 +245,9 @@ def test_prime_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.parametrize("r", ["zero", "one"])
-@pytest.mark.parametrize("x", ["zero", "one"])
+@pytest.mark.parametrize("inp", [["zero", "one"], ["one", "zero"]])
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
-def test_private_compare(get_clients, security, x, r) -> None:
+def test_private_compare(get_clients, security, inp) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security)
     session = Session(parties=parties, protocol=falcon)
@@ -257,6 +256,8 @@ def test_private_compare(get_clients, security, x, r) -> None:
         "zero": torch.tensor([0], dtype=torch.bool),
         "one": torch.tensor([1], dtype=torch.bool),
     }
+    x = inp[0]
+    r = inp[1]
     x_sh = [val[x], val[x], val[x]]
     rst_list = ReplicatedSharedTensor.distribute_shares(
         shares=x_sh, session=session, ring_size=2
@@ -266,5 +267,5 @@ def test_private_compare(get_clients, security, x, r) -> None:
 
     tensor_type = get_type_from_ring(session.ring_size)
     result = Falcon.private_compare([x_p], val[r].type(tensor_type))
-    expected_res = val[x] >= val[r]
+    expected_res = val[x] > val[r]
     assert (result.reconstruct(decode=False) == expected_res).all()
