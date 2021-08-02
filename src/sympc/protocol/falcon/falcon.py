@@ -667,4 +667,6 @@ class Falcon(metaclass=Protocol):
 
         wrap_sh = beta + delta - eta - alpha
 
+        wrap_sh.from_numpy()
+
         return wrap_sh
