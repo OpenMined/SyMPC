@@ -271,6 +271,7 @@ def test_private_compare(get_clients, security, inp) -> None:
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
+@pytest.mark.skip
 def test_wrap(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
