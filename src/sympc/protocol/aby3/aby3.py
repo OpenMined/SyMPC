@@ -25,6 +25,7 @@ from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 gen = csprng.create_random_device_generator()
+NR_PARTIES = 3  # constant for aby3 protocols
 
 
 class ABY3(metaclass=Protocol):
@@ -120,7 +121,7 @@ class ABY3(metaclass=Protocol):
 
         TODO :Switch to trunc2 algorithm  as it is communication efficient.
         """
-        if session.nr_parties != 3:
+        if session.nr_parties != NR_PARTIES:
             raise ValueError("Share truncation algorithm 1 works only for 3 parites.")
 
         # RSPointer - public ops, Tensor Pointer - Private ops
@@ -281,10 +282,14 @@ class ABY3(metaclass=Protocol):
 
         Raises:
             ValueError: If input tensor is not binary shared.
+            ValueError: If the exactly three parties are not involved in the computation.
         """
         input_ring = int(x.share_ptrs[0].get_ring_size().get_copy())  # input ring_size
         if input_ring != 2:
             raise ValueError("Bit injection works only for binary rings")
+
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 bit_injection requires 3 parties")
 
         args = [[share, str(ring_size)] for share in x.share_ptrs]
 
