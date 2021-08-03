@@ -189,6 +189,7 @@ def test_local_decomposition_exception() -> None:
     with pytest.raises(ValueError):
         ABY3.local_decomposition(x, "2")
 
+
 @pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
 def test_bit_decomposition_ttp(get_clients, security_type) -> None:
     parties = get_clients(3)

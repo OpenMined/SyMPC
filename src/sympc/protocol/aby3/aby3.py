@@ -271,6 +271,7 @@ class ABY3(metaclass=Protocol):
     @staticmethod
     def bit_injection(x: MPCTensor, session: Session, ring_size: int) -> MPCTensor:
         """Perform ABY3 bit injection for conversion of binary share to arithmetic share.
+
         Args:
             x (MPCTensor) : MPCTensor with shares of bit.
             session (Session): session the share belongs to.
