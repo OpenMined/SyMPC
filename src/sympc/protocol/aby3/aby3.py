@@ -126,7 +126,7 @@ class ABY3(metaclass=Protocol):
 
         TODO :Switch to trunc2 algorithm  as it is communication efficient.
         """
-        if session.nr_parties != 3:
+        if session.nr_parties != NR_PARTIES:
             raise ValueError("Share truncation algorithm 1 works only for 3 parites.")
 
         # RSPointer - public ops, Tensor Pointer - Private ops
@@ -241,18 +241,16 @@ class ABY3(metaclass=Protocol):
         ring_size = int(ring_size)
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
-        nr_parties = session.nr_parties
-
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
-        shares = [[zero.clone(), zero.clone()] for i in range(nr_parties)]
+        shares = [[zero.clone(), zero.clone()] for i in range(NR_PARTIES)]
 
         shares[rank][0] = x.shares[0].clone().type(tensor_type)
 
-        shares[(rank + 1) % nr_parties][1] = x.shares[1].clone().type(tensor_type)
+        shares[(rank + 1) % NR_PARTIES][1] = x.shares[1].clone().type(tensor_type)
 
         rst_list = []
-        for i in range(nr_parties):
+        for i in range(NR_PARTIES):
             rst = x.clone()
             rst.shares = shares[i]
             rst.ring_size = ring_size
