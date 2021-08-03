@@ -135,6 +135,12 @@ class GradAdd(GradFunc):
         Returns:
             x + y (MPCTensor): The result of the addition
         """
+        if isinstance(x, (list, int, float)):
+            x = torch.tensor(x)
+
+        if isinstance(y, (list, int, float)):
+            y = torch.tensor(y)
+
         ctx["x_shape"] = x.shape
         ctx["y_shape"] = y.shape
 
@@ -246,6 +252,12 @@ class GradSub(GradFunc):
         Returns:
             x - y (MPCTensor): The result of the substraction
         """
+        if isinstance(x, (list, int, float)):
+            x = torch.tensor(x)
+
+        if isinstance(y, (list, int, float)):
+            y = torch.tensor(y)
+
         ctx["x_shape"] = x.shape
         ctx["y_shape"] = y.shape
 
@@ -284,9 +296,10 @@ class GradMul(GradFunc):
         Returns:
             x * y (MPCTensor): The result of the multiplication
         """
-        if not hasattr(x, "shape"):
+        if isinstance(x, (list, int, float)):
             x = torch.tensor(x)
-        if not hasattr(y, "shape"):
+
+        if isinstance(y, (list, int, float)):
             y = torch.tensor(y)
 
         ctx["x"] = x
@@ -369,8 +382,11 @@ class GradDiv(GradFunc):
         Returns:
             x / y (MPCTensor): The result of the division
         """
-        ctx["x"] = x
-        ctx["y"] = y
+        if isinstance(x, (list, int, float)):
+            x = torch.tensor(x)
+
+        if isinstance(y, (list, int, float)):
+            y = torch.tensor(y)
 
         ctx["result"] = x / y
 
