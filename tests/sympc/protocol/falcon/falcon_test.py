@@ -340,6 +340,7 @@ def test_wrap(get_clients) -> None:
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
+@pytest.mark.xfail
 def test_relu(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
