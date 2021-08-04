@@ -643,6 +643,27 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         res.shares = [share >> y for share in self.shares]
         return res
 
+    def lshift(self, y: int) -> "ReplicatedSharedTensor":
+        """Apply the "lshift" operation to "self".
+
+        Args:
+            y (int): shift value
+
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
+
+        Raises:
+            ValueError: If y is not an integer.
+        """
+        if not isinstance(y, int):
+            raise ValueError("Left Shift works only with integers!")
+
+        res = ReplicatedSharedTensor(
+            session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
+        )
+        res.shares = [share << y for share in self.shares]
+        return res
+
     def bit_extraction(self, pos: int = 0) -> "ReplicatedSharedTensor":
         """Extracts the bit at the specified position.
 
@@ -1179,3 +1200,4 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     __xor__ = xor
     __eq__ = eq
     __rshift__ = rshift
+    __lshift__ = lshift

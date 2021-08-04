@@ -27,6 +27,7 @@ from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_nr_bits
 from sympc.utils import parallel_execution
 
 shares_sum = ReplicatedSharedTensor.shares_sum
@@ -670,3 +671,67 @@ class Falcon(metaclass=Protocol):
         wrap_sh.from_numpy()
 
         return wrap_sh
+
+    @staticmethod
+    def drelu(a: MPCTensor) -> MPCTensor:
+        """Computes Derivative of ReLU on input MPCTensor.
+
+        Args:
+            a (MPCTensor): input tensor.
+
+        Returns:
+            result (MPCTensor): DReLU of input tensor.
+
+        Raises:
+            ValueError: If the input tensor does not have a valid shape.
+        """
+        session = a.session
+        shape = a.shape
+        if shape is None:
+            raise ValueError("Input MPCTensor must have valid shape.")
+
+        ring_size = session.ring_size
+        ring_bits = get_nr_bits(ring_size)
+        msb_idx = ring_bits - 1  # index of msb
+
+        share_ptrs_msb: List[ReplicatedSharedTensor] = []
+        share_ptrs_wrap: List[ReplicatedSharedTensor] = []
+
+        for share in a.share_ptrs:
+            share_ptrs_msb.append(share.bit_extraction(msb_idx))
+            share_ptrs_wrap.append(share << 1)
+
+        msb = MPCTensor(shares=share_ptrs_msb, session=session, shape=shape)
+        wrap_lshift = MPCTensor(shares=share_ptrs_wrap, session=session, shape=shape)
+
+        wrap = Falcon.wrap(wrap_lshift)
+
+        result = msb + wrap + 1
+
+        return result
+
+    @staticmethod
+    def relu(a: MPCTensor) -> MPCTensor:
+        """Computer ReLU on input MPCTensor.
+
+        Args:
+            a (MPCTensor): input MPCTensor.
+
+        Returns:
+            result (MPCTensor): ReLU of input tensor.
+
+        Raises:
+            ValueError: If the input tensor does not have a valid shape.
+        """
+        shape = a.shape
+        tensor_type = a.session.tensor_type
+        if shape is None:
+            raise ValueError("Shape must be provided for ReLU.")
+
+        Falcon.drelu(a)
+
+        torch.zeros(shape).type(tensor_type)
+        result = ""
+        result = result + "1"
+
+        return result
