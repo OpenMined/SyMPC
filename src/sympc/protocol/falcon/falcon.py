@@ -425,7 +425,7 @@ class Falcon(metaclass=Protocol):
         shape = b.shape
         if ring_size != 2:
             raise ValueError(
-                f"Invalid {ring_size} for bit_injection,must be of ring size 2"
+                f"Invalid {ring_size} for selector bit,must be of ring size 2"
             )
         if shape is None:
             raise ValueError("The selector bit tensor must have a valid shape.")
@@ -446,7 +446,7 @@ class Falcon(metaclass=Protocol):
         )  # bit random share in session ring.
 
         tensor_type = get_type_from_ring(session.ring_size)
-        mask = (b + c).reconstruct(decode=False).type(tensor_type)
+        mask = (b ^ c).reconstruct(decode=False).type(tensor_type)
 
         d = (mask - (c_r * mask)) + (c_r * (mask ^ 1))
 
