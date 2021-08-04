@@ -753,7 +753,7 @@ class Falcon(metaclass=Protocol):
 
         wrap = Falcon.wrap(wrap_lshift)
 
-        result = msb + wrap
+        result = msb ^ wrap ^ 1
 
         return result
 
@@ -776,6 +776,7 @@ class Falcon(metaclass=Protocol):
             raise ValueError("Shape must be provided for ReLU.")
 
         b = Falcon.drelu(a)
+        b = b ^ 1  # invert drelu bit.
 
         zero = torch.zeros(shape).type(tensor_type)
         result = Falcon.select_shares(a, zero, b)
