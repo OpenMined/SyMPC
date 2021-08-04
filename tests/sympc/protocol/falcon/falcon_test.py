@@ -245,6 +245,55 @@ def test_prime_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_select_shares(get_clients, security) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    sh = torch.tensor([[1, 0], [0, 1]], dtype=torch.bool)
+    shares = [sh, sh, sh]
+    ptr_lst = ReplicatedSharedTensor.distribute_shares(shares, session, ring_size=2)
+    b = MPCTensor(shares=ptr_lst, session=session, shape=sh.shape)
+
+    x_val = torch.tensor([[1, 2], [3, 4]])
+    y_val = torch.tensor([[5, 6], [7, 8]])
+    x = MPCTensor(secret=x_val, session=session)
+    y = MPCTensor(secret=y_val, session=session)
+
+    z = Falcon.select_shares(x, y, b)
+
+    tensor_type = get_type_from_ring(session.ring_size)
+    bit_tensor = b.reconstruct(decode=False).type(tensor_type)
+    result = (x.reconstruct() * (bit_tensor ^ 1)) + (y.reconstruct() * bit_tensor)
+
+    assert (result == z.reconstruct()).all()
+
+
+def test_select_shares_exception_ring(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    val = MPCTensor(secret=1, session=session)
+    with pytest.raises(ValueError):
+        Falcon.select_shares(val, val, val)
+
+
+def test_select_shares_exception_shape(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    val = MPCTensor(secret=1, session=session)
+    rst = val.share_ptrs[0].get_copy()
+    rst.ring_size = 2
+    val.share_ptrs[0] = rst.send(parties[0])
+    val.shape = None
+    with pytest.raises(ValueError):
+        Falcon.select_shares(val, val, val)
+
+
 @pytest.mark.parametrize("inp", [["zero", "one"], ["one", "zero"]])
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_private_compare(get_clients, security, inp) -> None:
