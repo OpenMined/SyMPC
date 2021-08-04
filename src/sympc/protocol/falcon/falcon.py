@@ -753,7 +753,7 @@ class Falcon(metaclass=Protocol):
 
         wrap = Falcon.wrap(wrap_lshift)
 
-        result = msb + wrap + 1
+        result = msb + wrap
 
         return result
 

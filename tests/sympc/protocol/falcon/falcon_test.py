@@ -353,9 +353,8 @@ def test_relu(get_clients) -> None:
     result = Falcon.relu(x)
 
     expected_res = x.reconstruct()
-    print(expected_res)
+
     expected_res[0][1] = 0
     expected_res[1][0] = 0
-    print(result)
-    print(expected_res)
-    assert (expected_res == result).all()
+
+    assert (expected_res == result.reconstruct()).all()
