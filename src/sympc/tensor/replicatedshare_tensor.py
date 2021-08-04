@@ -341,7 +341,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: if both RSTensor have different ring_sizes
         """
         if not isinstance(y, ReplicatedSharedTensor):
-            # For rsub in MPCTensor which multiplies it with (-1)
+            # As prime ring size is unsigned,we convert negative values.
             y = y % PRIME_NUMBER if x.ring_size == PRIME_NUMBER else y
 
             if isinstance(y, np.ndarray):
