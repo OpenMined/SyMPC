@@ -338,3 +338,24 @@ def test_wrap(get_clients) -> None:
     expected_res = Falcon.wrap3(x1, x2, x3)
 
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+def test_relu(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[12, -46], [-82, 27]])
+
+    x = MPCTensor(secret=secret, session=session)
+
+    result = Falcon.relu(x)
+
+    expected_res = x.reconstruct()
+    print(expected_res)
+    expected_res[0][1] = 0
+    expected_res[1][0] = 0
+    print(result)
+    print(expected_res)
+    assert (expected_res == result).all()

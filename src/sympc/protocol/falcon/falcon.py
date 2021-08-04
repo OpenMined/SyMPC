@@ -775,10 +775,9 @@ class Falcon(metaclass=Protocol):
         if shape is None:
             raise ValueError("Shape must be provided for ReLU.")
 
-        Falcon.drelu(a)
+        b = Falcon.drelu(a)
 
-        torch.zeros(shape).type(tensor_type)
-        result = ""
-        result = result + "1"
+        zero = torch.zeros(shape).type(tensor_type)
+        result = Falcon.select_shares(a, zero, b)
 
         return result
