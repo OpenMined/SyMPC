@@ -329,12 +329,12 @@ def test_wrap(get_clients) -> None:
 
     secret = torch.tensor([[45.12, 82.12], [-12.5, 32.5]])
     x = MPCTensor(secret=secret, session=session)
-    x.to_numpy("uint64")
+
     result = Falcon.wrap(x)
 
     x1 = x.share_ptrs[0].get_copy().shares[0]
     x2, x3 = x.share_ptrs[1].get_copy().shares
 
-    expected_res = Falcon.wrap3(x1, x2, x3)
+    expected_res = torch.from_numpy(Falcon.wrap3(x1, x2, x3))
 
     assert (result.reconstruct(decode=False) == expected_res).all()

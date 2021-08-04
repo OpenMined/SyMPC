@@ -1124,12 +1124,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             ReplicatedSharedTensor: converted RSTensor object.
         """
-        rst = self.clone()
-        dtype = str(rst.shares[0].dtype)
+        shares = copy.deepcopy(self.shares)
+        dtype = str(self.shares[0].dtype)
         # Convert unsigned to signed as torch supports only signed.
         dtype = SIGNED_MAP.get(dtype, dtype)
-        for idx, share in enumerate(self.shares):
-            rst.shares[idx] = torch.from_numpy(share.astype(dtype))
+        rst = ReplicatedSharedTensor(
+            session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
+        )
+        rst.shares = []
+        for idx, share in enumerate(shares):
+            rst.shares.append(torch.from_numpy(share.astype(dtype)))
 
         return rst
 
