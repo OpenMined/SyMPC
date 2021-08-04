@@ -225,16 +225,19 @@ class ABY3(metaclass=Protocol):
 
         Raises:
             ValueError: If RSTensor does not have session uuid.
+            ValueError: If the exactly three parties are not involved in the computation.
         """
         if x.session_uuid is None:
             raise ValueError("Input RSTensor should have session_uuid")
 
         session = get_session(x.session_uuid)
+        if session.nr_parties != NR_PARTIES:
+            raise ValueError("ABY3 local_decomposition algorithm requires 3 parties")
+
         ring_size = int(ring_size)
         ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
-        nr_parties = session.nr_parties
 
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
@@ -249,16 +252,15 @@ class ABY3(metaclass=Protocol):
             input_rst.append(x)
 
         for share in input_rst:
-            shares = [[zero.clone(), zero.clone()] for i in range(nr_parties)]
+            shares = [[zero.clone(), zero.clone()] for i in range(NR_PARTIES)]
 
             shares[rank][0] = share.shares[0].clone().type(tensor_type)
-
-            shares[(rank + 1) % nr_parties][1] = (
+            shares[(rank + 1) % NR_PARTIES][1] = (
                 share.shares[1].clone().type(tensor_type)
             )
 
             rst_sh = []
-            for i in range(nr_parties):
+            for i in range(NR_PARTIES):
                 rst = x.clone()
                 rst.shares = shares[i]
                 rst.ring_size = ring_size
