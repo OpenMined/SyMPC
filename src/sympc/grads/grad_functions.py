@@ -135,9 +135,6 @@ class GradAdd(GradFunc):
         Returns:
             x + y (MPCTensor): The result of the addition
         """
-        if isinstance(x, (list, int, float)):
-            x = torch.tensor(x)
-
         if isinstance(y, (list, int, float)):
             y = torch.tensor(y)
 
@@ -252,9 +249,6 @@ class GradSub(GradFunc):
         Returns:
             x - y (MPCTensor): The result of the substraction
         """
-        if isinstance(x, (list, int, float)):
-            x = torch.tensor(x)
-
         if isinstance(y, (list, int, float)):
             y = torch.tensor(y)
 
