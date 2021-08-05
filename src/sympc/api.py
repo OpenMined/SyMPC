@@ -44,6 +44,9 @@ allowed_external_modules = [
     ("sympc.protocol.falcon", protocol.falcon),
     ("sympc.protocol.falcon.falcon", protocol.falcon.falcon),
     ("sympc.protocol.falcon.falcon.Falcon", protocol.falcon.falcon.Falcon),
+    ("sympc.protocol.aby3", protocol.aby3),
+    ("sympc.protocol.aby3.aby3", protocol.aby3.aby3),
+    ("sympc.protocol.aby3.aby3.ABY3", protocol.aby3.aby3.ABY3),
     ("sympc.protocol.fss", protocol.fss),
     ("sympc.protocol.fss.fss", protocol.fss.fss),
     ("sympc.protocol.spdz", protocol.spdz),
@@ -274,6 +277,7 @@ allowed_external_attrs = [
         "sympc.protocol.falcon.falcon.Falcon.triple_verification",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
+    ("sympc.protocol.aby3.aby3.ABY3.local_decomposition", "syft.lib.python.List"),
     (
         "sympc.session.Session.przs_generate_random_share",
         sy.lib.misc.union.UnionGenerator[
