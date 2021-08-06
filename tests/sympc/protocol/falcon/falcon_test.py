@@ -359,3 +359,21 @@ def test_relu(get_clients) -> None:
     expected_res[1][0] = 0
 
     assert (expected_res == result.reconstruct()).all()
+
+
+@pytest.mark.xfail
+def test_bounding_pow(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[9, 33], [64, 1023]])
+
+    x = MPCTensor(secret=secret, session=session)
+
+    result = Falcon.bounding_pow(x)
+
+    expected_res = torch.tensor([[3, 5], [6, 9]])
+
+    assert (expected_res == result).all()

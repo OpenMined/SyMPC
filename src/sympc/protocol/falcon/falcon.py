@@ -782,3 +782,45 @@ class Falcon(metaclass=Protocol):
         result = Falcon.select_shares(a, zero, b)
 
         return result
+
+    @staticmethod
+    def bounding_pow(x: MPCTensor) -> torch.Tensor:
+        """Computer bounding power of 2 on the given input MPCTensor.
+
+        Args:
+            x (MPCTensor): input tensor.
+
+        Returns:
+            alpha (torch.Tensor): Bounding power of 2 of input tensor in clear.
+
+        Raises:
+            ValueError: If the input tensor does not have valid shape.
+        """
+        session = x.session
+        ring_size = session.ring_size
+        ring_bits = get_nr_bits(ring_size)
+        bit_exp = int(math.log2(ring_bits))  # exponent of the ring_bits
+        tensor_type = session.tensor_type
+        shape = x.shape
+
+        if shape is None:
+            raise ValueError("Input MPCTensor should have valid shape")
+
+        alpha = torch.zeros(size=shape, dtype=tensor_type)
+
+        # we do a binary search for finding bounding pow.
+        d = x  # holds the difference.
+
+        for i in range(bit_exp - 1, -1, -1):
+            c = d - (2 ** (2 ** i + alpha))
+
+            c_drelu = Falcon.drelu(c)
+            r_c = c_drelu.reconstruct(decode=False)  # reconstructed value
+
+            alpha[r_c == 1] = alpha[r_c == 1] + 2 ** i
+
+            r_c = r_c.type(tensor_type)
+
+            d = d * (r_c ^ 1) + (c * r_c)
+
+        return alpha
