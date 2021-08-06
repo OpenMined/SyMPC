@@ -1,7 +1,12 @@
 codecov:
   require_ci_to_pass: yes
 
-coverage:
+comment:
+  layout: "reach,diff,flags,files,footer"
+  behavior: default
+  require_changes: no
+
+  coverage:
   precision: 2
   round: down
   range: "70...100"
