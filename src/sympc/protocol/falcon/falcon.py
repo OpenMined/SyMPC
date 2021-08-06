@@ -809,18 +809,14 @@ class Falcon(metaclass=Protocol):
         alpha = torch.zeros(size=shape, dtype=tensor_type)
 
         # we do a binary search for finding bounding pow.
-        d = x  # holds the difference.
 
         for i in range(bit_exp - 1, -1, -1):
-            c = d - (2 ** (2 ** i + alpha))
+
+            c = x - (2 ** (2 ** i + alpha))
 
             c_drelu = Falcon.drelu(c)
             r_c = c_drelu.reconstruct(decode=False)  # reconstructed value
 
             alpha[r_c == 1] = alpha[r_c == 1] + 2 ** i
-
-            r_c = r_c.type(tensor_type)
-
-            d = d * (r_c ^ 1) + (c * r_c)
 
         return alpha
