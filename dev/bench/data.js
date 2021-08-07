@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1628299847510,
+  "lastUpdate": 1628363594410,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1519,6 +1519,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.06761375670068664",
             "extra": "mean: 910.8286351999936 msec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "ec281fa644a39e9d039d2bf0e5e2cd92471b217d",
+          "message": "Add GradDiv to Autograd  (#284)\n\n* Random changes\r\n\r\n* Add DivGrad\r\n\r\n* Add GradDiv\r\n\r\n* Remove accidental commit\r\n\r\n* Precommit\r\n\r\n* Complete GradDiv\r\n\r\n* Remoe blank line\r\n\r\n* Add GradDiv test\r\n\r\n* Remove pytest skip\r\n\r\n* Precoomit hook\r\n\r\n* Reduced atol, introduced new test and removed reshape\r\n\r\n* precommit\r\n\r\n* Added caching and 1/y\r\n\r\n* Fixed reciprocal function\r\n\r\n* precommit hook\r\n\r\n* Removed multiple ops test\r\n\r\n* Little refractor\r\n\r\n* Precommit\r\n\r\n* Remove accidental test skip\r\n\r\n* Add parameters to slot and remove dtype conversion in gradadd\r\n\r\n* Casted to torch tensor\r\n\r\n* changed conv slots to tuple\r\n\r\n* Some changes\r\n\r\n* Cast inputs to torch tensor in grad functions: sum, add,sub and div\r\n\r\n* Removed unecessary torch casting\r\n\r\n* Small changes",
+          "timestamp": "2021-08-07T20:10:34+01:00",
+          "tree_id": "60f68af2346ce85075ac0f1e0335d7d89b826fd0",
+          "url": "https://github.com/OpenMined/SyMPC/commit/ec281fa644a39e9d039d2bf0e5e2cd92471b217d"
+        },
+        "date": 1628363593380,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 1.1290432703155118,
+            "unit": "iter/sec",
+            "range": "stddev: 0.06562529152576789",
+            "extra": "mean: 885.705646800011 msec\nrounds: 5"
           }
         ]
       }
