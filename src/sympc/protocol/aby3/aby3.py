@@ -238,7 +238,6 @@ class ABY3(metaclass=Protocol):
         ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
-
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
         # Similar to triples, we have instances for the shares generated.
