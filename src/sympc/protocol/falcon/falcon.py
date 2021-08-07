@@ -782,3 +782,7 @@ class Falcon(metaclass=Protocol):
         result = Falcon.select_shares(a, zero, b)
 
         return result
+    
+    @staticmethod
+    def max_mpc(x: MPCTensor) -> MPCTensor:
+        pass
