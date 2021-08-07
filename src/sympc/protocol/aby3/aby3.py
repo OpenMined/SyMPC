@@ -235,7 +235,6 @@ class ABY3(metaclass=Protocol):
         ring_size = int(ring_size)
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
-
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
         shares = [[zero.clone(), zero.clone()] for i in range(NR_PARTIES)]
