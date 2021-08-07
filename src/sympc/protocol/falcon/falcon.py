@@ -318,7 +318,9 @@ class Falcon(metaclass=Protocol):
             )
             mask = parallel_execution(Falcon.falcon_mask, session.parties)(args)
 
-        eps_shares, delta_shares = zip(*mask)
+        # zip on pointers is compute intensive
+        eps_shares = [mask[idx][0] for idx in range(session.nr_parties)]
+        delta_shares = [mask[idx][1] for idx in range(session.nr_parties)]
 
         eps = MPCTensor(shares=eps_shares, session=session)
         delta = MPCTensor(shares=delta_shares, session=session)
@@ -370,6 +372,7 @@ class Falcon(metaclass=Protocol):
         # Add PRZS Mask to z  value
         op = ReplicatedSharedTensor.get_op(x.ring_size, "add")
         share = op(z_value, przs_mask.get_shares()[0])
+
         return share
 
     @staticmethod
