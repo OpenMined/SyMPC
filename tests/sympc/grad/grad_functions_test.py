@@ -821,8 +821,8 @@ def test_grad_div_forward(get_clients) -> None:
     # We need Function Secret Sharing (only for 2 parties) for
     # comparing
     parties = get_clients(2)
-    x = torch.tensor([2.0, 3.0])
-    y = torch.tensor([6.0, 4.0])
+    x = torch.tensor([2.1, 3.2])
+    y = torch.tensor([6.03, 4.1])
 
     x_mpc = x.share(parties=parties)
     y_mpc = y.share(parties=parties)
@@ -843,10 +843,10 @@ def test_grad_div_backward(get_clients) -> None:
     session.autograd_active = True
     SessionManager.setup_mpc(session)
 
-    x_secret = torch.tensor([1.0, 2.0, 3.0, 4.0], requires_grad=True)
+    x_secret = torch.tensor([1.0, 2.1, 3.0, -4.13], requires_grad=True)
     x = MPCTensor(secret=x_secret, session=session, requires_grad=True)
 
-    y_secret = torch.tensor([2.0, 3.0, 4.0, 5.0], requires_grad=True)
+    y_secret = torch.tensor([-2.0, 3.0, 4.39, 5.0], requires_grad=True)
     y = MPCTensor(secret=y_secret, session=session, requires_grad=True)
 
     z = x_secret / y_secret

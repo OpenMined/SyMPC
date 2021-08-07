@@ -576,11 +576,11 @@ class MPCTensor(metaclass=SyMPCTensor):
 
         return result
 
-    def rtruediv(self, y: Union["MPCTensor", torch.Tensor, float, int]) -> "MPCTensor":
+    def rtruediv(self, y: Union[torch.Tensor, float, int]) -> "MPCTensor":
         """Apply recriprocal of MPCTensor.
 
         Args:
-            y (Union["MPCTensor", torch.Tensor, float, int]): Numerator.
+            y (Union[torch.Tensor, float, int]): Numerator.
 
         Returns:
             MPCTensor: Result of the operation.

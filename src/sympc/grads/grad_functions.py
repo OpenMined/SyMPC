@@ -290,9 +290,6 @@ class GradMul(GradFunc):
         Returns:
             x * y (MPCTensor): The result of the multiplication
         """
-        if isinstance(x, (list, int, float)):
-            x = torch.tensor(x)
-
         if isinstance(y, (list, int, float)):
             y = torch.tensor(y)
 
@@ -376,9 +373,6 @@ class GradDiv(GradFunc):
         Returns:
             x / y (MPCTensor): The result of the division
         """
-        if isinstance(x, (list, int, float)):
-            x = torch.tensor(x)
-
         if isinstance(y, (list, int, float)):
             y = torch.tensor(y)
 
@@ -399,7 +393,7 @@ class GradDiv(GradFunc):
         """
         y = ctx["y"]
 
-        grad_x = grad * (1 / y)
+        grad_x = grad / y
         grad_y = (-1) * (grad_x * ctx["result"])
 
         return grad_x, grad_y

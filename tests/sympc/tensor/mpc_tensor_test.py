@@ -794,7 +794,7 @@ def test_reciprocal(get_clients):
     session = Session(parties=clients)
     SessionManager.setup_mpc(session)
 
-    x_secret = torch.Tensor([1, 2, 3, 4])
+    x_secret = torch.Tensor([1.93, 2.61, -3.0, 4.01])
     x = MPCTensor(secret=x_secret, session=session)
 
     expected_res = 1 / (x_secret)
