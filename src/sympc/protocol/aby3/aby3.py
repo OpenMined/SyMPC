@@ -328,7 +328,7 @@ class ABY3(metaclass=Protocol):
         Returns:
             result (List[MPCTensor]): Result of the operation.
 
-        TODO: Should modify ripple carry adder to parallel prefix adder.
+        TODO: Should modify ripple carry adder to parallel prefix adder,currently unused.
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
@@ -352,7 +352,7 @@ class ABY3(metaclass=Protocol):
             bin_share (List[MPCTensor]): Returns binary shares of each bit of the secret.
 
         TODO : Should be modified to use parallel prefix adder when multiprocessing
-        functionality is integrated.
+        functionality is integrated,currently unused.
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
