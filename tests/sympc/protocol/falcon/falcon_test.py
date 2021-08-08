@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.encoder import FixedPointEncoder
 from sympc.protocol import ABY3
 from sympc.protocol import Falcon
 from sympc.session import Session
@@ -16,6 +17,7 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_type_from_ring
 
 
 def test_share_class() -> None:
@@ -291,27 +293,26 @@ def test_select_shares_exception_shape(get_clients) -> None:
         Falcon.select_shares(val, val, val)
 
 
-@pytest.mark.parametrize("inp", [["zero", "one"], ["one", "zero"]])
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
-def test_private_compare(get_clients, security, inp) -> None:
+def test_private_compare(get_clients, security) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
-    val = {
-        "zero": torch.tensor([0], dtype=torch.bool),
-        "one": torch.tensor([1], dtype=torch.bool),
-    }
-    x = inp[0]
-    r = inp[1]
-    x_sh = [val[x], val[x], val[x]]
-    rst_list = ReplicatedSharedTensor.distribute_shares(
-        shares=x_sh, session=session, ring_size=2
-    )
-    x_b = MPCTensor(shares=rst_list, session=session, shape=val[x].shape)
-    x_p = ABY3.bit_injection(x_b, session, PRIME_NUMBER)
+    base = session.config.encoder_base
+    precision = session.config.encoder_precision
+    fp_encoder = FixedPointEncoder(base=base, precision=precision)
+
+    secret = torch.tensor([[358, 79], [67, 2415]])
+    r = torch.tensor([[357, 90], [145, 2400]])
+    r = fp_encoder.encode(r)
+    x = MPCTensor(secret=secret, session=session)
+    x_b = ABY3.bit_decomposition_ttp(x, session)  # bit shares
+    x_p = []  # prime ring shares
+    for share in x_b:
+        x_p.append(ABY3.bit_injection(share, session, PRIME_NUMBER))
 
     tensor_type = get_type_from_ring(session.ring_size)
-    result = Falcon.private_compare([x_p], val[r].type(tensor_type))
-    expected_res = val[x] > val[r]
+    result = Falcon.private_compare(x_p, r.type(tensor_type))
+    expected_res = torch.tensor([[1, 0], [0, 1]], dtype=torch.bool)
     assert (result.reconstruct(decode=False) == expected_res).all()

@@ -462,7 +462,7 @@ class Falcon(metaclass=Protocol):
     def _random_prime_group(
         session: Session, shape: Union[torch.Size, tuple]
     ) -> MPCTensor:
-        """Computes shares of random number in Zp*.Zp* is the multplicative group mod p.Zp* = {1,2..,p-1}.
+        """Computes shares of random number in Zp*.Zp* is the multiplicative group mod p.
 
         Args:
             session (Session): session to generate random shares for.
@@ -471,6 +471,7 @@ class Falcon(metaclass=Protocol):
         Returns:
             share (MPCTensor): Retuns shares of random number in group Zp*.
 
+        Zp* = {1,2..,p-1},where p is a prime number.
         We use Euler's Theorum for verifying that random share is not zero.
         It states that:
         For a general modulus n
