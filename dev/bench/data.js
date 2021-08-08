@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1628406804471,
+  "lastUpdate": 1628425623300,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1581,6 +1581,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.04210888603019284",
             "extra": "mean: 1.1463279001999922 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "murarugeorgec@gmail.com",
+            "name": "George-Cristian Muraru",
+            "username": "gmuraru"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "a5d197d7f19477e5652c049764659c32f38a34f1",
+          "message": "Use get directly (#298)\n\n* Use get directly\n\n* Add session check back",
+          "timestamp": "2021-08-08T13:24:49+01:00",
+          "tree_id": "638375d7f162e80b0000d3c3c22f5752d8797c84",
+          "url": "https://github.com/OpenMined/SyMPC/commit/a5d197d7f19477e5652c049764659c32f38a34f1"
+        },
+        "date": 1628425621721,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 1.4649537311152456,
+            "unit": "iter/sec",
+            "range": "stddev: 0.0073386954642775575",
+            "extra": "mean: 682.6154155999973 msec\nrounds: 5"
           }
         ]
       }
