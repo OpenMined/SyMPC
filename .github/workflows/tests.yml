@@ -89,7 +89,7 @@ jobs:
         run: |
           bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
 
-  python-tests:
+  python-tests-mpc-tensor:
     strategy:
       max-parallel: 2
       matrix:
