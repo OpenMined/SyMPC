@@ -204,11 +204,15 @@ def test_bit_decomposition_ttp(get_clients, security_type) -> None:
     ring_bits = get_nr_bits(ring_size)
 
     val = 1
-    expected_res = 0
+    result = 0
     for i in range(ring_bits):
         if i != ring_bits - 1:
-            expected_res += b_sh[i].reconstruct(decode=False).type(tensor_type) * val
+            result += b_sh[i].reconstruct(decode=False).type(tensor_type) * val
         else:
-            expected_res += b_sh[i].reconstruct(decode=False).type(tensor_type) * (-val)
+            result += b_sh[i].reconstruct(decode=False).type(tensor_type) * (-val)
         val *= 2
-    assert (expected_res == x.reconstruct(decode=False)).all()
+
+    exp_res = torch.tensor(
+        [[-65536, 786432], [-2097152, 2949120], [6422528, -368574464]]
+    )
+    assert (result == exp_res).all()

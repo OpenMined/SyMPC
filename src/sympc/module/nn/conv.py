@@ -21,7 +21,7 @@ from .smpc_module import SMPCModule
 class Conv2d(SMPCModule):
     """Convolutional 2D."""
 
-    __slots__ = [
+    __slots__ = (
         "session",
         "weight",
         "bias",
@@ -30,7 +30,8 @@ class Conv2d(SMPCModule):
         "padding",
         "dilation",
         "groups",
-    ]
+        "_parameters",
+    )
 
     in_channels: int
     out_channels: int
@@ -41,6 +42,7 @@ class Conv2d(SMPCModule):
     groups: int
     weight: List[MPCTensor]
     bias: Optional[MPCTensor]
+    _parameters: OrderedDict
 
     def __init__(self, session: Session) -> None:
         """Initialize Conv2d layer.
@@ -57,6 +59,7 @@ class Conv2d(SMPCModule):
         self.padding = 0
         self.dilation = 1
         self.groups = 1
+        self._parameters = None
 
     def forward(self, x: MPCTensor) -> MPCTensor:
         """Do a feedforward through the layer.
@@ -140,11 +143,25 @@ class Conv2d(SMPCModule):
 
         self.kernel_size = (kernel_size_w, kernel_size_h)
         self.weight = MPCTensor(secret=weight, session=self.session, shape=shape)
+        self._parameters = OrderedDict({"weight": self.weight})
 
         if bias is not None:
             self.bias = MPCTensor(
                 secret=bias, session=self.session, shape=(self.out_channels,)
             )
+            self._parameters["bias"] = self.bias
+
+    def parameters(self, recurse: bool = False) -> MPCTensor:
+        """Get the parameters of the Linear module.
+
+        Args:
+            recurse (bool): For the moment not used. TODO
+
+        Yields:
+            Each parameter of the module
+        """
+        for param in self._parameters.values():
+            yield param
 
     def reconstruct_state_dict(self) -> Dict[str, Any]:
         """Reconstruct the shared state dict.
