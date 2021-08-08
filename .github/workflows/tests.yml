@@ -82,7 +82,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ --ignore=tests/notebooks --ignore=tests/sympc/tensor/mpc_tensor_test.py --ignore=tests/sympc/grad --ignore=tests/sympc/protcol/falcon -n 8 -x --durations=50
+          pytest tests/ --ignore=tests/notebooks --ignore=tests/sympc/tensor/mpc_tensor_test.py --ignore=tests/sympc/grad --ignore=tests/sympc/protocol/falcon -n 8 -x --durations=50
 
       - name: Run codecov
         if: ${{ matrix.os == 'ubuntu-latest' }}
@@ -223,6 +223,7 @@ jobs:
         run: |
           bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
 
+  
   python-tests-falcon:
     strategy:
       max-parallel: 2
@@ -283,7 +284,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/sympc/protcol/falcon -n 8 -x --durations=50
+          pytest tests/sympc/protocol/falcon -n 8 -x --durations=50
 
       - name: Run codecov
         if: ${{ matrix.os == 'ubuntu-latest' }}
