@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1628425623300,
+  "lastUpdate": 1628453799304,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1612,6 +1612,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.0073386954642775575",
             "extra": "mean: 682.6154155999973 msec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1e45f57d458b2036cfeaf401bb2da913453c6733",
+          "message": "Separate Github runners for compute intensive tests. (#299)\n\n* created separate runner for compute intensive tests\r\n\r\n* name_change\r\n\r\n* modified order\r\n\r\n* minor name change\r\n\r\n* split as four runners\r\n\r\n* minor change",
+          "timestamp": "2021-08-08T21:14:26+01:00",
+          "tree_id": "0252755eb198bbfeb5a24e8ca770baee095e5733",
+          "url": "https://github.com/OpenMined/SyMPC/commit/1e45f57d458b2036cfeaf401bb2da913453c6733"
+        },
+        "date": 1628453798774,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 1.456366179181686,
+            "unit": "iter/sec",
+            "range": "stddev: 0.010419075573161131",
+            "extra": "mean: 686.6404989999751 msec\nrounds: 5"
           }
         ]
       }
