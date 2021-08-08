@@ -294,10 +294,10 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 config=x.config,
             )
 
-        # elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
-        #    raise ValueError(
-        #        f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
-        #    )
+        elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
+            raise ValueError(
+                f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
+            )
         elif len(x.shares) != len(y.shares):
             raise ValueError(
                 f"Both RSTensors should have equal number of shares {len(x.shares)} {len(y.shares)}"
