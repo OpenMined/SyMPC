@@ -16,7 +16,6 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
-from sympc.utils import get_type_from_ring
 
 
 def test_share_class() -> None:
@@ -263,17 +262,15 @@ def test_select_shares(get_clients, security) -> None:
 
     z = Falcon.select_shares(x, y, b)
 
-    tensor_type = get_type_from_ring(session.ring_size)
-    bit_tensor = b.reconstruct(decode=False).type(tensor_type)
-    result = (x.reconstruct() * (bit_tensor ^ 1)) + (y.reconstruct() * bit_tensor)
+    expected_res = torch.tensor([[5.0, 2.0], [3.0, 8.0]])
 
-    assert (result == z.reconstruct()).all()
+    assert (expected_res == z.reconstruct()).all()
 
 
 def test_select_shares_exception_ring(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon()
-    session = Session(parties=parties, protocol=falcon)
+    session = Session(parties=parties, protocol=falcon, ring_size=2 ** 32)
     SessionManager.setup_mpc(session)
     val = MPCTensor(secret=1, session=session)
     with pytest.raises(ValueError):

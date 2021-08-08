@@ -787,3 +787,17 @@ def test_session_ring_xor(get_clients, security, bit) -> None:
     result = operator.xor(x, b)
     expected_res = secret_x ^ secret_b
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+def test_reciprocal(get_clients):
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    x_secret = torch.Tensor([1.93, 2.61, -3.0, 4.01])
+    x = MPCTensor(secret=x_secret, session=session)
+
+    expected_res = 1 / (x_secret)
+    mpc_result = 1 / (x)
+
+    assert np.allclose(mpc_result.reconstruct(), expected_res, rtol=1e-3)

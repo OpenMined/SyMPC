@@ -135,6 +135,9 @@ class GradAdd(GradFunc):
         Returns:
             x + y (MPCTensor): The result of the addition
         """
+        if isinstance(y, (list, int, float)):
+            y = torch.tensor(y)
+
         ctx["x_shape"] = x.shape
         ctx["y_shape"] = y.shape
 
@@ -173,6 +176,9 @@ class GradSum(GradFunc):
         Returns:
             sum(x) (MPCTensor): The summation of all the elements from the input
         """
+        if isinstance(x, (list, int, float)):
+            x = torch.tensor(x)
+
         ctx["x_shape"] = x.shape
         total_sum = x.sum()
         return total_sum
@@ -243,6 +249,9 @@ class GradSub(GradFunc):
         Returns:
             x - y (MPCTensor): The result of the substraction
         """
+        if isinstance(y, (list, int, float)):
+            y = torch.tensor(y)
+
         ctx["x_shape"] = x.shape
         ctx["y_shape"] = y.shape
 
@@ -281,9 +290,7 @@ class GradMul(GradFunc):
         Returns:
             x * y (MPCTensor): The result of the multiplication
         """
-        if not hasattr(x, "shape"):
-            x = torch.tensor(x)
-        if not hasattr(y, "shape"):
+        if isinstance(y, (list, int, float)):
             y = torch.tensor(y)
 
         ctx["x"] = x
@@ -349,6 +356,47 @@ class GradPow(GradFunc):
         x, y = ctx["x"], ctx["y"]
 
         return x ** (y - 1) * y * grad
+
+
+class GradDiv(GradFunc):
+    """The Division gradient function."""
+
+    @staticmethod
+    def forward(ctx: Dict[str, Any], x: MPCTensor, y: Any) -> MPCTensor:
+        """Perform the feedforward and compute the result for the division operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to save information needed in the backward pass
+            x (MPCTensor): 1st operand for the division operation
+            y (Any): 2nd operand for the divison operation
+
+        Returns:
+            x / y (MPCTensor): The result of the division
+        """
+        if isinstance(y, (list, int, float)):
+            y = torch.tensor(y)
+
+        ctx["result"] = x / y
+
+        return ctx["result"]
+
+    @staticmethod
+    def backward(ctx: Dict[str, Any], grad: MPCTensor) -> MPCTensor:
+        """Perform the backward pass for the division operation.
+
+        Args:
+            ctx (Dict[str, Any]): Context used to retrieve the information for the backward pass
+            grad (MPCTensor): The gradient that came from the child nodes
+
+        Returns:
+            (x_grad, y_grad) (Tuple[MPCTensor]): The gradients passed to the X and Y nodes.
+        """
+        y = ctx["y"]
+
+        grad_x = grad / y
+        grad_y = (-1) * (grad_x * ctx["result"])
+
+        return grad_x, grad_y
 
 
 class GradMatMul(GradFunc):
@@ -733,6 +781,7 @@ def forward(
 
     _self.session.autograd_active = False
     ctx = {}
+
     res = grad_fn.forward(ctx, _self, *args, **kwargs)
     _self.session.autograd_active = True
 
@@ -753,6 +802,7 @@ GRAD_FUNCS: Dict[str, GradFunc] = {
     "sub": GradSub,
     "add": GradAdd,
     "sum": GradSum,
+    "truediv": GradDiv,
     "sigmoid": GradSigmoid,
     "flatten": GradFlatten,
     "conv2d": GradConv2d,

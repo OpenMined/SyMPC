@@ -235,10 +235,8 @@ class ABY3(metaclass=Protocol):
             raise ValueError("ABY3 local_decomposition algorithm requires 3 parties")
 
         ring_size = int(ring_size)
-        ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
         tensor_type = get_type_from_ring(ring_size)
         rank = session.rank
-
         zero = torch.zeros(x.shares[0].shape).type(tensor_type)
 
         # Similar to triples, we have instances for the shares generated.
@@ -246,6 +244,7 @@ class ABY3(metaclass=Protocol):
 
         input_rst = []
         if bitwise:
+            ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
             for i in range(ring_bits):
                 input_rst.append(x.bit_extraction(i))
         else:
@@ -329,7 +328,7 @@ class ABY3(metaclass=Protocol):
         Returns:
             result (List[MPCTensor]): Result of the operation.
 
-        TODO: Should modify ripple carry adder to parallel prefix adder.
+        TODO: Should modify ripple carry adder to parallel prefix adder,currently unused.
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
@@ -353,7 +352,7 @@ class ABY3(metaclass=Protocol):
             bin_share (List[MPCTensor]): Returns binary shares of each bit of the secret.
 
         TODO : Should be modified to use parallel prefix adder when multiprocessing
-        functionality is integrated.
+        functionality is integrated,currently unused.
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
@@ -397,7 +396,7 @@ class ABY3(metaclass=Protocol):
         Returns:
             b_sh (List[MPCTensor]): Returns binary shares of each bit of the secret.
 
-        TODO: We should modify to use parallel prefix adder, which involves pickling Syft VM's
+        TODO: We should modify to use parallel prefix adder, which requires multiprocessing.
         """
         # Decoding is not done as they are shares of PRRS.
         tensor = x.reconstruct(decode=False)
