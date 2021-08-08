@@ -299,6 +299,7 @@ class Session:
                 config=Config(encoder_precision=0),
                 ring_size=ring_size,
             )
+
         return share
 
     def init_generators(self, seed_current: int, seed_next: int) -> None:
