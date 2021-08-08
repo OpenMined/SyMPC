@@ -82,7 +82,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest tests/ --deselect=tests/notebooks --deselect=tests/sympc/tensor/mpc_tensor_tensor.py --deselect=tests/sympc/grad -n 8 -x --durations=50
+          pytest tests/ --ignore=tests/notebooks --ignore=tests/sympc/tensor/mpc_tensor_test.py --ignore=tests/sympc/grad -n 8 -x --durations=50
 
       - name: Run codecov
         if: ${{ matrix.os == 'ubuntu-latest' }}
