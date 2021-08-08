@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1628363594410,
+  "lastUpdate": 1628406804471,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1550,6 +1550,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.06562529152576789",
             "extra": "mean: 885.705646800011 msec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "saxena.shubhank.19@gmail.com",
+            "name": "Shubhank Saxena",
+            "username": "shubhank-saxena"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "093b3ae444cb2d715c388f6fd4f6c24cec13323f",
+          "message": "Add codecov.yml file (#296)\n\n* Add codecov.yml file\r\n\r\n* Add codecov comments on PR\r\n\r\n* Increase range of codecov\r\n\r\n* minor change\r\n\r\nCo-authored-by: rasswanth-s <43314053+rasswanth-s@users.noreply.github.com>",
+          "timestamp": "2021-08-08T12:40:40+05:30",
+          "tree_id": "425f2d98a44ab3db7a7cbf78d1aa8fbb6b411e0b",
+          "url": "https://github.com/OpenMined/SyMPC/commit/093b3ae444cb2d715c388f6fd4f6c24cec13323f"
+        },
+        "date": 1628406803851,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.8723507469595189,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04210888603019284",
+            "extra": "mean: 1.1463279001999922 sec\nrounds: 5"
           }
         ]
       }
