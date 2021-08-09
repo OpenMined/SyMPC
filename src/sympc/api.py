@@ -247,6 +247,10 @@ replicated_shared_tensor_attrs = [
         "syft.lib.python.Dict",
     ),
     (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.set_config",
+        "syft.lib.python._SyNone",
+    ),
+    (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.bit_extraction",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),

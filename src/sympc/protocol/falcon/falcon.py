@@ -821,3 +821,36 @@ class Falcon(metaclass=Protocol):
             alpha[r_c == 1] = alpha[r_c == 1] + 2 ** i
 
         return alpha
+
+    @staticmethod
+    def division(a: MPCTensor, b: MPCTensor) -> MPCTensor:
+        """Computes Division operation a/b.
+
+        Args:
+            a (MPCTensor): Input tensor numerator.
+            b (MPCTensor): Input tensor denominator.
+
+        Returns:
+            result (MPCTensor): Result of the Division operation.
+        """
+        # TODO : Should move to approximations
+        session = a.session
+        base = session.config.encoder_base
+        alpha = Falcon.bounding_pow(b)
+
+        # assume the b tensor is encoded with precision alpha+1
+        # which transforms our denominator in range [0.5,1)
+        # all operations on b are performed with the new precision.
+        precision = alpha + 1
+        for share in b.share_ptrs:
+            share.set_config(base, precision)
+
+        w0 = 2.9142 - 2 * b
+        epsilon0 = 1 - b * w0
+        epsilon1 = epsilon0 * epsilon0
+
+        b_inv = w0 * (1 + epsilon0) * (1 + epsilon1)
+
+        result = a * b_inv
+
+        return result

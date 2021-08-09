@@ -171,6 +171,25 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return dataclasses.asdict(self.config)
 
+    def set_config(self, base: int, precision: int) -> None:
+        """Set config of tensor with given base,precision.
+
+        Args:
+            base (int): base of the config to assign.
+            precision (int): precision of the config to assign.
+
+        Raises:
+            ValueError: If precision or base in not an int.
+        """
+        if not isinstance(base, int) or not isinstance(precision, int):
+            raise ValueError(
+                f"Both base:{base} and precision:{precision} must be of type int."
+            )
+
+        config = Config(encoder_base=base, encoder_precision=precision)
+
+        self.config = config
+
     @staticmethod
     def addmodprime(
         x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
