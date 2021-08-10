@@ -278,6 +278,18 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.wrap_rst",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.share_matrix",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.matrix_to_rst",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.extend",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
 ]
 
 allowed_external_attrs = [

@@ -360,7 +360,7 @@ def test_relu(get_clients) -> None:
 
     assert (expected_res == result.reconstruct()).all()
     
-@pytest.mark.parametrize("op_str", ["le","ge"])
+@pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt"])
 def test_comparison_mpc_mpc(get_clients,op_str) -> None:
     clients = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
@@ -377,3 +377,22 @@ def test_comparison_mpc_mpc(get_clients,op_str) -> None:
     expected_result = op(x_secret, y_secret)
 
     assert (result == expected_result).all()
+    
+def test_something(get_clients):
+    clients = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]])
+    
+    x = MPCTensor(secret=x_secret, session=session)
+    
+    x.share_ptrs[0]=x.share_ptrs[0].share_matrix().resolve_pointer_type()
+    x.share_ptrs[1]=x.share_ptrs[1].share_matrix().resolve_pointer_type()
+    x.share_ptrs[2]=x.share_ptrs[2].share_matrix().resolve_pointer_type()
+
+    for i in range(0,3):
+        for j in range(0,2):
+          shares1=[x.share_ptrs[index].get_shares()[i].resolve_pointer_type()[j].resolve_pointer_type() for index in range(0,3)]
+          lol1=MPCTensor(session=x.session,shares=shares1,shape=(1,1))
