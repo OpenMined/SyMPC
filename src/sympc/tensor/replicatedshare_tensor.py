@@ -25,6 +25,7 @@ from sympc.tensor import ShareTensor
 from sympc.utils import RING_SIZE_TO_TYPE
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
+from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
@@ -283,7 +284,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: if both RSTensor have different ring_sizes
         """
         if not isinstance(y, ReplicatedSharedTensor):
-            # For rsub in MPCTensor which multiplies it with (-1)
+            # As prime ring size is unsigned,we convert negative values.
             y = y % PRIME_NUMBER if x.ring_size == PRIME_NUMBER else y
 
             y = ReplicatedSharedTensor(
@@ -298,9 +299,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
             )
         elif len(x.shares) != len(y.shares):
-            raise ValueError("Both RSTensors should have equal number of shares.")
+            raise ValueError(
+                f"Both RSTensors should have equal number of shares {len(x.shares)} {len(y.shares)}"
+            )
         elif x.ring_size != y.ring_size:
-            raise ValueError("Both RSTensors should have same ring_size")
+            raise ValueError(
+                f"Both RSTensors should have same ring_size {x.ring_size} {y.ring_size}"
+            )
 
         session_uuid = x.session_uuid
 
@@ -711,7 +716,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             ReplicatedSharedTensor : The ReplicatedSharedTensor in local.
         """
-        if not islocal(share_ptr):
+        if not ispointer(share_ptr):
+            return share_ptr
+        elif not islocal(share_ptr):
             share_ptr.request(block=True)
         res = share_ptr.get_copy()
         return res
@@ -896,7 +903,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             TypeError: when Datatype of shares is invalid.
 
         """
-        if not isinstance(shares, list):
+        if not isinstance(shares, (list, tuple)):
             raise TypeError("Shares to be distributed should be a list of shares")
 
         if len(shares) != session.nr_parties:

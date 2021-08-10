@@ -22,6 +22,7 @@ from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 shares_sum = ReplicatedSharedTensor.shares_sum
@@ -319,14 +320,11 @@ class Falcon(metaclass=Protocol):
             mask = parallel_execution(Falcon.falcon_mask, session.parties)(args)
 
         # zip on pointers is compute intensive
-        eps_shares = [mask[idx][0] for idx in range(session.nr_parties)]
-        delta_shares = [mask[idx][1] for idx in range(session.nr_parties)]
+        mask_local = [mask[idx].get() for idx in range(session.nr_parties)]
+        eps_shares, delta_shares = zip(*mask_local)
 
-        eps = MPCTensor(shares=eps_shares, session=session)
-        delta = MPCTensor(shares=delta_shares, session=session)
-
-        eps_plaintext = eps.reconstruct(decode=False)
-        delta_plaintext = delta.reconstruct(decode=False)
+        eps_plaintext = ReplicatedSharedTensor.reconstruct(eps_shares)
+        delta_plaintext = ReplicatedSharedTensor.reconstruct(delta_shares)
 
         args = [
             list(sh) + [eps_plaintext, delta_plaintext, op_str]
@@ -404,3 +402,52 @@ class Falcon(metaclass=Protocol):
             x.ring_size,
         )
         return z_value
+
+    @staticmethod
+    def select_shares(x: MPCTensor, y: MPCTensor, b: MPCTensor) -> MPCTensor:
+        """Returns either x or y based on bit b.
+
+        Args:
+            x (MPCTensor): input tensor
+            y (MPCTensor): input tensor
+            b (MPCTensor): input tensor which is shares of a bit used as selector bit.
+
+        Returns:
+            z (MPCTensor):Returns x (if b==0) or y (if b==1).
+
+        Raises:
+            ValueError: If the selector bit tensor is not of ring size "2".
+        """
+        ring_size = int(b.share_ptrs[0].get_ring_size().get_copy())
+        shape = b.shape
+        if ring_size != 2:
+            raise ValueError(
+                f"Invalid {ring_size} for selector bit,must be of ring size 2"
+            )
+        if shape is None:
+            raise ValueError("The selector bit tensor must have a valid shape.")
+        session = x.session
+
+        # TODO: Should be made to generate with CryptoProvider in Preprocessing stage.
+        c_ptrs: List[ReplicatedSharedTensor] = []
+        for session_ptr in session.session_ptrs:
+            c_ptrs.append(
+                session_ptr.prrs_generate_random_share(
+                    shape=shape, ring_size=str(ring_size)
+                )
+            )
+
+        c = MPCTensor(shares=c_ptrs, session=session, shape=shape)  # bit random share
+        c_r = ABY3.bit_injection(
+            c, session, session.ring_size
+        )  # bit random share in session ring.
+
+        tensor_type = get_type_from_ring(session.ring_size)
+        mask = (b ^ c).reconstruct(decode=False).type(tensor_type)
+
+        d = (mask - (c_r * mask)) + (c_r * (mask ^ 1))
+
+        # Order placed carefully to prevent re-encoding,should not be changed.
+        z = x + (d * (y - x))
+
+        return z
