@@ -782,3 +782,19 @@ class Falcon(metaclass=Protocol):
         result = Falcon.select_shares(a, zero, b)
 
         return result
+    
+    @staticmethod
+    def le(x: MPCTensor,y: MPCTensor) -> MPCTensor:
+        
+        res = y-x
+        res = Falcon.drelu(res)
+        
+        return res
+    
+    @staticmethod
+    def ge(x: MPCTensor,y: MPCTensor) -> MPCTensor:
+        
+        res = x-y
+        res = Falcon.drelu(res)
+        
+        return res
