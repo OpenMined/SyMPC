@@ -31,7 +31,7 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
-METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone", "repeat"}
+METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone", "repeat","flatten","expand"}
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
 SIGNED_MAP = {
     "bool": "bool",
@@ -69,7 +69,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone", "repeat"}
+    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone", "repeat","flatten","expand"}
     PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(
@@ -106,13 +106,22 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         tensor_type = get_type_from_ring(ring_size)
 
         self.shares = []
-
+        
         if shares is not None:
+          if(type(shares[0])!=list):
+             self.shares = [self._encode(share).to(tensor_type) for share in shares]
+          else:
+             self.shares = [share for share in shares]
+
+        """if shares is not None:
             for i in range(len(shares)):
                 share = shares[i]
                 if isinstance(shares[i], torch.Tensor):
                     share = self._encode(share).to(tensor_type)
-                self.shares.append(share)
+                    self.shares.append(share)
+                else:
+                    self.shares.append(share)"""
+                
                 
     def reshape(self, lst, shape):
         # stdlib

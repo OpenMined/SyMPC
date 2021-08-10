@@ -360,6 +360,7 @@ def test_relu(get_clients) -> None:
 
     assert (expected_res == result.reconstruct()).all()
     
+@pytest.mark.skip
 @pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt"])
 def test_comparison_mpc_mpc(get_clients,op_str) -> None:
     clients = get_clients(3)
@@ -378,7 +379,7 @@ def test_comparison_mpc_mpc(get_clients,op_str) -> None:
 
     assert (result == expected_result).all()
     
-def test_something(get_clients):
+"""def test_something(get_clients):
     clients = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
     session = Session(parties=clients, protocol=falcon)
@@ -392,7 +393,38 @@ def test_something(get_clients):
     x.share_ptrs[1]=x.share_ptrs[1].share_matrix().resolve_pointer_type()
     x.share_ptrs[2]=x.share_ptrs[2].share_matrix().resolve_pointer_type()
 
+    maximum = None
+
     for i in range(0,3):
         for j in range(0,2):
           shares1=[x.share_ptrs[index].get_shares()[i].resolve_pointer_type()[j].resolve_pointer_type() for index in range(0,3)]
           lol1=MPCTensor(session=x.session,shares=shares1,shape=(1,1))
+          
+          if(maximum is None):
+              maximum = lol1
+          else:
+              b = Falcon.ge(maximum,lol1)
+              maximum = Falcon.select_shares(lol1,maximum,b)
+              
+          print(maximum.get())
+          
+    assert 1==2"""
+    
+def test_argmax(get_clients) -> None:
+    clients = get_clients(3)
+    
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients, protocol=falcon)
+    
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([1, 2, 3, -1, -3])
+    x = MPCTensor(secret=secret, session=session)
+
+    argmax_val = x.argmax()
+    assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
+
+    expected = secret.argmax().float()
+    res = argmax_val.reconstruct()
+    assert res == expected, f"Expected argmax to be {expected}"
+

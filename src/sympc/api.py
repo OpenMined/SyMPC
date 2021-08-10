@@ -290,6 +290,16 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.extend",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.flatten",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.expand",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (   "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.shape",
+        "syft.lib.python.Tuple")
 ]
 
 allowed_external_attrs = [

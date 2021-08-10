@@ -155,19 +155,28 @@ def helper_argmax(
     ]
     shares = parallel_execution(helper_argmax_pairwise, session.parties)(args)
 
+    shares = [share.resolve_pointer_type() for share in shares]
+
     res_shape = shares[0].shape.get()
+
     x_pairwise = MPCTensor(shares=shares, session=x.session, shape=res_shape)
+
+    print(x_pairwise.get())
 
     # with the MPCTensor tensor we check what entries are positive
     # then we check what columns of M matrix have m-1 non-zero entries after comparison
     # (by summing over cols)
     pairwise_comparisons = x_pairwise >= 0
 
+    print("RESULT PAIRWISE: ", pairwise_comparisons.reconstruct())
+
     # re-compute row_length
     _dim = -1 if dim is None else dim
+
     row_length = x.shape[_dim] if x.shape[_dim] > 1 else 2
 
     result = pairwise_comparisons.sum(0)
+    print("RESULT: ", result.reconstruct(decode=True))
     result = result >= (row_length - 1)
     res_shape = res_shape[1:]  # Remove the leading dimension because of sum(0)
 
@@ -270,17 +279,47 @@ def helper_argmax_pairwise(
     session = get_session(session_uuid_str)
 
     dim = -1 if dim is None else dim
-    row_length = share.shape[dim] if share.shape[dim] > 1 else 2
+
+    shape = share.shape[dim]
+
+    row_length = shape if shape > 1 else 2
 
     # Copy each row (length - 1) times to compare to each other row
-    a = share.expand(row_length - 1, *share.shape)
+
+    from sympc.tensor import ReplicatedSharedTensor
+
+    if type(share) == ReplicatedSharedTensor:
+        a = share.expand(row_length - 1, *share.shape)
+    else:
+        a = share.expand(row_length - 1, *share.shape)
 
     # Generate cyclic permutations for each row
-    shares = torch.stack(
-        [share.tensor.roll(i + 1, dims=dim) for i in range(row_length - 1)]
-    )
-    b = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
-    b.tensor = shares
+    shares = []
+    
+    print(type(share))
+    
+    if type(share) == ReplicatedSharedTensor:
+
+        for j in range(0, 2):
+            lol = []
+            for i in range(row_length - 1):
+                lol.append(share.shares[j].roll(i + 1, dims=dim))
+
+            shares.append(torch.stack(lol))
+    else:
+
+        shares = torch.stack(
+            [share.tensor.roll(i + 1, dims=dim) for i in range(row_length - 1)]
+        )
+
+    if type(share) == ShareTensor:
+        b = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
+        b.tensor = shares
+    else:
+        b = ReplicatedSharedTensor(
+            session_uuid=UUID(session_uuid_str), config=session.config
+        )
+        b.shares = shares
 
     return a - b
 
