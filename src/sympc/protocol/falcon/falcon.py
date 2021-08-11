@@ -812,3 +812,7 @@ class Falcon(metaclass=Protocol):
             )
 
         return res
+
+    @staticmethod
+    def max_mpc(x: MPCTensor) -> MPCTensor:
+        pass

@@ -502,3 +502,8 @@ def test_max_pool2d(get_clients, kernel_size, stride, padding) -> None:
     )
 
     assert np.allclose(res.reconstruct(), res_expected, atol=1e-4)
+
+
+def test_max(get_clients) -> None:
+
+    pass
