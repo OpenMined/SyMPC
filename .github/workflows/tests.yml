@@ -60,7 +60,7 @@ jobs:
         with:
           format: space-delimited
 
-      - uses: pre-commit/action@v2.0.0
+      - uses: pre-commit/action@v2.0.3
         with:
           extra_args: --files ${{ steps.file_changes.outputs.all }} # apply only to changed files.
 
