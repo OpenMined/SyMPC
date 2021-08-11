@@ -22,7 +22,62 @@ on:
       - "requirements.txt"
 
 jobs:
+  python-linting:
+    strategy:
+      max-parallel: 1
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
+      - id: file_changes # get changed files.
+        uses: jitterbit/get-changed-files@v1
+        with:
+          format: space-delimited
+
+      - uses: pre-commit/action@v2.0.0
+        with:
+          extra_args: --files ${{ steps.file_changes.outputs.all }} # apply only to changed files.
+
+      - name: Check docstring coverage
+        run: |
+          pip install interrogate
+          interrogate -mvp src/ -f 80
+
+      - name: Scan for security issues
+        run: |
+          pip install bandit safety
+          bandit -r src
+          safety check
+
+
   python-tests:
+    needs: [python-linting]
     strategy:
       max-parallel: 2
       matrix:
@@ -90,6 +145,7 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
 
   python-tests-mpc-tensor:
+    needs: [python-linting]
     strategy:
       max-parallel: 2
       matrix:
@@ -157,6 +213,7 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
 
   python-tests-grad:
+    needs: [python-linting]
     strategy:
       max-parallel: 2
       matrix:
@@ -225,6 +282,7 @@ jobs:
 
   
   python-tests-falcon:
+    needs: [python-linting]
     strategy:
       max-parallel: 2
       matrix:
