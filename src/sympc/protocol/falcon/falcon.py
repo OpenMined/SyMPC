@@ -832,25 +832,60 @@ class Falcon(metaclass=Protocol):
 
         Returns:
             result (MPCTensor): Result of the Division operation.
+
+        Raises:
+            ValueError: If input tensor does not have shape attribute.
         """
         # TODO : Should move to approximations
         session = a.session
-        base = session.config.encoder_base
-        alpha = Falcon.bounding_pow(b)
+        ring_size = session.ring_size
+        config = session.config
+        base = config.encoder_base
+        precision = config.encoder_precision
+        shape = a.shape
+        if shape is None:
+            raise ValueError(
+                f"Input tensor must have valid shape: {shape} for division"
+            )
 
-        # assume the b tensor is encoded with precision alpha+1
+        # alpha = Falcon.bounding_pow(b)
+        alpha = torch.tensor([3])
+        for share in b.share_ptrs:
+            share.set_config(1, 0)  # base:1 #precision:0
+
+        # assume the b fixed point value is encoded with (alpha+1+precision) precision.
         # which transforms our denominator in range [0.5,1)
         # all operations on b are performed with the new precision.
-        precision = alpha + 1
-        for share in b.share_ptrs:
-            share.set_config(base, precision)
+        precision_n = alpha + 1 + precision  # divisor nomalized precision
 
-        w0 = 2.9142 - 2 * b
-        epsilon0 = 1 - b * w0
+        scale_n = base ** precision_n  # scale of normalized precision
+        const_two_point_nine = 2.9142 * (scale_n)
+        const_one = 1 * (scale_n)
+
+        w0 = const_two_point_nine - 2 * b
+
+        xw0 = ABY3.truncate(b * w0, session, ring_size, config, precision_n)
+
+        epsilon0 = const_one - xw0
+
         epsilon1 = epsilon0 * epsilon0
+        epsilon1 = ABY3.truncate(epsilon1, session, ring_size, config, precision_n)
 
-        b_inv = w0 * (1 + epsilon0) * (1 + epsilon1)
+        term_one = const_one + epsilon0
+        term_two = const_one + epsilon1
+        term_mul = term_one * term_two
+        term_mul = ABY3.truncate(term_mul, session, ring_size, config, precision_n)
+
+        b_inv = w0 * term_mul
+
+        b_inv = ABY3.truncate(b_inv, session, ring_size, config, precision_n)
 
         result = a * b_inv
+        result = ABY3.truncate(
+            result, session, ring_size, config, 2 * (precision_n - precision)
+        )
+
+        for share in b.share_ptrs:
+            share.set_config(base, precision)  # revert to original value.
 
         return result

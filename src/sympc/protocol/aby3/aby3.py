@@ -74,6 +74,7 @@ class ABY3(metaclass=Protocol):
         session: Session,
         ring_size: int,
         config: Config,
+        custom_precision: torch.Tensor,
     ) -> List[ReplicatedSharedTensor]:
         """Performs the ABY3 truncation algorithm1.
 
@@ -83,6 +84,7 @@ class ABY3(metaclass=Protocol):
             session (Session) : session the tensor belong to
             ring_size (int): Ring size of the underlying tensors.
             config (Config): The configuration(base,precision) of the underlying tensors.
+            custom_precision(torch.Tensor): Custom precision for each tensor value to be truncated.
 
         Returns:
             List["ReplicatedSharedTensor"] : Truncated shares.
@@ -90,7 +92,7 @@ class ABY3(metaclass=Protocol):
         tensor_type = get_type_from_ring(ring_size)
         rand_value = torch.empty(size=shape, dtype=tensor_type).random_(generator=gen)
         base = config.encoder_base
-        precision = config.encoder_precision
+        precision = custom_precision if custom_precision else config.encoder_precision
         scale = base ** precision
 
         x1, x2, x3 = ptr_list
@@ -111,6 +113,9 @@ class ABY3(metaclass=Protocol):
         if isinstance(ptr_list[0], np.ndarray):
             shares = list(map(lambda x: x.astype(dtype), shares))
 
+        if custom_precision:
+            config = Config(encoder_base=1, encoder_precision=0)
+
         ptr_list = ReplicatedSharedTensor.distribute_shares(
             shares, session, ring_size, config
         )
@@ -118,7 +123,11 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def truncate(
-        x: MPCTensor, session: Session, ring_size: int, config: Config
+        x: MPCTensor,
+        session: Session,
+        ring_size: int,
+        config: Config,
+        custom_precision: torch.Tensor = None,
     ) -> MPCTensor:
         """Perfoms the ABY3 truncation algorithm.
 
@@ -127,6 +136,7 @@ class ABY3(metaclass=Protocol):
             session (Session) : session of the input tensor.
             ring_size (int): Ring size of the underlying tensor.
             config (Config) : The configuration(base,precision) of the underlying tensor.
+            custom_precision(torch.Tensor): Custom precision for each tensor value to be truncated.
 
         Returns:
             MPCTensor: truncated MPCTensor.
@@ -154,7 +164,7 @@ class ABY3(metaclass=Protocol):
                 ptr_list.append(x.share_ptrs[0].get_shares()[0].get_copy())
                 ptr_list.extend(x.share_ptrs[1].get_copy().shares)
                 share_ptrs = ABY3.truncation_algorithm1(
-                    ptr_list, x.shape, session, ring_size, config
+                    ptr_list, x.shape, session, ring_size, config, custom_precision
                 )
 
         elif ptr_name == "TensorPointer":
@@ -168,7 +178,7 @@ class ABY3(metaclass=Protocol):
             else:
 
                 share_ptrs = ABY3.truncation_algorithm1(
-                    ptr_list, x.shape, session, ring_size, config
+                    ptr_list, x.shape, session, ring_size, config, custom_precision
                 )
         else:
             raise ValueError("{ptr_name} not supported.")
