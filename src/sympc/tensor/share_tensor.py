@@ -20,6 +20,7 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
+from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
@@ -515,8 +516,11 @@ class ShareTensor(metaclass=SyMPCTensor):
                 ShareTensor. The ShareTensor in local.
 
             """
+            if not ispointer(share_ptr):
+                return share_ptr
             if not islocal(share_ptr):
                 share_ptr.request(block=True)
+
             res = share_ptr.get_copy()
             return res
 

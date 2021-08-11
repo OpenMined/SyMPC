@@ -77,14 +77,11 @@ def mul_master(
         mask = parallel_execution(spdz_mask, session.parties)(args)
 
     # zip on pointers is compute intensive
-    eps_shares = [mask[idx][0] for idx in range(session.nr_parties)]
-    delta_shares = [mask[idx][1] for idx in range(session.nr_parties)]
+    mask_local = [mask[idx].get() for idx in range(session.nr_parties)]
+    eps_shares, delta_shares = zip(*mask_local)
 
-    eps = MPCTensor(shares=eps_shares, session=session)
-    delta = MPCTensor(shares=delta_shares, session=session)
-
-    eps_plaintext = eps.reconstruct(decode=False)
-    delta_plaintext = delta.reconstruct(decode=False)
+    eps_plaintext = ShareTensor.reconstruct(eps_shares)
+    delta_plaintext = ShareTensor.reconstruct(delta_shares)
 
     # Specific arguments to each party
     args = [

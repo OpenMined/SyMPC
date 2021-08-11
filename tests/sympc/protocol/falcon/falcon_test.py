@@ -303,8 +303,8 @@ def test_private_compare(get_clients, security) -> None:
     precision = session.config.encoder_precision
     fp_encoder = FixedPointEncoder(base=base, precision=precision)
 
-    secret = torch.tensor([[358, 79], [67, 2415]])
-    r = torch.tensor([[357, 90], [145, 2400]])
+    secret = torch.tensor([[358.85, 79.29], [67.78, 2415.50]])
+    r = torch.tensor([[357.05, 90], [145.32, 2400.54]])
     r = fp_encoder.encode(r)
     x = MPCTensor(secret=secret, session=session)
     x_b = ABY3.bit_decomposition_ttp(x, session)  # bit shares
