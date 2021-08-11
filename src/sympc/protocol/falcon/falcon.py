@@ -782,19 +782,33 @@ class Falcon(metaclass=Protocol):
         result = Falcon.select_shares(a, zero, b)
 
         return result
-    
+
     @staticmethod
-    def le(x: MPCTensor,y: MPCTensor) -> MPCTensor:
-        
-        res = y-x
+    def le(x: MPCTensor, y: MPCTensor, arithmetic=True) -> MPCTensor:
+        res = y - x
         res = Falcon.drelu(res)
-        
+        if arithmetic:
+            ring_size = None
+            session = None
+            if isinstance(x, MPCTensor):
+                session = x.session
+                ring_size = x.share_ptrs[0].get_ring_size().get()
+
+            if isinstance(y, MPCTensor):
+                session = y.session
+                ring_size = y.share_ptrs[0].get_ring_size().get()
+
+            res = ABY3.bit_injection(res, session, ring_size)
+
         return res
-    
+
     @staticmethod
-    def ge(x: MPCTensor,y: MPCTensor) -> MPCTensor:
-        
-        res = x-y
+    def ge(x: MPCTensor, y: MPCTensor, arithmetic=True) -> MPCTensor:
+        res = x - y
         res = Falcon.drelu(res)
-        
+        if arithmetic:
+            res = ABY3.bit_injection(
+                res, x.session, x.share_ptrs[0].get_ring_size().get()
+            )
+
         return res

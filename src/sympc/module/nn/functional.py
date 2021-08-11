@@ -163,14 +163,26 @@ def _reshape_max_pool2d(
     session = x.session
 
     args = [[share, kernel_size, stride, padding, dilation] for share in x.share_ptrs]
-    shares = parallel_execution(helper_max_pool2d_reshape, session.parties)(args)
+
+    from sympc.tensor import ReplicatedSharedTensor
+
+    if x.session.protocol.share_class == ReplicatedSharedTensor:
+        shares = parallel_execution(helper_max_pool2d_reshape_rst, session.parties)(
+            args
+        )
+    elif x.session.protocol.share_class == ShareTensor:
+        shares = parallel_execution(helper_max_pool2d_reshape_share, session.parties)(
+            args
+        )
+    else:
+        raise TypeError("Invalid share class")
 
     res_shape = shares[0].shape.get()
     res = MPCTensor(shares=shares, session=session, shape=res_shape)
     return res
 
 
-def helper_max_pool2d_reshape(
+def helper_max_pool2d_reshape_share(
     x: ShareTensor,
     kernel_size: Tuple[int, int],
     stride: Tuple[int, int],
@@ -194,6 +206,7 @@ def helper_max_pool2d_reshape(
         The prepared share tensor (reshaped)
     """
     session = get_session(x.session_uuid)
+
     tensor = x.tensor.numpy()
 
     padding = [(0, 0)] * len(tensor.shape[:-2]) + [
@@ -234,6 +247,81 @@ def helper_max_pool2d_reshape(
     return res_share
 
 
+def helper_max_pool2d_reshape_rst(
+    x: ShareTensor,
+    kernel_size: Tuple[int, int],
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    dilation: Tuple[int, int],
+) -> ShareTensor:
+    """Function that runs at each party for preparing the share.
+
+    Reshape each share tensor to prepare it for calling 'argmax'.
+    The new share would have "each element" as the input on which we
+    will run the max_pool2d kernel.
+
+    Args:
+        x (ShareTensor): the ShareTensor on which to apply the reshaping
+        kernel_size (Tuple[int, int]): the kernel size
+        stride (Tuple[int, int]): the stride size
+        padding (Tuple[int, int]): the padding size
+        dilation (Tuple[int, int]): the dilation size
+
+    Returns:
+        The prepared share tensor (reshaped)
+    """
+    from sympc.tensor import ReplicatedSharedTensor
+
+    session = get_session(x.session_uuid)
+
+    tensors = [x.shares[0].numpy(), x.shares[1].numpy()]
+
+    window_view_shares = []
+
+    for tensor in tensors:
+
+        padding = [(0, 0)] * len(tensor.shape[:-2]) + [
+            (padding[0], padding[0]),
+            (padding[1], padding[1]),
+        ]
+        tensor_type = session.tensor_type
+
+        padding_value = 0
+        if session.rank == 0:
+            # ATTENTION: Min value for max_pool2d that works -25
+            padding_value = -25
+
+        tensor = np.pad(tensor, padding, mode="constant", constant_values=padding_value)
+
+        output_shape = tensor.shape[:-2]
+        output_shape += (
+            (tensor.shape[-2] - kernel_size[0]) // stride[0] + 1,
+            (tensor.shape[-1] - kernel_size[1]) // stride[1] + 1,
+        )
+        output_shape += kernel_size
+
+        output_strides = tensor.strides[:-2]
+        output_strides += (
+            stride[0] * tensor.strides[-2],
+            stride[1] * tensor.strides[-1],
+        )
+        output_strides += tensor.strides[-2:]
+
+        window_view_share = torch.tensor(
+            np.lib.stride_tricks.as_strided(
+                tensor, shape=output_shape, strides=output_strides
+            ),
+            dtype=tensor_type,
+        )
+
+        window_view_share = window_view_share.reshape(-1, *kernel_size)
+        window_view_shares.append(window_view_share)
+
+    res_share = ReplicatedSharedTensor(config=x.config)
+    res_share.shares = window_view_shares
+    return res_share
+
+
 def max_pool2d(
     x: MPCTensor,
     kernel_size: Union[int, Tuple[int, int]],
@@ -262,7 +350,7 @@ def max_pool2d(
     Raises:
         ValueError: if the kernel size is bigger than the input
     """
-    if x.session.nr_parties != 2:
+    if x.session.nr_parties != 2 and x.session.nr_parties != 3:
         raise ValueError("Maxpool currently has support for only two parties.")
 
     max_pool2d_forward = GRAD_FUNCS.get("max_pool2d", None)
