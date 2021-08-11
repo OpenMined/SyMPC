@@ -16,23 +16,18 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
-from sympc.utils import get_type_from_ring
-import sympc
 
 
-@pytest.mark.skip
 def test_share_class() -> None:
     assert Falcon.share_class == ReplicatedSharedTensor
 
 
-@pytest.mark.skip
 def test_session() -> None:
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol)
     assert type(session.protocol) == Falcon
 
 
-@pytest.mark.skip
 def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
     parties = get_clients(parties)
     protocol = Falcon("malicious")
@@ -40,13 +35,11 @@ def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
         Session(protocol=protocol, parties=parties)
 
 
-@pytest.mark.skip
 def test_invalid_security_type():
     with pytest.raises(ValueError):
         Falcon(security_type="covert")
 
 
-@pytest.mark.skip
 def test_eq():
     falcon = Falcon()
     aby1 = ABY3(security_type="malicious")
@@ -63,7 +56,6 @@ def test_eq():
     assert falcon != aby2
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 def test_mul_private(get_clients, security, base, precision):
@@ -86,7 +78,6 @@ def test_mul_private(get_clients, security, base, precision):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 def test_mul_private_matrix(get_clients, security, base, precision):
@@ -110,7 +101,6 @@ def test_mul_private_matrix(get_clients, security, base, precision):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("parties", [2, 4])
 def test_mul_private_exception_nothreeparties(get_clients, parties):
     parties = get_clients(parties)
@@ -128,7 +118,6 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
         tensor1 * tensor2
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_private_matmul(get_clients, security):
     parties = get_clients(3)
@@ -149,7 +138,6 @@ def test_private_matmul(get_clients, security):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
-@pytest.mark.skip
 def test_exception_mul_malicious(get_clients):
     parties = get_clients(3)
     protocol = Falcon("malicious")
@@ -190,7 +178,6 @@ def test_exception_mul_malicious(get_clients):
         x * y
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_bin_mul_private(get_clients, security):
     parties = get_clients(3)
@@ -224,7 +211,6 @@ def test_bin_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_prime_mul_private(get_clients, security):
     parties = get_clients(3)
@@ -258,7 +244,6 @@ def test_prime_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_select_shares(get_clients, security) -> None:
     parties = get_clients(3)
@@ -277,25 +262,21 @@ def test_select_shares(get_clients, security) -> None:
 
     z = Falcon.select_shares(x, y, b)
 
-    tensor_type = get_type_from_ring(session.ring_size)
-    bit_tensor = b.reconstruct(decode=False).type(tensor_type)
-    result = (x.reconstruct() * (bit_tensor ^ 1)) + (y.reconstruct() * bit_tensor)
+    expected_res = torch.tensor([[5.0, 2.0], [3.0, 8.0]])
 
-    assert (result == z.reconstruct()).all()
+    assert (expected_res == z.reconstruct()).all()
 
 
-@pytest.mark.skip
 def test_select_shares_exception_ring(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon()
-    session = Session(parties=parties, protocol=falcon)
+    session = Session(parties=parties, protocol=falcon, ring_size=2 ** 32)
     SessionManager.setup_mpc(session)
     val = MPCTensor(secret=1, session=session)
     with pytest.raises(ValueError):
         Falcon.select_shares(val, val, val)
 
 
-@pytest.mark.skip
 def test_select_shares_exception_shape(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon()
@@ -308,6 +289,8 @@ def test_select_shares_exception_shape(get_clients) -> None:
     val.shape = None
     with pytest.raises(ValueError):
         Falcon.select_shares(val, val, val)
+
+
 
 
 @pytest.mark.skip
