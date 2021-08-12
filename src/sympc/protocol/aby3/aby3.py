@@ -310,21 +310,25 @@ class ABY3(metaclass=Protocol):
 
         args = [[share, str(ring_size)] for share in x.share_ptrs]
 
-        decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+        decomposed_shares = parallel_execution(
+            ABY3.local_decomposition, session.parties
+        )(args)
 
         # Using zip for grouping on pointers is compute intensive.
-        x1_sh = []
-        x2_sh = []
-        x3_sh = []
+        x1_share = []
+        x2_share = []
+        x3_share = []
 
-        for sh in list(map(lambda x: x[0].resolve_pointer_type(), decompose)):
-            x1_sh.append(sh[0].resolve_pointer_type())
-            x2_sh.append(sh[1].resolve_pointer_type())
-            x3_sh.append(sh[2].resolve_pointer_type())
+        for share in list(
+            map(lambda x: x[0].resolve_pointer_type(), decomposed_shares)
+        ):
+            x1_share.append(share[0].resolve_pointer_type())
+            x2_share.append(share[1].resolve_pointer_type())
+            x3_share.append(share[2].resolve_pointer_type())
 
-        x1 = MPCTensor(shares=x1_sh, session=session, shape=x.shape)
-        x2 = MPCTensor(shares=x2_sh, session=session, shape=x.shape)
-        x3 = MPCTensor(shares=x3_sh, session=session, shape=x.shape)
+        x1 = MPCTensor(shares=x1_share, session=session, shape=x.shape)
+        x2 = MPCTensor(shares=x2_share, session=session, shape=x.shape)
+        x3 = MPCTensor(shares=x3_share, session=session, shape=x.shape)
 
         arith_share = x1 ^ x2 ^ x3
 
