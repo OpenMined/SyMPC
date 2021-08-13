@@ -33,7 +33,17 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
-METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone", "repeat"}
+METHODS_NEW_RS_TENSOR: Set[str] = {
+    "unsqueeze",
+    "view",
+    "t",
+    "sum",
+    "clone",
+    "repeat",
+    "flatten",
+    "expand",
+    "reshape",
+}
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
 SIGNED_MAP = {
     "bool": "bool",
@@ -71,7 +81,18 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone", "repeat"}
+    METHODS_FORWARD = {
+        "numel",
+        "t",
+        "unsqueeze",
+        "view",
+        "sum",
+        "clone",
+        "repeat",
+        "flatten",
+        "expand",
+        "reshape",
+    }
     PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(

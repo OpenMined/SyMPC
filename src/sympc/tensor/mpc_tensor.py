@@ -1076,7 +1076,13 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+
+        from sympc.protocol import Falcon
+
+        if not isinstance(protocol, Falcon):
+
+            other = self.__check_or_convert(other, self.session)
+
         return protocol.le(self, other)
 
     def ge(self, other: "MPCTensor") -> "MPCTensor":
@@ -1089,7 +1095,12 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        if not isinstance(protocol, Falcon):
+
+            other = self.__check_or_convert(other, self.session)
+
         return protocol.le(other, self)
 
     def lt(self, other: "MPCTensor") -> "MPCTensor":
@@ -1102,31 +1113,43 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        tensor = self
+
+        if not isinstance(protocol, Falcon):
+            other = self.__check_or_convert(other, self.session)
+
         fp_encoder = FixedPointEncoder(
             base=self.session.config.encoder_base,
             precision=self.session.config.encoder_precision,
         )
         one = fp_encoder.decode(1)
-        return protocol.le(self + one, other)
+        tensor += one
+
+        return protocol.le(tensor, other)
 
     def gt(self, other: "MPCTensor") -> "MPCTensor":
         """Greater than operator.
-
         Args:
             other (MPCTensor): MPCTensor to compare.
-
         Returns:
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        r = other
+        if not isinstance(protocol, Falcon):
+            other = self.__check_or_convert(other, self.session)
+
         fp_encoder = FixedPointEncoder(
             base=self.session.config.encoder_base,
             precision=self.session.config.encoder_precision,
         )
         one = fp_encoder.decode(1)
-        r = other + one
+        r += one
+
         return protocol.le(r, self)
 
     def eq(self, other: "MPCTensor") -> "MPCTensor":
@@ -1139,7 +1162,11 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        if not isinstance(protocol, Falcon):
+            other = self.__check_or_convert(other, self.session)
+
         return protocol.eq(self, other)
 
     def ne(self, other: "MPCTensor") -> "MPCTensor":
