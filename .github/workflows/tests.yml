@@ -22,9 +22,64 @@ on:
       - "requirements.txt"
 
 jobs:
-  python-tests:
+  python-linting:
     strategy:
-      max-parallel: 3
+      max-parallel: 1
+      matrix:
+        os: [ubuntu-latest]
+        python-version: [3.9]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
+      - id: file_changes # get changed files.
+        uses: jitterbit/get-changed-files@v1
+        with:
+          format: space-delimited
+
+      - uses: pre-commit/action@v2.0.3
+        with:
+          extra_args: --files ${{ steps.file_changes.outputs.all }} # apply only to changed files.
+
+      - name: Check docstring coverage
+        run: |
+          pip install interrogate
+          interrogate -mvp src/ -f 80
+
+      - name: Scan for security issues
+        run: |
+          pip install bandit safety
+          bandit -r src
+          safety check
+
+
+  python-tests:
+    needs: [python-linting]
+    strategy:
+      max-parallel: 2
       matrix:
         os: [ubuntu-latest, macos-latest]
         python-version: [3.9]
@@ -37,13 +92,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Upgrade pip
         run: |
           pip install --upgrade --user pip
+
       - name: Get pip cache dir
         id: pip-cache
         run: |
           echo "::set-output name=dir::$(pip cache dir)"
+
       - name: pip cache
         uses: actions/cache@v2
         with:
@@ -51,11 +109,70 @@ jobs:
           key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
           restore-keys: |
             ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
       - name: Install CPU Torch
         if: runner.os != 'macos'
         run: |
           pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
+
+      - name: Install dependencies
+        run: |
+          hash -r
+          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
+          pip install -e .
+        shell: bash
+      
+
+      - name: Run tests
+        run: |
+          pytest tests/ --ignore=tests/notebooks --ignore=tests/sympc/tensor/mpc_tensor_test.py --ignore=tests/sympc/grad --ignore=tests/sympc/protocol/falcon -n 8 -x --durations=50
+
+      - name: Run codecov
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
+
+  python-tests-mpc-tensor:
+    needs: [python-linting]
+    strategy:
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.9]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
+      - name: Install CPU Torch
+        if: runner.os != 'macos'
+        run: |
+          pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        shell: bash
+
       - name: Install dependencies
         run: |
           hash -r
@@ -67,24 +184,125 @@ jobs:
         with:
           format: space-delimited
 
-      - uses: pre-commit/action@v2.0.0
-        with:
-          extra_args: --files ${{ steps.file_changes.outputs.all }} # apply only to changed files.
-
-      - name: Check docstring coverage
-        run: |
-          interrogate -mvp src/ -f 80
-
-      - name: Scan for security issues
-        run: |
-          bandit -r src
-          safety check
-
       - name: Run tests
         run: |
-          pytest tests/ --deselect=tests/notebooks -n 8 -x --durations=50
+          pytest tests/sympc/tensor/mpc_tensor_test.py -n 8 -x --durations=50
 
       - name: Run codecov
         if: ${{ matrix.os == 'ubuntu-latest' }}
         run: |
           bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
+
+  python-tests-grad:
+    needs: [python-linting]
+    strategy:
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.9]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
+      - name: Install CPU Torch
+        if: runner.os != 'macos'
+        run: |
+          pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          hash -r
+          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
+          pip install -e .
+        shell: bash
+
+      - name: Run tests
+        run: |
+          pytest tests/sympc/grad -n 8 -x --durations=50
+
+      - name: Run codecov
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
+
+  
+  python-tests-falcon:
+    needs: [python-linting]
+    strategy:
+      max-parallel: 2
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python-version: [3.9]
+
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Upgrade pip
+        run: |
+          pip install --upgrade --user pip
+
+      - name: Get pip cache dir
+        id: pip-cache
+        run: |
+          echo "::set-output name=dir::$(pip cache dir)"
+
+      - name: pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.pip-cache.outputs.dir }}
+          key: ${{ runner.os }}-pip-py${{ matrix.python-version }}-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py${{ matrix.python-version }}-
+
+      - name: Install CPU Torch
+        if: runner.os != 'macos'
+        run: |
+          pip install torch==1.8.1+cpu torchvision==0.9.1+cpu torchcsprng==0.2.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        shell: bash
+
+      - name: Install dependencies
+        run: |
+          hash -r
+          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
+          pip install -e .
+        shell: bash
+
+      - name: Run tests
+        run: |
+          pytest tests/sympc/protocol/falcon -n 8 -x --durations=50
+
+      - name: Run codecov
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        run: |
+          bash <(curl -s https://codecov.io/bash) -t ${{ secrets.CODECOV_TOKEN }} -X gcov
+

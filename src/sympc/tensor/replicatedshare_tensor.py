@@ -24,8 +24,10 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import RING_SIZE_TO_TYPE
+from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
+from sympc.utils import ispointer
 from sympc.utils import parallel_execution
 
 from .tensor import SyMPCTensor
@@ -387,9 +389,13 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
                 f"Session UUIDs did not match {x.session_uuid} {y.session_uuid}"
             )
         elif len(x.shares) != len(y.shares):
-            raise ValueError("Both RSTensors should have equal number of shares.")
+            raise ValueError(
+                f"Both RSTensors should have equal number of shares {len(x.shares)} {len(y.shares)}"
+            )
         elif x.ring_size != y.ring_size:
-            raise ValueError("Both RSTensors should have same ring_size")
+            raise ValueError(
+                f"Both RSTensors should have same ring_size {x.ring_size} {y.ring_size}"
+            )
 
         if isinstance(x.shares[0], np.ndarray) and not isinstance(
             y.shares[0], np.ndarray
@@ -654,9 +660,16 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If y is not an integer.
+            ValueError : If invalid shift value is provided.
         """
         if not isinstance(y, int):
             raise ValueError("Right Shift works only with integers!")
+
+        ring_bits = get_nr_bits(self.ring_size)
+        if y > ring_bits - 1:
+            raise ValueError(
+                f"Invalid value for right shift : {y},must be in range:[0,{ring_bits-1}]"
+            )
 
         res = ReplicatedSharedTensor(
             session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
@@ -693,7 +706,15 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Returns:
             ReplicatedSharedTensor : extracted bits at specific position.
+
+        Raises:
+            ValueError: If invalid position is provided.
         """
+        ring_bits = get_nr_bits(self.ring_size)
+        if pos > ring_bits - 1:
+            raise ValueError(
+                f"Invalid position for bit_extraction : {pos},must be in range:[0,{ring_bits-1}]"
+            )
         shares = []
         # logical shift
         bit_mask = torch.ones(self.shares[0].shape, dtype=self.shares[0].dtype) << pos
@@ -849,7 +870,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         Returns:
             ReplicatedSharedTensor : The ReplicatedSharedTensor in local.
         """
-        if not islocal(share_ptr):
+        if not ispointer(share_ptr):
+            return share_ptr
+        elif not islocal(share_ptr):
             share_ptr.request(block=True)
         res = share_ptr.get_copy()
         return res
@@ -1034,7 +1057,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             TypeError: when Datatype of shares is invalid.
 
         """
-        if not isinstance(shares, list):
+        if not isinstance(shares, (list, tuple)):
             raise TypeError("Shares to be distributed should be a list of shares")
 
         if len(shares) != session.nr_parties:

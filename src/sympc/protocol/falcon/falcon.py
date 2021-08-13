@@ -342,14 +342,11 @@ class Falcon(metaclass=Protocol):
             mask = parallel_execution(Falcon.falcon_mask, session.parties)(args)
 
         # zip on pointers is compute intensive
-        eps_shares = [mask[idx][0] for idx in range(session.nr_parties)]
-        delta_shares = [mask[idx][1] for idx in range(session.nr_parties)]
+        mask_local = [mask[idx].get() for idx in range(session.nr_parties)]
+        eps_shares, delta_shares = zip(*mask_local)
 
-        eps = MPCTensor(shares=eps_shares, session=session)
-        delta = MPCTensor(shares=delta_shares, session=session)
-
-        eps_plaintext = eps.reconstruct(decode=False)
-        delta_plaintext = delta.reconstruct(decode=False)
+        eps_plaintext = ReplicatedSharedTensor.reconstruct(eps_shares)
+        delta_plaintext = ReplicatedSharedTensor.reconstruct(delta_shares)
 
         args = [
             list(sh) + [eps_plaintext, delta_plaintext, op_str]
@@ -486,7 +483,7 @@ class Falcon(metaclass=Protocol):
     def _random_prime_group(
         session: Session, shape: Union[torch.Size, tuple]
     ) -> MPCTensor:
-        """Computes shares of random number in Zp*.Zp* is the multplicative group mod p.Zp* = {1,2..,p-1}.
+        """Computes shares of random number in Zp*.Zp* is the multiplicative group mod p.
 
         Args:
             session (Session): session to generate random shares for.
@@ -495,6 +492,7 @@ class Falcon(metaclass=Protocol):
         Returns:
             share (MPCTensor): Retuns shares of random number in group Zp*.
 
+        Zp* = {1,2..,p-1},where p is a prime number.
         We use Euler's Theorum for verifying that random share is not zero.
         It states that:
         For a general modulus n
