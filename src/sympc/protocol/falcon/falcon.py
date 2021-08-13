@@ -821,100 +821,12 @@ class Falcon(metaclass=Protocol):
         return alpha
 
     @staticmethod
-    def _division_public(a: MPCTensor, b: Union[torch.Tensor, float, int]) -> MPCTensor:
-        """Apply division operation on MPCTensor and a public value.
-
-        Args:
-            a (MPCTensor): input tensor numerator.
-            b (Union[torch.Tensor,float,int]): public value denominator.
-
-        Returns:
-            result (MPCTensor): Quotient of the division operation.
-
-        Raises:
-            ValueError: If input tensor does not have a valid shape.
-        """
-        session = a.session
-        ring_size = session.ring_size
-        config = session.config
-        base = config.encoder_base
-        precision = config.encoder_precision
-        session.tensor_type
-        shape = a.shape
-        if shape is None:
-            raise ValueError(
-                f"Input tensor must have valid shape: {shape} for division"
-            )
-
-        if isinstance(b, (int, float)):
-            b = torch.tensor(data=[b])
-
-        alpha = torch.log2(b)
-        fp_encoder = FixedPointEncoder(base=base, precision=precision)
-        b = fp_encoder.encode(b)
-        is_private = False
-        for share in a.share_ptrs:
-            share.set_config(1, 0)  # base:1 #precision:0
-
-        precision_n = alpha + 1 + precision  # divisor nomalized precision
-
-        scale_n = base ** precision_n  # scale of normalized precision
-        const_two_point_nine = 2.9142 * (scale_n)
-        const_one = 1 * (scale_n)
-
-        w0 = const_two_point_nine - 2 * b
-
-        xw0 = b * w0 >> precision_n if base == 2 else (b * w0) / scale_n
-
-        epsilon0 = const_one - xw0
-
-        epsilon1 = epsilon0 * epsilon0
-
-        if is_private:
-            epsilon1 = ABY3.truncate(epsilon1, session, ring_size, config, precision_n)
-        else:
-            epsilon1 = epsilon1 >> precision_n if base == 2 else (epsilon1) / scale_n
-
-        term_one = const_one + epsilon0
-        term_two = const_one + epsilon1
-        term_mul = term_one * term_two
-
-        if is_private:
-            term_mul = ABY3.truncate(term_mul, session, ring_size, config, precision_n)
-        else:
-            term_mul = term_mul >> precision_n if base == 2 else (term_mul) / scale_n
-
-        b_inv = w0 * term_mul
-
-        if is_private:
-            b_inv = ABY3.truncate(b_inv, session, ring_size, config, precision_n)
-        else:
-            b_inv = b_inv >> precision_n if base == 2 else (b_inv) / scale_n
-
-        result = a * b_inv
-
-        if is_private:
-            result = ABY3.truncate(
-                result, session, ring_size, config, 2 * precision_n - precision
-            )
-        else:
-            result = result >> precision_n if base == 2 else (result) / scale_n
-
-        for a_share, b_share in zip(a.share_ptrs, b.share_ptrs):
-            a_share.set_config(base, precision)  # base:1 #precision:0
-            b_share.set_config(base, precision)
-
-        return result
-
-    @staticmethod
-    def division(
-        a: MPCTensor, b: Union[MPCTensor, torch.Tensor, float, int]
-    ) -> MPCTensor:
+    def division(a: MPCTensor, b: MPCTensor) -> MPCTensor:
         """Computes Division operation a/b.
 
         Args:
             a (MPCTensor): Input tensor numerator.
-            b (Union[MPCTensor, torch.Tensor, float, int]): Input tensor denominator.
+            b (MPCTensor): Input tensor denominator.
 
         Returns:
             result (MPCTensor): Result of the Division operation.

@@ -605,10 +605,10 @@ class MPCTensor(metaclass=SyMPCTensor):
         from sympc.tensor import ReplicatedSharedTensor
 
         session = self.session
+        is_private = isinstance(y, MPCTensor)
 
         share_class = session.protocol.share_class
         if share_class == ShareTensor:
-            is_private = isinstance(y, MPCTensor)
 
             # TODO: Implement support for more than two parties.
             if is_private:
@@ -625,7 +625,13 @@ class MPCTensor(metaclass=SyMPCTensor):
             return result
 
         elif share_class == ReplicatedSharedTensor:
-            result = Falcon.division(self, y)
+            if is_private:
+                result = Falcon.division(self, y)
+            else:
+                # for public divisors we reciprocal directly and multiply.
+                # we use reciprocal of python or torch respectively.
+                result = self * (1 / y)
+
             return result
 
         else:

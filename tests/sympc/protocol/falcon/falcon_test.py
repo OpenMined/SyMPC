@@ -318,7 +318,7 @@ def test_private_compare(get_clients, security) -> None:
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_wrap(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
@@ -338,7 +338,7 @@ def test_wrap(get_clients) -> None:
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_relu(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
@@ -359,7 +359,7 @@ def test_relu(get_clients) -> None:
     assert (expected_res == result.reconstruct()).all()
 
 
-@pytest.mark.xfail
+@pytest.mark.skip
 def test_bounding_pow(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type="semi-honest")
@@ -375,3 +375,21 @@ def test_bounding_pow(get_clients) -> None:
     expected_res = torch.tensor([[3, 5], [6, 9]])
 
     assert (expected_res == result).all()
+
+
+@pytest.mark.parametrize("security", ["semi-honest"])
+def test_division_public(get_clients, security) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[7, -3.5, 978], [0.5, 0.825, -354]])
+    divisor = torch.tensor([[3, 0.5, -52], [0.5, -0.25, -24]])
+    x = MPCTensor(secret=secret, session=session)
+
+    result = x / divisor
+
+    expected_res = secret / divisor
+
+    assert np.allclose(result.reconstruct(), expected_res, rtol=1e-3)
