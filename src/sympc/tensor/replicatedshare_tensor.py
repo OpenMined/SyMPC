@@ -15,6 +15,7 @@ from typing import Union
 from uuid import UUID
 
 # third party
+import numpy as np
 import torch
 
 import sympc
@@ -23,6 +24,7 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import RING_SIZE_TO_TYPE
+from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
 from sympc.utils import ispointer
@@ -31,8 +33,15 @@ from sympc.utils import parallel_execution
 from .tensor import SyMPCTensor
 
 PROPERTIES_NEW_RS_TENSOR: Set[str] = {"T"}
-METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone"}
+METHODS_NEW_RS_TENSOR: Set[str] = {"unsqueeze", "view", "t", "sum", "clone", "repeat"}
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
+SIGNED_MAP = {
+    "bool": "bool",
+    "uint8": "int8",
+    "uint16": "int16",
+    "uint32": "int32",
+    "uint64": "int64",
+}
 
 PRIME_NUMBER = 67  # Global constant for prime order rings.
 
@@ -62,7 +71,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     }
 
     # Used by the SyMPCTensor metaclass
-    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone"}
+    METHODS_FORWARD = {"numel", "t", "unsqueeze", "view", "sum", "clone", "repeat"}
     PROPERTIES_FORWARD = {"T", "shape"}
 
     def __init__(
@@ -163,80 +172,149 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         """
         return dataclasses.asdict(self.config)
 
+    def set_config(self, base: int, precision: int) -> None:
+        """Set config of tensor with given base,precision.
+
+        Args:
+            base (int): base of the config to assign.
+            precision (int): precision of the config to assign.
+
+        Raises:
+            ValueError: If precision or base in not an int.
+        """
+        if not isinstance(base, int) or not isinstance(precision, int):
+            raise ValueError(
+                f"Both base:{base} and precision:{precision} must be of type int."
+            )
+
+        config = Config(encoder_base=base, encoder_precision=precision)
+
+        self.config = config
+
     @staticmethod
-    def addmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def addmodprime(
+        x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
+    ) -> Union[torch.Tensor, np.ndarray]:
         """Computes addition(x+y) modulo PRIME_NUMBER constant.
 
         Args:
-            x (torch.Tensor): input tensor
-            y (torch.tensor): input tensor
+            x (Union[torch.Tensor,np.ndarray]): input tensor
+            y (Union[torch.Tensor,np.ndarray]): input tensor
 
         Returns:
-            value (torch.Tensor): Result of the operation.
+            value (Union[torch.Tensor,np.ndarray]): Result of the operation.
 
         Raises:
-            ValueError : If either of the tensors datatype is not torch.uint8
+            ValueError : If either of the tensors datatype is not uint8 type.
+            ValueError: If input tensor does not match a tensor type.
         """
-        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
-            raise ValueError(
-                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
-            )
+        if isinstance(x, torch.Tensor):
+            if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+                raise ValueError(
+                    f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+                )
+        elif isinstance(x, np.ndarray):
+            if x.dtype != np.uint8 or y.dtype != np.uint8:
+                raise ValueError(
+                    f"Both numpy tensors x:{x.dtype} y:{y.dtype} should be of np.uint8 dtype"
+                )
+        else:
+            raise ValueError("Invalid input")
 
         return (x + y) % PRIME_NUMBER
 
     @staticmethod
-    def submodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def submodprime(
+        x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
+    ) -> Union[torch.Tensor, np.ndarray]:
         """Computes subtraction(x-y) modulo PRIME_NUMBER constant.
 
         Args:
-            x (torch.Tensor): input tensor
-            y (torch.tensor): input tensor
+            x (Union[torch.Tensor,np.ndarray]): input tensor
+            y (Union[torch.Tensor,np.ndarray]): input tensor
 
         Returns:
-            value (torch.Tensor): Result of the operation.
+            value (Union[torch.Tensor,np.ndarray]): Result of the operation.
 
         Raises:
-            ValueError : If either of the tensors datatype is not torch.uint8
+            ValueError : If either of the tensors datatype is not uint8 type.
+            ValueError: If input tensor does not match a tensor type.
         """
-        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
-            raise ValueError(
-                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
-            )
+        if isinstance(x, torch.Tensor):
+            if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+                raise ValueError(
+                    f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+                )
 
-        # Typecasting is done, as underflow returns a positive number,as it is unsigned.
-        x = x.to(torch.int8)
-        y = y.to(torch.int8)
+            # Typecasting is done, as underflow returns a positive number,as it is unsigned.
+            x = x.to(torch.int8)
+            y = y.to(torch.int8)
 
-        result = (x - y) % PRIME_NUMBER
+            result = (x - y) % PRIME_NUMBER
+            result = result.to(torch.uint8)
 
-        return result.to(torch.uint8)
+        elif isinstance(x, np.ndarray):
+            if x.dtype != np.uint8 or y.dtype != np.uint8:
+                raise ValueError(
+                    f"Both numpy tensors x:{x.dtype} y:{y.dtype} should be of np.uint8 dtype"
+                )
+            # Typecasting is done, as underflow returns a positive number,as it is unsigned.
+            x = x.astype(np.int8)
+            y = y.astype(np.int8)
+
+            result = (x - y) % PRIME_NUMBER
+            result = result.astype(np.uint8)
+
+        else:
+            raise ValueError("Invalid input")
+
+        return result
 
     @staticmethod
-    def mulmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
+    def mulmodprime(
+        x: Union[torch.Tensor, np.ndarray], y: Union[torch.Tensor, np.ndarray]
+    ) -> Union[torch.Tensor, np.ndarray]:
         """Computes multiplication(x*y) modulo PRIME_NUMBER constant.
 
         Args:
-            x (torch.Tensor): input tensor
-            y (torch.tensor): input tensor
+            x (Union[torch.Tensor,np.ndarray]): input tensor
+            y (Union[torch.Tensor,np.ndarray]): input tensor
 
         Returns:
-            value (torch.Tensor): Result of the operation.
+            value (Union[torch.Tensor,np.ndarray]): Result of the operation.
 
         Raises:
-            ValueError : If either of the tensors datatype is not torch.uint8
+            ValueError : If either of the tensors datatype is not uint8 type.
+            ValueError: If input tensor does not match a tensor type.
         """
-        if x.dtype != torch.uint8 or y.dtype != torch.uint8:
-            raise ValueError(
-                f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
-            )
+        if isinstance(x, torch.Tensor):
+            if x.dtype != torch.uint8 or y.dtype != torch.uint8:
+                raise ValueError(
+                    f"Both tensors x:{x.dtype} y:{y.dtype} should be of torch.uint8 dtype"
+                )
+            # We typecast as multiplication result in 2n bits ,which causes overflow.
+            x = x.to(torch.int16)
+            y = y.to(torch.int16)
 
-        # We typecast as multiplication result in 2n bits ,which causes overflow.
-        x = x.to(torch.int16)
-        y = y.to(torch.int16)
+            result = (x * y) % PRIME_NUMBER
+            result = result.to(torch.uint8)
 
-        result = (x * y) % PRIME_NUMBER
+        elif isinstance(x, np.ndarray):
+            if x.dtype != np.uint8 or y.dtype != np.uint8:
+                raise ValueError(
+                    f"Both numpy tensors x:{x.dtype} y:{y.dtype} should be of np.uint8 dtype"
+                )
+            # We typecast as multiplication result in 2n bits ,which causes overflow.
+            x = x.astype(np.int16)
+            y = y.astype(np.int16)
 
-        return result.to(torch.uint8)
+            result = (x * y) % PRIME_NUMBER
+            result = result.astype(np.uint8)
+
+        else:
+            raise ValueError("Invalid input")
+
+        return result
 
     @staticmethod
     def get_op(ring_size: int, op_str: str) -> Callable[..., Any]:
@@ -287,12 +365,22 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             # As prime ring size is unsigned,we convert negative values.
             y = y % PRIME_NUMBER if x.ring_size == PRIME_NUMBER else y
 
+            if isinstance(y, np.ndarray):
+                # use the encoding of torch tensor
+                # TODO:should have separate encoding for numpy.
+                y = torch.from_numpy(y.astype(SIGNED_MAP[str(y.dtype)]))
+
             y = ReplicatedSharedTensor(
                 session_uuid=x.session_uuid,
                 shares=[y],
                 ring_size=x.ring_size,
                 config=x.config,
             )
+
+            if isinstance(x.shares[0], np.ndarray) and isinstance(
+                y.shares[0], torch.Tensor
+            ):
+                y.shares[0] = y.shares[0].numpy().astype(x.shares[0].dtype)
 
         elif y.session_uuid and x.session_uuid and y.session_uuid != x.session_uuid:
             raise ValueError(
@@ -306,6 +394,11 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             raise ValueError(
                 f"Both RSTensors should have same ring_size {x.ring_size} {y.ring_size}"
             )
+
+        if isinstance(x.shares[0], np.ndarray) and not isinstance(
+            y.shares[0], np.ndarray
+        ):
+            y = y.to_numpy(str(x.shares[0].dtype))
 
         session_uuid = x.session_uuid
 
@@ -565,15 +658,74 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If y is not an integer.
+            ValueError : If invalid shift value is provided.
         """
         if not isinstance(y, int):
             raise ValueError("Right Shift works only with integers!")
+
+        ring_bits = get_nr_bits(self.ring_size)
+        if y > ring_bits - 1:
+            raise ValueError(
+                f"Invalid value for right shift : {y},must be in range:[0,{ring_bits-1}]"
+            )
 
         res = ReplicatedSharedTensor(
             session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
         )
         res.shares = [share >> y for share in self.shares]
         return res
+
+    def lshift(self, y: int) -> "ReplicatedSharedTensor":
+        """Apply the "lshift" operation to "self".
+
+        Args:
+            y (int): shift value
+
+        Returns:
+            ReplicatedSharedTensor: Result of the operation.
+
+        Raises:
+            ValueError: If y is not an integer.
+        """
+        if not isinstance(y, int):
+            raise ValueError("Left Shift works only with integers!")
+
+        res = ReplicatedSharedTensor(
+            session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
+        )
+        res.shares = [share << y for share in self.shares]
+        return res
+
+    def bit_extraction(self, pos: int = 0) -> "ReplicatedSharedTensor":
+        """Extracts the bit at the specified position.
+
+        Args:
+            pos (int): position to extract bit.
+
+        Returns:
+            ReplicatedSharedTensor : extracted bits at specific position.
+
+        Raises:
+            ValueError: If invalid position is provided.
+        """
+        ring_bits = get_nr_bits(self.ring_size)
+        if pos > ring_bits - 1:
+            raise ValueError(
+                f"Invalid position for bit_extraction : {pos},must be in range:[0,{ring_bits-1}]"
+            )
+        shares = []
+        # logical shift
+        bit_mask = torch.ones(self.shares[0].shape, dtype=self.shares[0].dtype) << pos
+        for share in self.shares:
+            tensor = share & bit_mask
+            shares.append(tensor)
+        rst = ReplicatedSharedTensor(
+            shares=shares,
+            session_uuid=self.session_uuid,
+            config=Config(encoder_base=1, encoder_precision=0),
+            ring_size=2,
+        )
+        return rst
 
     def rmatmul(self, y):
         """Apply the "rmatmul" operation between "y" and "self".
@@ -864,7 +1016,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         for share_index in range(party_rank, party_rank + nshares):
             share = shares[share_index % (nshares + 1)]
 
-            if isinstance(share, torch.Tensor):
+            if isinstance(share, torch.Tensor) or isinstance(share, np.ndarray):
                 party_shares.append(share)
 
             elif isinstance(share, ShareTensor):
@@ -1014,6 +1166,73 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         return res
 
+    def to_numpy(self, dtype: str) -> "ReplicatedSharedTensor":
+        """Converts the underlying tensor shares to numpy array.
+
+        Args:
+            dtype (str) : The data type to convert the tensor to.
+
+        Returns:
+            ReplicatedSharedTensor: converted RSTensor object.
+        """
+        rst = self.clone()
+        for idx, share in enumerate(self.shares):
+            rst.shares[idx] = share.numpy().astype(dtype)
+
+        return rst
+
+    def from_numpy(self) -> "ReplicatedSharedTensor":
+        """Converts the underlying tensor to torch tensor.
+
+        Returns:
+            ReplicatedSharedTensor: converted RSTensor object.
+        """
+        shares = copy.deepcopy(self.shares)
+        dtype = str(self.shares[0].dtype)
+        # Convert unsigned to signed as torch supports only signed.
+        dtype = SIGNED_MAP.get(dtype, dtype)
+        rst = ReplicatedSharedTensor(
+            session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
+        )
+        rst.shares = []
+        for idx, share in enumerate(shares):
+            rst.shares.append(torch.from_numpy(share.astype(dtype)))
+
+        return rst
+
+    def wrap_rst(self, other) -> "ReplicatedSharedTensor":
+        """Applies wrap2 on the shares.
+
+        Args:
+            other (ReplicatedSharedTensor): tensor to wrap on.
+
+        Returns:
+            result (ReplicatedSharedTensor): Wrap of the tensor in binary.
+
+        Raises:
+            ValueError: If the input tensors are not numpy array.
+        """
+        from sympc.protocol import Falcon
+
+        if not (
+            isinstance(self.shares[0], np.ndarray)
+            and isinstance(other.shares[0], np.ndarray)
+        ):
+            raise ValueError("Input tensor to wrap should be a numpy array.")
+        shares = []
+
+        for x_share, y_share in zip(self.shares, other.shares):
+            shares.append(Falcon.wrap2(x_share, y_share))
+
+        config = Config(encoder_base=1, encoder_precision=0)
+        result = ReplicatedSharedTensor(
+            ring_size=2,
+            session_uuid=self.session_uuid,
+            config=config,
+        )
+        result.shares = shares
+        return result
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
@@ -1027,3 +1246,4 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
     __xor__ = xor
     __eq__ = eq
     __rshift__ = rshift
+    __lshift__ = lshift
