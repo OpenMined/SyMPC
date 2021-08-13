@@ -885,3 +885,55 @@ class Falcon(metaclass=Protocol):
             share.set_config(base, precision)  # base:1 #precision:0
 
         return result
+
+    @staticmethod
+    def batch_norm(
+        batch: List[MPCTensor], beta: MPCTensor, gamma: MPCTensor
+    ) -> List[MPCTensor]:
+        """Compute Batch Normalization on given shares.
+
+        Args:
+            batch (MPCTensor): shares list to compute batch normalization on.
+            beta (MPCTensor): learnable parameter beta.
+            gamma (MPCTensor): learnable parameter gamma.
+
+        Returns:
+            result (List[MPCTensor]): normalized shares.
+        """
+        session = batch[0].session
+        shape = batch[0].session
+
+        batch_size = len(batch)
+
+        mean = sum(batch) / batch_size  # mean of batch
+
+        std_dev = (batch[0] - mean) ** 2  # standard deviation
+
+        for share in batch[1::]:
+            std_dev += (share - mean) ** 2
+
+        std_dev = std_dev / batch_size
+
+        # set constant in falcon
+        epsilon = torch.zeros(size=shape, dtype=session.tensor_type) + (1 << 5)
+
+        b = std_dev + epsilon
+
+        alpha = Falcon.bounding_pow(b)
+
+        x: List[MPCTensor] = ["" for i in range(5)]
+        x[0] = 2 ** (-alpha / 2)
+
+        # TODO should move to approximations
+        for i in range(4):
+            x[i + 1] = (x[i] * (3 - (b * (x[i] ** 2)))) / 2
+
+        x_app = x[4]  # approxmated value by newton method.
+
+        result = []
+
+        for share in batch:
+            normalized_share = gamma * x_app * (share - mean) + beta
+            result.append(normalized_share)
+
+        return result
