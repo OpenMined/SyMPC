@@ -393,3 +393,23 @@ def test_division_public(get_clients, security) -> None:
     expected_res = secret / divisor
 
     assert np.allclose(result.reconstruct(), expected_res, rtol=1e-3)
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_division_private(get_clients, security) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    numerator = torch.tensor([[7, -3.5, 978], [0.5, 0.825, -354]])
+    denominator = torch.tensor([[3, 0.5, -52], [0.5, -0.25, -24]])
+    x = MPCTensor(secret=numerator, session=session)
+    y = MPCTensor(secret=denominator, session=session)
+
+    result = x / y
+
+    expected_res = numerator / denominator
+
+    assert np.allclose(result.reconstruct(), expected_res, rtol=1e-3)

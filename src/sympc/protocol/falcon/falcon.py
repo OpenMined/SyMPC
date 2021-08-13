@@ -17,7 +17,6 @@ import torch
 import torchcsprng as csprng
 
 from sympc.config import Config
-from sympc.encoder import FixedPointEncoder
 from sympc.protocol import ABY3
 from sympc.protocol.protocol import Protocol
 from sympc.session import Session
@@ -841,27 +840,18 @@ class Falcon(metaclass=Protocol):
         config = session.config
         base = config.encoder_base
         precision = config.encoder_precision
-        session.tensor_type
         shape = a.shape
         if shape is None:
             raise ValueError(
                 f"Input tensor must have valid shape: {shape} for division"
             )
-        is_private = isinstance(b, MPCTensor)
 
-        if is_private:
-            alpha = Falcon.bounding_pow(b)
-        else:
-            if isinstance(b, (int, float)):
-                b = torch.tensor(data=[b])
-            alpha = torch.log2(b)
-            fp_encoder = FixedPointEncoder(base=base, precision=precision)
-            b = fp_encoder.encode(b)
+        alpha = Falcon.bounding_pow(b)
+        for share in b.share_ptrs:
+            share.set_config(1, 0)
 
-        for a_share, b_share in zip(a.share_ptrs, b.share_ptrs):
-            a_share.set_config(1, 0)  # base:1 #precision:0
-            b_share.set_config(1, 0)
-
+        # We normalize the tensor to [0.5,1) by assuming it has precision
+        # in the bounds of power of two, we scale the  constant respectively.
         precision_n = alpha + 1 + precision  # divisor nomalized precision
 
         scale_n = base ** precision_n  # scale of normalized precision
@@ -870,47 +860,28 @@ class Falcon(metaclass=Protocol):
 
         w0 = const_two_point_nine - 2 * b
 
-        if is_private:
-            xw0 = ABY3.truncate(b * w0, session, ring_size, config, precision_n)
-        else:
-            xw0 = b * w0 >> precision_n if base == 2 else (b * w0) / scale_n
+        xw0 = ABY3.truncate(b * w0, session, ring_size, config, precision_n)
 
         epsilon0 = const_one - xw0
 
         epsilon1 = epsilon0 * epsilon0
-
-        if is_private:
-            epsilon1 = ABY3.truncate(epsilon1, session, ring_size, config, precision_n)
-        else:
-            epsilon1 = epsilon1 >> precision_n if base == 2 else (epsilon1) / scale_n
+        epsilon1 = ABY3.truncate(epsilon1, session, ring_size, config, precision_n)
 
         term_one = const_one + epsilon0
         term_two = const_one + epsilon1
-        term_mul = term_one * term_two
 
-        if is_private:
-            term_mul = ABY3.truncate(term_mul, session, ring_size, config, precision_n)
-        else:
-            term_mul = term_mul >> precision_n if base == 2 else (term_mul) / scale_n
+        term_mul = term_one * term_two
+        term_mul = ABY3.truncate(term_mul, session, ring_size, config, precision_n)
 
         b_inv = w0 * term_mul
+        b_inv = ABY3.truncate(b_inv, session, ring_size, config, precision_n)
 
-        if is_private:
-            b_inv = ABY3.truncate(b_inv, session, ring_size, config, precision_n)
-        else:
-            b_inv = b_inv >> precision_n if base == 2 else (b_inv) / scale_n
+        result = b_inv * a
+        result = ABY3.truncate(
+            result, session, ring_size, config, 2 * precision_n - precision
+        )
 
-        result = a * b_inv
-
-        if is_private:
-            result = ABY3.truncate(
-                result, session, ring_size, config, 2 * precision_n - precision
-            )
-        else:
-            result = result >> precision_n if base == 2 else (result) / scale_n
-
-        for a_share, b_share in zip(a.share_ptrs, b.share_ptrs):
-            a_share.set_config(base, precision)  # base:1 #precision:0
-            b_share.set_config(base, precision)
+        for share in b.share_ptrs:
+            share.set_config(base, precision)  # base:1 #precision:0
 
         return result
