@@ -245,8 +245,8 @@ class ABY3(metaclass=Protocol):
         input_rst = []
         if bitwise:
             ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
-            for i in range(ring_bits):
-                input_rst.append(x.bit_extraction(i))
+            input_rst = [x.bit_extraction(idx) for idx in range(ring_bits)]
+
         else:
             input_rst.append(x)
 
