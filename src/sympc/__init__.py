@@ -25,6 +25,9 @@ from . import optim  # noqa: 401 isort: skip
 try:
     # third party
     import syft
+    from syft.experimental_flags import flags
+
+    flags.APACHE_ARROW_TENSOR_SERDE = False
 
 except ImportError as e:
     print("PySyft is needed to be able to use SyMPC")

@@ -600,23 +600,42 @@ class MPCTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If parties are more than two.
         """
+        from sympc.protocol import Falcon
+        from sympc.protocol.spdz import spdz
+        from sympc.tensor import ReplicatedSharedTensor
+
+        session = self.session
         is_private = isinstance(y, MPCTensor)
 
-        # TODO: Implement support for more than two parties.
-        if is_private:
+        share_class = session.protocol.share_class
+        if share_class == ShareTensor:
 
-            if len(self.session.session_ptrs) > 2:
-                raise ValueError(
-                    "Private division currently works with a maximum of two parties only."
-                )
+            # TODO: Implement support for more than two parties.
+            if is_private:
 
-            reciprocal = APPROXIMATIONS["reciprocal"]
-            return self.mul(reciprocal(y))
+                if len(self.session.session_ptrs) > 2:
+                    raise ValueError(
+                        "Private division currently works with a maximum of two parties only."
+                    )
 
-        from sympc.protocol.spdz import spdz
+                reciprocal = APPROXIMATIONS["reciprocal"]
+                return self.mul(reciprocal(y))
 
-        result = spdz.public_divide(self, y)
-        return result
+            result = spdz.public_divide(self, y)
+            return result
+
+        elif share_class == ReplicatedSharedTensor:
+            if is_private:
+                result = Falcon.division(self, y)
+            else:
+                # for public divisors we reciprocal directly and multiply.
+                # we use reciprocal of python or torch respectively.
+                result = self * (1 / y)
+
+            return result
+
+        else:
+            raise ValueError(f"Invalid share class:{share_class} for division")
 
     def pow(self, power: int) -> "MPCTensor":
         """Compute integer power of a number by recursion using mul.
@@ -1164,6 +1183,46 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the xor.
         """
         return self.__apply_op(y, "xor")
+
+    def to_numpy(self, dtype: str) -> "MPCTensor":
+        """Converts the underlying tensor shares to numpy array.
+
+        Args:
+            dtype (str) : The data type to convert the tensor to.
+
+        Raises:
+            ValueError : If invalid share class is provided as input.
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+
+        if dtype is None:
+            raise ValueError("dtype must be provided for numpy conversion.")
+
+        share_class = self.session.protocol.share_class
+
+        if share_class == ReplicatedSharedTensor:
+            # inplace op
+            for idx in range(len(self.share_ptrs)):
+                self.share_ptrs[idx] = self.share_ptrs[idx].to_numpy(dtype)
+        else:
+            raise ValueError(f"Share Class {share_class} not supported for numpy.")
+
+    def from_numpy(self) -> "MPCTensor":
+        """Converts the underlying tensor to torch tensor.
+
+        Raises:
+            ValueError : If invalid share class is provided as input.
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+
+        share_class = self.session.protocol.share_class
+
+        if share_class == ReplicatedSharedTensor:
+            # inplace op
+            for idx in range(len(self.share_ptrs)):
+                self.share_ptrs[idx] = self.share_ptrs[idx].from_numpy()
+        else:
+            raise ValueError(f"Share Class {share_class} not supported for numpy.")
 
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
