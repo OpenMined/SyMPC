@@ -377,7 +377,7 @@ def test_bounding_pow(get_clients) -> None:
     assert (expected_res == result).all()
 
 
-@pytest.mark.parametrize("security", ["semi-honest"])
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_division_public(get_clients, security) -> None:
     parties = get_clients(3)
     falcon = Falcon(security_type=security)
