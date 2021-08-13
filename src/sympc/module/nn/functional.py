@@ -167,9 +167,7 @@ def _reshape_max_pool2d(
     from sympc.tensor import ReplicatedSharedTensor
 
     if x.session.protocol.share_class == ReplicatedSharedTensor:
-        shares = parallel_execution(helper_max_pool2d_reshape_rst, session.parties)(
-            args
-        )
+        shares = parallel_execution(max_pool2d_reshape_rst, session.parties)(args)
     elif x.session.protocol.share_class == ShareTensor:
         shares = parallel_execution(helper_max_pool2d_reshape_share, session.parties)(
             args
@@ -247,8 +245,37 @@ def helper_max_pool2d_reshape_share(
     return res_share
 
 
-def helper_max_pool2d_reshape_rst(
+def max_pool2d_reshape_rst(
     x: ShareTensor,
+    kernel_size: Tuple[int, int],
+    stride: Tuple[int, int],
+    padding: Tuple[int, int],
+    dilation: Tuple[int, int],
+):
+    from sympc.tensor import ReplicatedSharedTensor
+
+    tensors = [x.shares[0].numpy(), x.shares[1].numpy()]
+
+    window_view_shares = []
+
+    session = get_session(x.session_uuid)
+
+    for tensor in tensors:
+        window_view_shares.append(
+            helper_max_pool2d_reshape_rst(
+                tensor, session, kernel_size, stride, padding, dilation
+            )
+        )
+
+    res_share = ReplicatedSharedTensor(config=x.config, session_uuid=x.session_uuid)
+    res_share.shares = window_view_shares
+
+    return res_share
+
+
+def helper_max_pool2d_reshape_rst(
+    tensor: ShareTensor,
+    session,
     kernel_size: Tuple[int, int],
     stride: Tuple[int, int],
     padding: Tuple[int, int],
@@ -270,56 +297,43 @@ def helper_max_pool2d_reshape_rst(
     Returns:
         The prepared share tensor (reshaped)
     """
-    from sympc.tensor import ReplicatedSharedTensor
+    padding = [(0, 0)] * len(tensor.shape[:-2]) + [
+        (padding[0], padding[0]),
+        (padding[1], padding[1]),
+    ]
+    tensor_type = session.tensor_type
 
-    session = get_session(x.session_uuid)
+    padding_value = 0
+    if session.rank == 0:
+        # ATTENTION: Min value for max_pool2d that works -25
+        padding_value = -25
 
-    tensors = [x.shares[0].numpy(), x.shares[1].numpy()]
+    tensor = np.pad(tensor, padding, mode="constant", constant_values=padding_value)
 
-    window_view_shares = []
+    output_shape = tensor.shape[:-2]
+    output_shape += (
+        (tensor.shape[-2] - kernel_size[0]) // stride[0] + 1,
+        (tensor.shape[-1] - kernel_size[1]) // stride[1] + 1,
+    )
+    output_shape += kernel_size
 
-    for tensor in tensors:
+    output_strides = tensor.strides[:-2]
+    output_strides += (
+        stride[0] * tensor.strides[-2],
+        stride[1] * tensor.strides[-1],
+    )
+    output_strides += tensor.strides[-2:]
 
-        padding = [(0, 0)] * len(tensor.shape[:-2]) + [
-            (padding[0], padding[0]),
-            (padding[1], padding[1]),
-        ]
-        tensor_type = session.tensor_type
+    window_view_share = torch.tensor(
+        np.lib.stride_tricks.as_strided(
+            tensor, shape=output_shape, strides=output_strides
+        ),
+        dtype=tensor_type,
+    )
 
-        padding_value = 0
-        if session.rank == 0:
-            # ATTENTION: Min value for max_pool2d that works -25
-            padding_value = -25
+    window_view_share = window_view_share.reshape(-1, *kernel_size)
 
-        tensor = np.pad(tensor, padding, mode="constant", constant_values=padding_value)
-
-        output_shape = tensor.shape[:-2]
-        output_shape += (
-            (tensor.shape[-2] - kernel_size[0]) // stride[0] + 1,
-            (tensor.shape[-1] - kernel_size[1]) // stride[1] + 1,
-        )
-        output_shape += kernel_size
-
-        output_strides = tensor.strides[:-2]
-        output_strides += (
-            stride[0] * tensor.strides[-2],
-            stride[1] * tensor.strides[-1],
-        )
-        output_strides += tensor.strides[-2:]
-
-        window_view_share = torch.tensor(
-            np.lib.stride_tricks.as_strided(
-                tensor, shape=output_shape, strides=output_strides
-            ),
-            dtype=tensor_type,
-        )
-
-        window_view_share = window_view_share.reshape(-1, *kernel_size)
-        window_view_shares.append(window_view_share)
-
-    res_share = ReplicatedSharedTensor(config=x.config)
-    res_share.shares = window_view_shares
-    return res_share
+    return window_view_share
 
 
 def max_pool2d(
@@ -463,8 +477,19 @@ def max_pool2d_backward_helper(
             padding[0] : res_shape[-2] - padding[0],
             padding[1] : res_shape[-1] - padding[1],
         ]
-    res = ShareTensor(config=grads_share.config)
-    res.tensor = tensor
+
+    from sympc.tensor import ReplicatedSharedTensor
+
+    if tensor.session.protocol.share_class == ReplicatedSharedTensor:
+        res_share = ReplicatedSharedTensor(
+            config=tensor.config, session_uuid=tensor.session_uuid
+        )
+        res_share.shares = tensor
+    elif tensor.session.protocol.share_class == ShareTensor:
+        res = ShareTensor(config=grads_share.config)
+        res.tensor = tensor
+    else:
+        raise TypeError("Invalid share class")
 
     return res
 

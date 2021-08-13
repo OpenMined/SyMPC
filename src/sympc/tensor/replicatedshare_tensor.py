@@ -40,6 +40,7 @@ METHODS_NEW_RS_TENSOR: Set[str] = {
     "repeat",
     "flatten",
     "expand",
+    "reshape",
 }
 BINARY_MAP = {"add": "xor", "sub": "xor", "mul": "and_"}
 SIGNED_MAP = {
@@ -88,6 +89,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         "repeat",
         "flatten",
         "expand",
+        "reshape",
     }
     PROPERTIES_FORWARD = {"T", "shape"}
 
@@ -127,171 +129,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
         self.shares = []
 
         if shares is not None:
-            if type(shares[0]) != list:
-                self.shares = [self._encode(share).to(tensor_type) for share in shares]
-            else:
-                self.shares = [share for share in shares]
-
-        """if shares is not None:
-            for i in range(len(shares)):
-                share = shares[i]
-                if isinstance(shares[i], torch.Tensor):
-                    share = self._encode(share).to(tensor_type)
-                    self.shares.append(share)
-                else:
-                    self.shares.append(share)"""
-
-    def get_ring_size(self):
-        return self.ring_size
-
-    def reshape(self, lst, shape):
-        # stdlib
-        from functools import reduce
-        from operator import mul
-
-        if len(shape) == 1:
-            return lst
-        n = reduce(mul, shape[1:])
-        return [
-            self.reshape(lst[i * n : (i + 1) * n], shape[1:])
-            for i in range(len(lst) // n)
-        ]
-
-    def share_matrix(self):
-        tensors = []
-        for i in range(0, self.shares[0].shape[0]):
-            subtensors = []
-            for j in range(0, self.shares[0].shape[1]):
-
-                share = [self.shares[0][i][j], self.shares[1][i][j]]
-                tensor = ReplicatedSharedTensor(
-                    shares=share,
-                    session_uuid=self.session_uuid,
-                    ring_size=self.ring_size,
-                    config=Config(encoder_base=1, encoder_precision=0),
-                )
-                subtensors.append(tensor)
-
-            tensors.append(subtensors)
-
-        return ReplicatedSharedTensor(
-            shares=tensors,
-            session_uuid=self.session_uuid,
-            ring_size=self.ring_size,
-            config=Config(encoder_base=1, encoder_precision=0),
-        )
-
-    """def share_matrix(self):
-        
-        shape=self.shape
-        
-        shares=self.shares
-        
-        if(len(shares[0].shape)==4):
-            
-            timesteps,batches,w,h=shape
-            shares[0]=shares[0].reshape((timesteps*batches,w,h))
-            shares[1]=shares[1].reshape((timesteps*batches,w,h))
-        
-        if(len(shares[0].shape)==3):
-            
-            batches,w,h=shape
-            shares[0]=shares[0].reshape((batches,w,h))
-            shares[1]=shares[1].reshape((batches,w,h))
-        
-        elif(len(shares[0].shape)==2):
-            
-            w,h=shape
-            shares[0]=shares[1].reshape((1,w,h))
-            shares[1]=shares[1].reshape((1,w,h))
-    
-        batches=[]
-        
-    
-        for batch in range(0, shares[0].shape[0]):
-          tensors = []
-          for i in range(0, shares[0].shape[1]):
-            for j in range(0, shares[0].shape[2]):
-
-                share = [shares[0][batch][i][j], shares[1][batch][i][j]]
-                tensor = ReplicatedSharedTensor(
-                    shares=share,
-                    config=Config(encoder_base=1, encoder_precision=0),
-                    session_uuid=self.session_uuid,
-                    ring_size=self.ring_size,
-                )
-                tensors.append(tensor)
-
-          tensors = self.reshape(tensors,(w,h))
-          
-          
-          batches.append(ReplicatedSharedTensor(
-            shares=tensors,
-            config=Config(encoder_base=1, encoder_precision=0),
-            session_uuid=self.session_uuid,
-            ring_size=self.ring_size,
-          ))
-         
-          
-          
-        #Reshape for time series
-        return batches"""
-
-    def matrix_to_rst(self):
-
-        tensors = []
-
-        shape = (len(self.shares), len(self.shares[0]))
-
-        shares = self.shares
-
-        tensor1 = torch.zeros([shape[0], shape[1]])
-        tensor2 = torch.zeros([shape[0], shape[1]])
-
-        for i in range(0, shape[0]):
-            for j in range(0, shape[1]):
-                tensor1[i][j] = self.shares[i][j].shares[0]
-                tensor2[i][j] = self.shares[i][j].shares[1]
-
-        shares = [tensor1, tensor2]
-
-        return ReplicatedSharedTensor(
-            shares=shares,
-            session_uuid=self.session_uuid,
-            ring_size=self.ring_size,
-            config=Config(encoder_base=1, encoder_precision=0),
-        )
-
-    def extend(self, data):
-
-        print(self.shares[0].shape)
-
-        in_shape = self.shares[0].shape
-        data_shape = data.shares[0].shape
-
-        in_share1 = self.shares[0]
-        in_share2 = self.shares[1]
-
-        data_share1 = data.shares[0]
-        data_share2 = data.shares[1]
-
-        if len(in_shape) == 0:
-            in_share1 = in_share1.reshape([1])
-            in_share2 = in_share2.reshape([1])
-
-        if len(data_shape) == 0:
-            data_share1 = data_share1.reshape([1])
-            data_share2 = data_share2.reshape([1])
-
-        a = torch.cat([in_share1, in_share2])
-        b = torch.cat([data_share1, data_share2])
-
-        return ReplicatedSharedTensor(
-            shares=[a, b],
-            session_uuid=self.session_uuid,
-            ring_size=self.ring_size,
-            config=Config(encoder_base=1, encoder_precision=0),
-        )
+            self.shares = [self._encode(share).to(tensor_type) for share in shares]
 
     def _encode(self, data: torch.Tensor) -> torch.Tensor:
         """Encode via FixedPointEncoder.

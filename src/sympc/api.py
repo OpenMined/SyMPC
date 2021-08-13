@@ -279,23 +279,15 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.share_matrix",
-        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
-    ),
-    (
-        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.matrix_to_rst",
-        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
-    ),
-    (
-        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.extend",
-        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
-    ),
-    (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.flatten",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.expand",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.reshape",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
@@ -311,7 +303,7 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
-        "sympc.module.nn.functional.helper_max_pool2d_reshape_rst",
+        "sympc.module.nn.functional.max_pool2d_reshape_rst",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
 ]
