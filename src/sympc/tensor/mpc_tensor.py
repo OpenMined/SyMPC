@@ -1076,7 +1076,13 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+
+        from sympc.protocol import Falcon
+
+        if not isinstance(protocol, Falcon):
+
+            other = self.__check_or_convert(other, self.session)
+
         return protocol.le(self, other)
 
     def ge(self, other: "MPCTensor") -> "MPCTensor":
@@ -1089,7 +1095,12 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        if not isinstance(protocol, Falcon):
+
+            other = self.__check_or_convert(other, self.session)
+
         return protocol.le(other, self)
 
     def lt(self, other: "MPCTensor") -> "MPCTensor":
@@ -1102,31 +1113,43 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        tensor = self
+
+        if not isinstance(protocol, Falcon):
+            other = self.__check_or_convert(other, self.session)
+
         fp_encoder = FixedPointEncoder(
             base=self.session.config.encoder_base,
             precision=self.session.config.encoder_precision,
         )
         one = fp_encoder.decode(1)
-        return protocol.le(self + one, other)
+        tensor += one
+
+        return protocol.le(tensor, other)
 
     def gt(self, other: "MPCTensor") -> "MPCTensor":
         """Greater than operator.
-
         Args:
             other (MPCTensor): MPCTensor to compare.
-
         Returns:
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        r = other
+        if not isinstance(protocol, Falcon):
+            other = self.__check_or_convert(other, self.session)
+
         fp_encoder = FixedPointEncoder(
             base=self.session.config.encoder_base,
             precision=self.session.config.encoder_precision,
         )
         one = fp_encoder.decode(1)
-        r = other + one
+        r += one
+
         return protocol.le(r, self)
 
     def eq(self, other: "MPCTensor") -> "MPCTensor":
@@ -1139,7 +1162,11 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the comparison.
         """
         protocol = self.session.get_protocol()
-        other = self.__check_or_convert(other, self.session)
+        from sympc.protocol import Falcon
+
+        if not isinstance(protocol, Falcon):
+            other = self.__check_or_convert(other, self.session)
+
         return protocol.eq(self, other)
 
     def ne(self, other: "MPCTensor") -> "MPCTensor":
@@ -1164,6 +1191,46 @@ class MPCTensor(metaclass=SyMPCTensor):
             MPCTensor: Result of the xor.
         """
         return self.__apply_op(y, "xor")
+
+    def to_numpy(self, dtype: str) -> "MPCTensor":
+        """Converts the underlying tensor shares to numpy array.
+
+        Args:
+            dtype (str) : The data type to convert the tensor to.
+
+        Raises:
+            ValueError : If invalid share class is provided as input.
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+
+        if dtype is None:
+            raise ValueError("dtype must be provided for numpy conversion.")
+
+        share_class = self.session.protocol.share_class
+
+        if share_class == ReplicatedSharedTensor:
+            # inplace op
+            for idx in range(len(self.share_ptrs)):
+                self.share_ptrs[idx] = self.share_ptrs[idx].to_numpy(dtype)
+        else:
+            raise ValueError(f"Share Class {share_class} not supported for numpy.")
+
+    def from_numpy(self) -> "MPCTensor":
+        """Converts the underlying tensor to torch tensor.
+
+        Raises:
+            ValueError : If invalid share class is provided as input.
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+
+        share_class = self.session.protocol.share_class
+
+        if share_class == ReplicatedSharedTensor:
+            # inplace op
+            for idx in range(len(self.share_ptrs)):
+                self.share_ptrs[idx] = self.share_ptrs[idx].from_numpy()
+        else:
+            raise ValueError(f"Share Class {share_class} not supported for numpy.")
 
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)

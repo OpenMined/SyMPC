@@ -118,7 +118,7 @@ def cat_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> Shar
     return result
 
 
-def helper_argmax(
+def helper_argmax_rst(
     x: MPCTensor,
     dim: Optional[Union[int, Tuple[int]]] = None,
     keepdim: bool = False,
@@ -153,9 +153,95 @@ def helper_argmax(
             session.rank_to_uuid.values(), prep_x.share_ptrs
         )
     ]
-    shares = parallel_execution(helper_argmax_pairwise, session.parties)(args)
+    shares = parallel_execution(helper_argmax_pairwise_rst, session.parties)(args)
+
+    shares = [share.resolve_pointer_type() for share in shares]
 
     res_shape = shares[0].shape.get()
+
+    x_pairwise = MPCTensor(shares=shares, session=x.session, shape=res_shape)
+
+    # with the MPCTensor tensor we check what entries are positive
+    # then we check what columns of M matrix have m-1 non-zero entries after comparison
+    # (by summing over cols)
+
+    pairwise_comparisons = x_pairwise >= 0
+
+    # re-compute row_length
+    _dim = -1 if dim is None else dim
+
+    row_length = x.shape[_dim] if x.shape[_dim] > 1 else 2
+
+    result = pairwise_comparisons.sum(0)
+
+    result = result >= (row_length - 1)
+    res_shape = res_shape[1:]  # Remove the leading dimension because of sum(0)
+
+    if not one_hot:
+        if dim is None:
+            check = result * torch.Tensor([i for i in range(np.prod(res_shape))])
+        else:
+            size = [1 for _ in range(len(res_shape))]
+            size[dim] = res_shape[dim]
+            check = result * torch.Tensor([i for i in range(res_shape[_dim])]).view(
+                size
+            )
+
+        if dim is not None:
+            argmax = check.sum(dim=dim, keepdim=keepdim)
+        else:
+            argmax = check.sum()
+            if (argmax >= row_length).reconstruct():
+                # In case we have 2 max values, rather then returning an invalid index
+                # we raise an exception
+                raise ValueError("There are multiple argmax values")
+
+        result = argmax
+
+    return result
+
+
+def helper_argmax_share(
+    x: MPCTensor,
+    dim: Optional[Union[int, Tuple[int]]] = None,
+    keepdim: bool = False,
+    one_hot: bool = False,
+) -> MPCTensor:
+    """Compute argmax using pairwise comparisons. Makes the number of rounds fixed, here it is 2.
+
+    This is inspired from CrypTen.
+
+    Args:
+        x (MPCTensor): the MPCTensor on which to compute helper_argmax on
+        dim (Union[int, Tuple[int]): compute argmax over a specific dimension(s)
+        keepdim (bool): when one_hot is true, keep all the dimensions of the tensor
+        one_hot (bool): return the argmax as a one hot vector
+
+    Returns:
+        Given the args, it returns a one hot encoding (as an MPCTensor) or the index
+        of the maximum value
+
+    Raises:
+        ValueError: In case more max values are found and we need to return the index
+    """
+    # for each share in MPCTensor
+    #   do the algorithm portrayed in paper (helper_argmax_pairwise)
+    #   results in creating two matrices and subtraction them
+    session = x.session
+
+    prep_x = x.flatten() if dim is None else x
+    args = [
+        [str(uuid), share_ptr_tensor, dim]
+        for uuid, share_ptr_tensor in zip(
+            session.rank_to_uuid.values(), prep_x.share_ptrs
+        )
+    ]
+    shares = parallel_execution(helper_argmax_pairwise_share, session.parties)(args)
+
+    shares = [share.resolve_pointer_type() for share in shares]
+
+    res_shape = shares[0].shape.get()
+
     x_pairwise = MPCTensor(shares=shares, session=x.session, shape=res_shape)
 
     # with the MPCTensor tensor we check what entries are positive
@@ -165,9 +251,11 @@ def helper_argmax(
 
     # re-compute row_length
     _dim = -1 if dim is None else dim
+
     row_length = x.shape[_dim] if x.shape[_dim] > 1 else 2
 
     result = pairwise_comparisons.sum(0)
+
     result = result >= (row_length - 1)
     res_shape = res_shape[1:]  # Remove the leading dimension because of sum(0)
 
@@ -211,8 +299,17 @@ def argmax(
 
     Returns:
         The index of the maximum value as an MPCTensor
+
     """
-    return helper_argmax(x, dim=dim, keepdim=keepdim, one_hot=False)
+
+    from sympc.tensor import ReplicatedSharedTensor
+
+    if x.session.protocol.share_class == ReplicatedSharedTensor:
+        return helper_argmax_rst(x, dim=dim, keepdim=keepdim, one_hot=False)
+    elif x.session.protocol.share_class == ShareTensor:
+        return helper_argmax_share(x, dim=dim, keepdim=keepdim, one_hot=False)
+    else:
+        raise TypeError("Invalid share class")
 
 
 def max_mpc(
@@ -232,12 +329,19 @@ def max_mpc(
     Returns:
         A tuple representing (max MPCTensor, indices_max MPCTensor)
     """
-    argmax_mpc = helper_argmax(x, dim=dim, keepdim=keepdim, one_hot=True)
+    from sympc.tensor import ReplicatedSharedTensor
+
+    if x.session.protocol.share_class == ReplicatedSharedTensor:
+        argmax_mpc = helper_argmax_rst(x, dim=dim, keepdim=keepdim, one_hot=True)
+    elif x.session.protocol.share_class == ShareTensor:
+        argmax_mpc = helper_argmax_share(x, dim=dim, keepdim=keepdim, one_hot=True)
+    else:
+        raise TypeError("Invalid share class")
+
     max_mpc = argmax_mpc * x
     if dim is None:
         res = max_mpc.sum()
     else:
-
         if not one_hot:
             shape = argmax_mpc.shape
             size = [1 for _ in range(len(shape))]
@@ -252,7 +356,7 @@ def max_mpc(
     return res
 
 
-def helper_argmax_pairwise(
+def helper_argmax_pairwise_share(
     session_uuid_str, share: ShareTensor, dim: Optional[Union[int, Tuple[int]]] = None
 ) -> ShareTensor:
     """Helper function that would compute the difference between all the elements in a tensor.
@@ -270,17 +374,76 @@ def helper_argmax_pairwise(
     session = get_session(session_uuid_str)
 
     dim = -1 if dim is None else dim
-    row_length = share.shape[dim] if share.shape[dim] > 1 else 2
+
+    shape = share.shape[dim]
+
+    row_length = shape if shape > 1 else 2
 
     # Copy each row (length - 1) times to compare to each other row
-    a = share.expand(row_length - 1, *share.shape)
+
+    from sympc.tensor import ReplicatedSharedTensor
+
+    if type(share) == ReplicatedSharedTensor:
+        a = share.expand(row_length - 1, *share.shape)
+    else:
+        a = share.expand(row_length - 1, *share.shape)
 
     # Generate cyclic permutations for each row
+    shares = []
+
     shares = torch.stack(
         [share.tensor.roll(i + 1, dims=dim) for i in range(row_length - 1)]
     )
+
     b = ShareTensor(session_uuid=UUID(session_uuid_str), config=session.config)
     b.tensor = shares
+
+    return a - b
+
+
+def helper_argmax_pairwise_rst(
+    session_uuid_str, share: ShareTensor, dim: Optional[Union[int, Tuple[int]]] = None
+) -> ShareTensor:
+    """Helper function that would compute the difference between all the elements in a tensor.
+
+    Credits goes to the CrypTen team.
+
+    Args:
+        session_uuid_str (str): UUID to identify the session on each party side.
+        share (ShareTensor): Share tensor
+        dim (Optional[Union[int, Tuple[int]]]): dimension to compute over
+
+    Returns:
+        A ShareTensor that represents the difference between each "row" in the ShareTensor.
+    """
+    session = get_session(session_uuid_str)
+
+    dim = -1 if dim is None else dim
+
+    shape = share.shape[dim]
+
+    row_length = shape if shape > 1 else 2
+
+    # Copy each row (length - 1) times to compare to each other row
+
+    from sympc.tensor import ReplicatedSharedTensor
+
+    a = share.expand(row_length - 1, *share.shape)
+
+    # Generate cyclic permutations for each row
+    shares = []
+
+    for j in range(0, 2):
+        lol = []
+        for i in range(row_length - 1):
+            lol.append(share.shares[j].roll(i + 1, dims=dim))
+
+        shares.append(torch.stack(lol))
+
+    b = ReplicatedSharedTensor(
+        session_uuid=UUID(session_uuid_str), config=session.config
+    )
+    b.shares = shares
 
     return a - b
 

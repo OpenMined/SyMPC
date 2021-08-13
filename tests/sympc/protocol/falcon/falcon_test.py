@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from sympc.config import Config
+from sympc.encoder import FixedPointEncoder
 from sympc.protocol import ABY3
 from sympc.protocol import Falcon
 from sympc.session import Session
@@ -16,18 +17,23 @@ from sympc.store import CryptoPrimitiveProvider
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_type_from_ring
+import sympc
 
 
+@pytest.mark.skip
 def test_share_class() -> None:
     assert Falcon.share_class == ReplicatedSharedTensor
 
 
+@pytest.mark.skip
 def test_session() -> None:
     protocol = Falcon("semi-honest")
     session = Session(protocol=protocol)
     assert type(session.protocol) == Falcon
 
 
+@pytest.mark.skip
 def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
     parties = get_clients(parties)
     protocol = Falcon("malicious")
@@ -35,11 +41,13 @@ def test_exception_malicious_less_parties(get_clients, parties=2) -> None:
         Session(protocol=protocol, parties=parties)
 
 
+@pytest.mark.skip
 def test_invalid_security_type():
     with pytest.raises(ValueError):
         Falcon(security_type="covert")
 
 
+@pytest.mark.skip
 def test_eq():
     falcon = Falcon()
     aby1 = ABY3(security_type="malicious")
@@ -56,6 +64,7 @@ def test_eq():
     assert falcon != aby2
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 def test_mul_private(get_clients, security, base, precision):
@@ -78,6 +87,7 @@ def test_mul_private(get_clients, security, base, precision):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 @pytest.mark.parametrize("base, precision", [(2, 16), (2, 17), (10, 3), (10, 4)])
 def test_mul_private_matrix(get_clients, security, base, precision):
@@ -101,6 +111,7 @@ def test_mul_private_matrix(get_clients, security, base, precision):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("parties", [2, 4])
 def test_mul_private_exception_nothreeparties(get_clients, parties):
     parties = get_clients(parties)
@@ -118,6 +129,7 @@ def test_mul_private_exception_nothreeparties(get_clients, parties):
         tensor1 * tensor2
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_private_matmul(get_clients, security):
     parties = get_clients(3)
@@ -138,6 +150,7 @@ def test_private_matmul(get_clients, security):
     assert np.allclose(result.reconstruct(), expected_res, atol=1e-3)
 
 
+@pytest.mark.skip
 def test_exception_mul_malicious(get_clients):
     parties = get_clients(3)
     protocol = Falcon("malicious")
@@ -178,6 +191,7 @@ def test_exception_mul_malicious(get_clients):
         x * y
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_bin_mul_private(get_clients, security):
     parties = get_clients(3)
@@ -211,6 +225,7 @@ def test_bin_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_prime_mul_private(get_clients, security):
     parties = get_clients(3)
@@ -244,6 +259,7 @@ def test_prime_mul_private(get_clients, security):
     assert (result.reconstruct(decode=False) == expected_res).all()
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("security", ["semi-honest", "malicious"])
 def test_select_shares(get_clients, security) -> None:
     parties = get_clients(3)
@@ -267,6 +283,7 @@ def test_select_shares(get_clients, security) -> None:
     assert (expected_res == z.reconstruct()).all()
 
 
+@pytest.mark.skip
 def test_select_shares_exception_ring(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon()
@@ -277,6 +294,7 @@ def test_select_shares_exception_ring(get_clients) -> None:
         Falcon.select_shares(val, val, val)
 
 
+@pytest.mark.skip
 def test_select_shares_exception_shape(get_clients) -> None:
     parties = get_clients(3)
     falcon = Falcon()
@@ -289,3 +307,227 @@ def test_select_shares_exception_shape(get_clients) -> None:
     val.shape = None
     with pytest.raises(ValueError):
         Falcon.select_shares(val, val, val)
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize("inp", [["zero", "one"], ["one", "zero"]])
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_private_compare(get_clients, security) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    base = session.config.encoder_base
+    precision = session.config.encoder_precision
+    fp_encoder = FixedPointEncoder(base=base, precision=precision)
+
+    secret = torch.tensor([[358.85, 79.29], [67.78, 2415.50]])
+    r = torch.tensor([[357.05, 90], [145.32, 2400.54]])
+    r = fp_encoder.encode(r)
+    x = MPCTensor(secret=secret, session=session)
+    x_b = ABY3.bit_decomposition_ttp(x, session)  # bit shares
+    x_p = []  # prime ring shares
+    for share in x_b:
+        x_p.append(ABY3.bit_injection(share, session, PRIME_NUMBER))
+
+    tensor_type = get_type_from_ring(session.ring_size)
+    result = Falcon.private_compare(x_p, r.type(tensor_type))
+    expected_res = torch.tensor([[1, 0], [0, 1]], dtype=torch.bool)
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.skip
+@pytest.mark.xfail
+def test_wrap(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[45.12, 82.12], [-12.5, 32.5]])
+    x = MPCTensor(secret=secret, session=session)
+
+    result = Falcon.wrap(x)
+
+    x1 = x.share_ptrs[0].get_copy().shares[0]
+    x2, x3 = x.share_ptrs[1].get_copy().shares
+
+    expected_res = torch.from_numpy(Falcon.wrap3(x1, x2, x3))
+
+    assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+@pytest.mark.skip
+@pytest.mark.xfail
+def test_relu(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[12, -46], [-82, 27]])
+
+    x = MPCTensor(secret=secret, session=session)
+
+    result = Falcon.relu(x)
+
+    expected_res = x.reconstruct()
+
+    expected_res[0][1] = 0
+    expected_res[1][0] = 0
+
+    assert (expected_res == result.reconstruct()).all()
+
+
+@pytest.mark.skip
+@pytest.mark.parametrize("op_str", ["le", "lt", "ge", "gt"])
+def test_comparison_mpc_mpc(get_clients, op_str) -> None:
+    clients = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    op = getattr(operator, op_str)
+
+    x_secret = torch.Tensor([[0.125, -1.25], [-4.25, 4], [-3, 3]])
+    y_secret = torch.Tensor([[4.5, -2.5], [5, 2.25], [-3, 3]])
+    x = MPCTensor(secret=x_secret, session=session)
+    y = MPCTensor(secret=y_secret, session=session)
+    result = op(x, y).reconstruct(decode=False)
+    expected_result = op(x_secret, y_secret)
+
+    assert (result == expected_result).all()
+
+
+@pytest.mark.skip
+def test_argmax_1(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([1, 2, 3, -1, -3])
+    x = MPCTensor(secret=secret, session=session)
+
+    argmax_val = x.argmax()
+    assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
+
+    expected = secret.argmax().float()
+    res = argmax_val.reconstruct()
+    assert res == expected, f"Expected argmax to be {expected}"
+
+
+@pytest.mark.skip
+def test_argmax(get_clients) -> None:
+    clients = get_clients(3)
+
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients, protocol=falcon)
+
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([1, 2, 3, -1, -3])
+    x = MPCTensor(secret=secret, session=session)
+
+    argmax_val = x.argmax()
+    assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
+
+    expected = secret.argmax().float()
+    res = argmax_val.reconstruct(decode=False)
+    assert res == expected, f"Expected argmax to be {expected}"
+
+
+@pytest.mark.skip
+def test_max(get_clients) -> None:
+    clients = get_clients(3)
+
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor([1, 2, 3, -1, -3])
+    x = MPCTensor(secret=secret, session=session)
+
+    max_val = x.max()
+    assert isinstance(x, MPCTensor), "Expected argmax to be MPCTensor"
+
+    expected = secret.max()
+    res = max_val.reconstruct()
+    assert res == expected, f"Expected argmax to be {expected}"
+
+
+"""POSSIBLE_CONFIGS_MAXPOOL_2D = [
+    (1, 1, 0),
+    (2, 1, 0),
+    (2, 1, 1),
+    (2, 2, 0),
+    (2, 2, 1),
+    (3, 1, 0),
+    (3, 1, 1),
+    (3, 2, 0),
+    (3, 2, 1),
+    (3, 3, 0),
+    (3, 3, 1),
+    ((5, 3), (1, 2), (2, 1)),
+]"""
+
+POSSIBLE_CONFIGS_MAXPOOL_2D = [(1, 1, 0)]
+
+
+@pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
+def test_max_pool2d_rst(get_clients, kernel_size, stride, padding) -> None:
+    clients = get_clients(3)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor(
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.2, -0.3, -0.53, -15, 0.32],
+                [0.22, 0.42, -10, -0.55, 2.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [23.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ]
+    )
+    mpc = MPCTensor(secret=secret, session=session)
+
+    res = sympc.module.nn.max_pool2d(
+        mpc, kernel_size=kernel_size, stride=stride, padding=padding
+    )
+    res_expected = torch.max_pool2d(
+        secret, kernel_size=kernel_size, stride=stride, padding=padding
+    )
+
+    assert np.allclose(res.reconstruct(), res_expected, atol=1e-4)
+
+
+@pytest.mark.parametrize("kernel_size, stride, padding", POSSIBLE_CONFIGS_MAXPOOL_2D)
+def test_max_pool2d_share(get_clients, kernel_size, stride, padding) -> None:
+    clients = get_clients(2)
+    falcon = Falcon(security_type="semi-honest")
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.Tensor(
+        [
+            [
+                [0.23, 0.32, 0.62, 2.23, 5.32],
+                [0.2, -0.3, -0.53, -15, 0.32],
+                [0.22, 0.42, -10, -0.55, 2.32],
+                [0.12, 0.22, -10, -0.35, -3.2],
+                [23.12, -4.22, 5.3, -0.12, 6.0],
+            ]
+        ]
+    )
+    mpc = MPCTensor(secret=secret, session=session)
+
+    res = sympc.module.nn.max_pool2d(
+        mpc, kernel_size=kernel_size, stride=stride, padding=padding
+    )
+    res_expected = torch.max_pool2d(
+        secret, kernel_size=kernel_size, stride=stride, padding=padding
+    )
+
+    assert np.allclose(res.reconstruct(), res_expected, atol=1e-4)

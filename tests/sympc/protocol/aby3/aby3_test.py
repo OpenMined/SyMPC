@@ -12,6 +12,7 @@ from sympc.session import SessionManager
 from sympc.tensor import MPCTensor
 from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
+from sympc.utils import get_nr_bits
 from sympc.utils import parallel_execution
 
 
@@ -152,7 +153,7 @@ def test_local_decomposition(get_clients, security_type):
 
     decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
 
-    x1_sh, x2_sh, x3_sh = list(zip(*decompose))
+    x1_sh, x2_sh, x3_sh = zip(*map(lambda x: x[0], decompose))
 
     x1_sh = [ptr.get_copy().shares for ptr in x1_sh]
     x2_sh = [ptr.get_copy().shares for ptr in x2_sh]
@@ -187,3 +188,31 @@ def test_local_decomposition_exception() -> None:
     x = ReplicatedSharedTensor()
     with pytest.raises(ValueError):
         ABY3.local_decomposition(x, "2")
+
+
+@pytest.mark.parametrize("security_type", ["semi-honest", "malicious"])
+def test_bit_decomposition_ttp(get_clients, security_type) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security_type)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    secret = torch.tensor([[-1, 12], [-32, 45], [98, -5624]])
+    x = MPCTensor(secret=secret, session=session)
+    b_sh = ABY3.bit_decomposition_ttp(x, session)
+    ring_size = x.session.ring_size
+    tensor_type = x.session.tensor_type
+    ring_bits = get_nr_bits(ring_size)
+
+    val = 1
+    result = 0
+    for i in range(ring_bits):
+        if i != ring_bits - 1:
+            result += b_sh[i].reconstruct(decode=False).type(tensor_type) * val
+        else:
+            result += b_sh[i].reconstruct(decode=False).type(tensor_type) * (-val)
+        val *= 2
+
+    exp_res = torch.tensor(
+        [[-65536, 786432], [-2097152, 2949120], [6422528, -368574464]]
+    )
+    assert (result == exp_res).all()

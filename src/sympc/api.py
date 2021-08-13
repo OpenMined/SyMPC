@@ -138,11 +138,11 @@ share_tensor_attrs = [
     ("sympc.tensor.static.stack_share_tensor", "sympc.tensor.share_tensor.ShareTensor"),
     ("sympc.tensor.static.cat_share_tensor", "sympc.tensor.share_tensor.ShareTensor"),
     (
-        "sympc.tensor.static.helper_argmax_pairwise",
+        "sympc.tensor.static.helper_argmax_pairwise_share",
         "sympc.tensor.share_tensor.ShareTensor",
     ),
     (
-        "sympc.module.nn.functional.helper_max_pool2d_reshape",
+        "sympc.module.nn.functional.helper_max_pool2d_reshape_share",
         "sympc.tensor.share_tensor.ShareTensor",
     ),
     ("sympc.tensor.share_tensor.ShareTensor.shape", "syft.lib.python.Tuple"),
@@ -195,6 +195,10 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
     (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__lshift__",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.__floordiv__",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
@@ -243,6 +247,10 @@ replicated_shared_tensor_attrs = [
         "syft.lib.python.Dict",
     ),
     (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.bit_extraction",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.T",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
@@ -252,6 +260,50 @@ replicated_shared_tensor_attrs = [
     ),
     (
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.view",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.repeat",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.to_numpy",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.from_numpy",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.wrap_rst",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.flatten",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.expand",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.reshape",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.shape",
+        "syft.lib.python.Tuple",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.get_ring_size",
+        "syft.lib.python.Int",
+    ),
+    (
+        "sympc.tensor.static.helper_argmax_pairwise_rst",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.module.nn.functional.max_pool2d_reshape_rst",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
 ]
@@ -276,6 +328,10 @@ allowed_external_attrs = [
     (
         "sympc.protocol.falcon.falcon.Falcon.triple_verification",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.protocol.falcon.falcon.Falcon.wrap2",
+        "numpy.ndarray",
     ),
     ("sympc.protocol.aby3.aby3.ABY3.local_decomposition", "syft.lib.python.List"),
     (
