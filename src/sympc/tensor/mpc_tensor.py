@@ -600,23 +600,36 @@ class MPCTensor(metaclass=SyMPCTensor):
         Raises:
             ValueError: If parties are more than two.
         """
-        is_private = isinstance(y, MPCTensor)
-
-        # TODO: Implement support for more than two parties.
-        if is_private:
-
-            if len(self.session.session_ptrs) > 2:
-                raise ValueError(
-                    "Private division currently works with a maximum of two parties only."
-                )
-
-            reciprocal = APPROXIMATIONS["reciprocal"]
-            return self.mul(reciprocal(y))
-
+        from sympc.protocol import Falcon
         from sympc.protocol.spdz import spdz
+        from sympc.tensor import ReplicatedSharedTensor
 
-        result = spdz.public_divide(self, y)
-        return result
+        session = self.session
+
+        share_class = session.protocol.share_class
+        if share_class == ShareTensor:
+            is_private = isinstance(y, MPCTensor)
+
+            # TODO: Implement support for more than two parties.
+            if is_private:
+
+                if len(self.session.session_ptrs) > 2:
+                    raise ValueError(
+                        "Private division currently works with a maximum of two parties only."
+                    )
+
+                reciprocal = APPROXIMATIONS["reciprocal"]
+                return self.mul(reciprocal(y))
+
+            result = spdz.public_divide(self, y)
+            return result
+
+        elif share_class == ReplicatedSharedTensor:
+            result = Falcon.division(self, y)
+            return result
+
+        else:
+            raise ValueError(f"Invalid share class:{share_class} for division")
 
     def pow(self, power: int) -> "MPCTensor":
         """Compute integer power of a number by recursion using mul.
