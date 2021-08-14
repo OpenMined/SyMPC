@@ -595,3 +595,16 @@ def test_ops_prime_public_xor(get_clients, security, bit) -> None:
     expected_res = secret ^ value
 
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+def test_exception_rshift() -> None:
+    rst = ReplicatedSharedTensor(shares=[5], ring_size=2 ** 64)
+
+    with pytest.raises(ValueError):
+        rst >> 65
+
+
+def test_exception_bit_extraction() -> None:
+    rst = ReplicatedSharedTensor(shares=[5], ring_size=2 ** 64)
+    with pytest.raises(ValueError):
+        rst.bit_extraction(-1)
