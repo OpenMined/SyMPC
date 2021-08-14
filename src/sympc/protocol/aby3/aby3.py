@@ -4,6 +4,7 @@ ABY3 : A Mixed Protocol Framework for Machine Learning.
 https://eprint.iacr.org/2018/403.pdf
 """
 # stdlib
+import itertools
 from typing import Any
 from typing import List
 from typing import Tuple
@@ -261,8 +262,7 @@ class ABY3(metaclass=Protocol):
         input_rst = []
         if bitwise:
             ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
-            for i in range(ring_bits):
-                input_rst.append(x.bit_extraction(i))
+            input_rst = [x.bit_extraction(idx) for idx in range(ring_bits)]
         else:
             input_rst.append(x)
 
@@ -352,11 +352,11 @@ class ABY3(metaclass=Protocol):
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
-        c = [0 for _ in range(ring_bits + 1)]  # carry bits of addition.
+        c = 0  # carry bits of addition.
         result: List[MPCTensor] = []
         for idx in range(ring_bits):
-            s = a[idx] + b[idx] + c[idx]
-            c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + b[idx])
+            s = a[idx] + b[idx] + c
+            c = a[idx] * b[idx] + c * (a[idx] + b[idx])
             result.append(s)
         return result
 
@@ -374,20 +374,22 @@ class ABY3(metaclass=Protocol):
         TODO : Should be modified to use parallel prefix adder when multiprocessing
         functionality is integrated,currently unused.
         """
-        ring_size = session.ring_size
-        ring_bits = get_nr_bits(ring_size)
         x1: List[MPCTensor] = []  # bit shares of shares
         x2: List[MPCTensor] = []
         x3: List[MPCTensor] = []
 
-        args = [[share, str(2), True] for share in x.share_ptrs]
+        args = [[share, "2", True] for share in x.share_ptrs]
 
-        decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
+        decomposed_shares = parallel_execution(
+            ABY3.local_decomposition, session.parties
+        )(args)
 
-        x_sh = list(zip(*decompose))
+        # Initially we have have List[p1,p2,p3] where p1,p2,p3 are list returned from parties.
+        # Each of p1,p2,p3 is List[ [x1,x2,x3] ,...] in bit length of the session ring size.
+        # Each element of the list is a share of the shares for each bit.
+        x_sh = itertools.starmap(zip, zip(*decomposed_shares))
 
-        for idx in range(ring_bits):
-            x1_sh, x2_sh, x3_sh = zip(*x_sh[idx])
+        for x1_sh, x2_sh, x3_sh in x_sh:
             x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
             x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
             x3_sh = [ptr.resolve_pointer_type() for ptr in x3_sh]
