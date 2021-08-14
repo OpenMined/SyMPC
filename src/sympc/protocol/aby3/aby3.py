@@ -373,8 +373,7 @@ class ABY3(metaclass=Protocol):
         # Each element of the list is a share of the shares for each bit.
         x_sh = itertools.starmap(zip, zip(*decomposed_shares))
 
-        for share in x_sh:
-            x1_sh, x2_sh, x3_sh = share
+        for x1_sh, x2_sh, x3_sh in x_sh:
             x1_sh = [ptr.resolve_pointer_type() for ptr in x1_sh]
             x2_sh = [ptr.resolve_pointer_type() for ptr in x2_sh]
             x3_sh = [ptr.resolve_pointer_type() for ptr in x3_sh]
