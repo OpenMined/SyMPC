@@ -55,6 +55,7 @@ allowed_external_modules = [
     ("sympc.grads", grads),
 ]
 
+
 allowed_external_classes = [
     ("sympc.session.Session", "sympc.session.Session", session.Session),
     ("sympc.store.CryptoStore", "sympc.store.CryptoStore", store.CryptoStore),
