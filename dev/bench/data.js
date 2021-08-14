@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1628746113783,
+  "lastUpdate": 1628942894771,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1674,6 +1674,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.008159859122556422",
             "extra": "mean: 692.9210793999914 msec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "43314053+rasswanth-s@users.noreply.github.com",
+            "name": "rasswanth",
+            "username": "rasswanth-s"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "92f7f96193a2c1f491fe959caa2e0f797168c5e7",
+          "message": "ABY3: Bit Decomposition Orchestrator Implementation (#285)\n\n* Changed relative paths to absolute paths\r\n\r\n* Linting\r\n\r\n* Added truncation\r\n\r\n* Changed parties\r\n\r\n* Linting\r\n\r\n* Added ABY3 Protocol folder\r\n\r\n* modified to trunc1 algorithm\r\n\r\n* Added more tests\r\n\r\n* Modified Falcon Tests\r\n\r\n* Added malicious mult with truncation\r\n\r\n* Refactored and modified tests\r\n\r\n* added tests and made random_gen global\r\n\r\n* Minor refactoring\r\n\r\n* modfied redistribution and added tests\r\n\r\n* revert distribution and modify type annotations\r\n\r\n* modified resharing\r\n\r\n* Added support for tensor pointer\r\n\r\n* Increased test coverage\r\n\r\n* Modified truncation algorithm name\r\n\r\n* Added triple verfication and mask\r\n\r\n* ABY3 refactoring changes\r\n\r\n* Malicious mult refactored-green\r\n\r\n* modified to aby3 name_changes\r\n\r\n* Falcon malicious mult -check-modification\r\n\r\n* modify spdz to session attribute\r\n\r\n* Modify spdz to use session and linting\r\n\r\n* modified crypto primitive provider tests\r\n\r\n* modify prrs tests\r\n\r\n* remove malicious not implemented\r\n\r\n* added tests\r\n\r\n* Added beaver test and reduced round complexity\r\n\r\n* modified przs shape and ops\r\n\r\n* Added matmul\r\n\r\n* Added bit injection skel\r\n\r\n* Modified type annotations\r\n\r\n* added ring_size_from_type\r\n\r\n* modified return type name\r\n\r\n* changes kwargs format\r\n\r\n* changed kwargs type for beaver\r\n\r\n* update change from malicious_mult\r\n\r\n* extended rst to binary,prime\r\n\r\n* modified modulus session\r\n\r\n* modified session przs and rst distribution\r\n\r\n* minor refactor\r\n\r\n* minor refactor\r\n\r\n* revert prrs encoding\r\n\r\n* Modified session tests and added test for malicious behavious in mul\r\n\r\n* Added tests and mul for prime,binary\r\n\r\n* fix ring_issue\r\n\r\n* made PRIME_NUMBER global and added tests for ring_size in session\r\n\r\n* removed hardcoding of PRIME_NUMBER and moved ring truncation to ABY3\r\n\r\n* modified aby3 tests\r\n\r\n* Revert \"added ring_size_from_type\"\r\n\r\nThis reverts commit 988403f087d041f3b86deb59cdcc711d86302037.\r\n\r\n* Revert \"Added bit injection skel\"\r\n\r\nThis reverts commit 9dffeac23e298f570d61328538ad7b49051e45bd.\r\n\r\n* modified type annotations\r\n\r\n* added tests for add,sub,mul for prime rings\r\n\r\n* modified triple reconstruction\r\n\r\n* Added bit_injection and local_decomposition\r\n\r\n* linting\r\n\r\n* modified mul to take session spcific config\r\n\r\n* modified bit_injection to changes from modulus PR\r\n\r\n* added bit injection tests\r\n\r\n* modified aby3 bit injection test\r\n\r\n* added select shares and tests.\r\n\r\n* deep copy share elements\r\n\r\n* modified to use list comprehension\r\n\r\n* modified type annotations and space\r\n\r\n* modified type annotations\r\n\r\n* modified to work on tensor inputs\r\n\r\n* added todo for crypto provider\r\n\r\n* modified random generation in session and trunc algo randomness\r\n\r\n* added bit decomposition\r\n\r\n* modified typo\r\n\r\n* modified parallel execution\r\n\r\n* linting\r\n\r\n* orchestrator ttp\r\n\r\n* modified sanity checks and added tests for local decomposition\r\n\r\n* modified comments\r\n\r\n* modified to use xor\r\n\r\n* modified tests\r\n\r\n* increased coverage\r\n\r\n* increased coverage\r\n\r\n* modified local decomposition\r\n\r\n* comment and name changes\r\n\r\n* minor format\r\n\r\n* added TODO comments\r\n\r\n* fixed typo\r\n\r\n* removed usage of zip\r\n\r\n* decompose bug fix\r\n\r\n* modified for bitwise bit injection\r\n\r\n* hardcoded test, and modified spdz eps,delta, global variable for nr_parites\r\n\r\n* modified spdz bug\r\n\r\n* minor change\r\n\r\n* linting\r\n\r\n* minor changes\r\n\r\n* hardcoded test of select shares\r\n\r\n* Fix Syft commit\r\n\r\n* hardcoded tests\r\n\r\n* added comment for unused code\r\n\r\n* added sanity checks in bit extraction and right shift\r\n\r\n* added separate workflow for linting\r\n\r\n* removed pre-commit from test runners\r\n\r\n* bump pre-commit version\r\n\r\n* modified variable names\r\n\r\n* modified bit extraction to list comphrehension\r\n\r\n* minor change -review\r\n\r\n* modified bit decomposition to use starmap\r\n\r\n* minor changes\r\n\r\nCo-authored-by: George Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2021-08-14T13:05:34+01:00",
+          "tree_id": "eccccb323e5a2979443de6193e66ab81b47d6bcb",
+          "url": "https://github.com/OpenMined/SyMPC/commit/92f7f96193a2c1f491fe959caa2e0f797168c5e7"
+        },
+        "date": 1628942893740,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 1.1033049583437127,
+            "unit": "iter/sec",
+            "range": "stddev: 0.011573442061553972",
+            "extra": "mean: 906.367720399993 msec\nrounds: 5"
           }
         ]
       }
