@@ -203,14 +203,9 @@ def test_bit_decomposition_ttp(get_clients, security_type) -> None:
     tensor_type = x.session.tensor_type
     ring_bits = get_nr_bits(ring_size)
 
-    val = 1
-    result = 0
+    result = torch.zeros(size=x.shape, dtype=tensor_type)
     for i in range(ring_bits):
-        if i != ring_bits - 1:
-            result += b_sh[i].reconstruct(decode=False).type(tensor_type) * val
-        else:
-            result += b_sh[i].reconstruct(decode=False).type(tensor_type) * (-val)
-        val *= 2
+        result |= b_sh[i].reconstruct(decode=False).type(tensor_type) << i
 
     exp_res = torch.tensor(
         [[-65536, 786432], [-2097152, 2949120], [6422528, -368574464]]

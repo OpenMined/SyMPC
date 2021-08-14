@@ -645,9 +645,9 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             raise ValueError("Right Shift works only with integers!")
 
         ring_bits = get_nr_bits(self.ring_size)
-        if y > ring_bits - 1:
+        if y < 0 or y > ring_bits - 1:
             raise ValueError(
-                f"Invalid value for right shift : {y},must be in range:[0,{ring_bits-1}]"
+                f"Invalid value for right shift: {y}, must be in range:[0,{ring_bits-1}]"
             )
 
         res = ReplicatedSharedTensor(
@@ -690,16 +690,14 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             ValueError: If invalid position is provided.
         """
         ring_bits = get_nr_bits(self.ring_size)
-        if pos > ring_bits - 1:
+        if pos < 0 or pos > ring_bits - 1:
             raise ValueError(
-                f"Invalid position for bit_extraction : {pos},must be in range:[0,{ring_bits-1}]"
+                f"Invalid position for bit_extraction: {pos}, must be in range:[0,{ring_bits-1}]"
             )
         shares = []
         # logical shift
         bit_mask = torch.ones(self.shares[0].shape, dtype=self.shares[0].dtype) << pos
-        for share in self.shares:
-            tensor = share & bit_mask
-            shares.append(tensor)
+        shares = [share & bit_mask for share in self.shares]
         rst = ReplicatedSharedTensor(
             shares=shares,
             session_uuid=self.session_uuid,
