@@ -246,7 +246,6 @@ class ABY3(metaclass=Protocol):
         if bitwise:
             ring_bits = get_nr_bits(session.ring_size)  # for bit-wise decomposition
             input_rst = [x.bit_extraction(idx) for idx in range(ring_bits)]
-
         else:
             input_rst.append(x)
 
@@ -336,11 +335,11 @@ class ABY3(metaclass=Protocol):
         """
         ring_size = session.ring_size
         ring_bits = get_nr_bits(ring_size)
-        c = [0 for _ in range(ring_bits + 1)]  # carry bits of addition.
+        c = 0  # carry bits of addition.
         result: List[MPCTensor] = []
         for idx in range(ring_bits):
-            s = a[idx] + b[idx] + c[idx]
-            c[idx + 1] = a[idx] * b[idx] + c[idx] * (a[idx] + b[idx])
+            s = a[idx] + b[idx] + c
+            c = a[idx] * b[idx] + c * (a[idx] + b[idx])
             result.append(s)
         return result
 
@@ -364,7 +363,7 @@ class ABY3(metaclass=Protocol):
         x2: List[MPCTensor] = []
         x3: List[MPCTensor] = []
 
-        args = [[share, str(2), True] for share in x.share_ptrs]
+        args = [[share, "2", True] for share in x.share_ptrs]
 
         decompose = parallel_execution(ABY3.local_decomposition, session.parties)(args)
 
