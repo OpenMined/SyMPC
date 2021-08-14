@@ -23,6 +23,7 @@ from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
 from sympc.tensor import ShareTensor
 from sympc.utils import RING_SIZE_TO_TYPE
+from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import islocal
 from sympc.utils import ispointer
@@ -565,15 +566,51 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
 
         Raises:
             ValueError: If y is not an integer.
+            ValueError : If invalid shift value is provided.
         """
         if not isinstance(y, int):
             raise ValueError("Right Shift works only with integers!")
+
+        ring_bits = get_nr_bits(self.ring_size)
+        if y < 0 or y > ring_bits - 1:
+            raise ValueError(
+                f"Invalid value for right shift: {y}, must be in range:[0,{ring_bits-1}]"
+            )
 
         res = ReplicatedSharedTensor(
             session_uuid=self.session_uuid, config=self.config, ring_size=self.ring_size
         )
         res.shares = [share >> y for share in self.shares]
         return res
+
+    def bit_extraction(self, pos: int = 0) -> "ReplicatedSharedTensor":
+        """Extracts the bit at the specified position.
+
+        Args:
+            pos (int): position to extract bit.
+
+        Returns:
+            ReplicatedSharedTensor : extracted bits at specific position.
+
+        Raises:
+            ValueError: If invalid position is provided.
+        """
+        ring_bits = get_nr_bits(self.ring_size)
+        if pos < 0 or pos > ring_bits - 1:
+            raise ValueError(
+                f"Invalid position for bit_extraction: {pos}, must be in range:[0,{ring_bits-1}]"
+            )
+        shares = []
+        # logical shift
+        bit_mask = torch.ones(self.shares[0].shape, dtype=self.shares[0].dtype) << pos
+        shares = [share & bit_mask for share in self.shares]
+        rst = ReplicatedSharedTensor(
+            shares=shares,
+            session_uuid=self.session_uuid,
+            config=Config(encoder_base=1, encoder_precision=0),
+            ring_size=2,
+        )
+        return rst
 
     def rmatmul(self, y):
         """Apply the "rmatmul" operation between "y" and "self".
