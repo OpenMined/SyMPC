@@ -466,10 +466,10 @@ class Falcon(metaclass=Protocol):
             shape (Union[torch.Size,tuple]): shape of the random share to generate.
 
         Returns:
-            share (MPCTensor): Retuns shares of random number in group Zp*.
+            share (MPCTensor): Returns shares of random number in group Zp*.
 
         Zp* = {1,2..,p-1},where p is a prime number.
-        We use Euler's Theorum for verifying that random share is not zero.
+        We use Euler's Theorem for verifying that random share is not zero.
         It states that:
         For a general modulus n
         a^phi(n) = 1(mod n), if a is co prime to n.
@@ -507,11 +507,11 @@ class Falcon(metaclass=Protocol):
         """
         shape = x[0].shape
         session = x[0].session
-        ptr_list: List = []
-        for session_ptr in session.session_ptrs:
-            ptr_list.append(
-                session_ptr.prrs_generate_random_share(shape=shape, ring_size=str(2))
-            )
+
+        ptr_list: List[ReplicatedSharedTensor] = [
+            session_ptr.prrs_generate_random_share(shape=shape, ring_size=str(2))
+            for session_ptr in session.session_ptrs
+        ]
 
         beta_2 = MPCTensor(
             shares=ptr_list, session=session, shape=shape
@@ -521,9 +521,11 @@ class Falcon(metaclass=Protocol):
         )  # shares of random bit in Zp.
         m = Falcon._random_prime_group(session, shape)
 
-        u = [0 for i in range(len(x))]
-        w = [0 for i in range(len(x))]
-        c = [0 for i in range(len(x))]
+        nr_shares = len(x)
+        u = [0] * nr_shares
+        w = [0] * nr_shares
+        c = [0] * nr_shares
+
         for i in range(len(x) - 1, -1, -1):
             r_i = r >> i & 1  # bit at ith position
             u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
