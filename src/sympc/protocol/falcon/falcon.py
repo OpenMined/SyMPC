@@ -498,13 +498,23 @@ class Falcon(metaclass=Protocol):
 
         Args:
             x (List[MPCTensor]) : shares of bits of x in Zp.
-            r (torch.Tensor) : Public integer r.
+            r (torch.Tensor) : Public value r.
 
         Returns:
             result (MPCTensor): Returns shares of bits of the operation.
 
+        Raises:
+            ValueError: If input shares is not a list.
+            ValueError: If input public value is not a tensor.
+
         (if (x>=r) returns 1 else returns 0)
         """
+        if not isinstance(x, list):
+            raise ValueError(f"Input shares for Private Compare: {x} must be a list")
+
+        if not isinstance(r, torch.Tensor):
+            raise ValueError(f"Value r:{r} must be a tensor for private compare")
+
         shape = x[0].shape
         session = x[0].session
 
@@ -523,14 +533,15 @@ class Falcon(metaclass=Protocol):
 
         nr_shares = len(x)
         u = [0] * nr_shares
-        w = [0] * nr_shares
         c = [0] * nr_shares
 
+        w = 0
+
         for i in range(len(x) - 1, -1, -1):
-            r_i = r >> i & 1  # bit at ith position
+            r_i = (r >> i) & 1  # bit at ith position
             u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
-            w[i] = x[i] ^ r_i
-            c[i] = u[i] + 1 + sum(w[i + 1 :])
+            c[i] = u[i] + 1 + w
+            w += x[i] ^ r_i
 
         d = m * (math.prod(c))
 

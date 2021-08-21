@@ -316,3 +316,17 @@ def test_private_compare(get_clients, security) -> None:
     result = Falcon.private_compare(x_p, r.type(tensor_type))
     expected_res = torch.tensor([[1, 0], [0, 1]], dtype=torch.bool)
     assert (result.reconstruct(decode=False) == expected_res).all()
+
+
+def test_private_compare_exception(get_clients) -> None:
+    parties = get_clients(3)
+    falcon = Falcon()
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+    x = MPCTensor(secret=1, session=session)
+    r = torch.tensor([1])
+    with pytest.raises(ValueError):
+        Falcon.private_compare(x, r)
+
+    with pytest.raises(ValueError):
+        Falcon.private_compare([x], x)
