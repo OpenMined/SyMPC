@@ -463,7 +463,7 @@ class Falcon(metaclass=Protocol):
 
         Args:
             session (Session): session to generate random shares for.
-            shape (Union[torch.Size,tuple]): shape of the random share to generate.
+            shape (Union[torch.Size, tuple]): shape of the random share to generate.
 
         Returns:
             share (MPCTensor): Returns shares of random number in group Zp*.
@@ -513,13 +513,13 @@ class Falcon(metaclass=Protocol):
             raise ValueError(f"Input shares for Private Compare: {x} must be a list")
 
         if not isinstance(r, torch.Tensor):
-            raise ValueError(f"Value r:{r} must be a tensor for private compare")
+            raise ValueError(f"Value r:{r} must be a torch tensor for private compare")
 
         shape = x[0].shape
         session = x[0].session
 
         ptr_list: List[ReplicatedSharedTensor] = [
-            session_ptr.prrs_generate_random_share(shape=shape, ring_size=str(2))
+            session_ptr.prrs_generate_random_share(shape=shape, ring_size="2")
             for session_ptr in session.session_ptrs
         ]
 
@@ -543,7 +543,7 @@ class Falcon(metaclass=Protocol):
             c[i] = u[i] + 1 + w
             w += x[i] ^ r_i
 
-        d = m * (math.prod(c))
+        d = m * math.prod(c)
 
         d_val = d.reconstruct(decode=False)  # plaintext d.
         d_val[d_val != 0] = 1  # making all non zero values as 1.
