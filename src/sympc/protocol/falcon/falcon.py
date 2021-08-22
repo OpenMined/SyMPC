@@ -475,6 +475,8 @@ class Falcon(metaclass=Protocol):
         a^phi(n) = 1(mod n), if a is co prime to n.
         In our case n=p(prime number), phi(p) = p-1
         phi(n) = Euler totient function.
+        We effectively try to sample a random number in range [1,p-1],discard the instances where
+        it equals zero.
         """
         while True:
             ptr_list: List[ReplicatedSharedTensor] = []
