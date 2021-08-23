@@ -22,7 +22,7 @@ on:
       - "requirements.txt"
 
 concurrency: 
-  group: ${{ github.ref }}
+  group: ${{ github.job }}
   cancel-in-progress: true
 
 jobs:
