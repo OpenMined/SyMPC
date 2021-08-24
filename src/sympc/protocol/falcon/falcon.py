@@ -4,13 +4,17 @@ Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
+import math
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # third party
+import numpy as np
 import torch
+import torchcsprng as csprng
 
 from sympc.config import Config
 from sympc.protocol import ABY3
@@ -20,12 +24,22 @@ from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
+from sympc.utils import get_nr_bits
 from sympc.utils import get_type_from_ring
 from sympc.utils import parallel_execution
 
 shares_sum = ReplicatedSharedTensor.shares_sum
+gen = csprng.create_random_device_generator()
+UNSIGNED_MAP = {
+    torch.bool: "torch.bool",
+    torch.int8: "uint8",
+    torch.int16: "uint16",
+    torch.int32: "uint32",
+    torch.int64: "uint64",
+}
 
 
 class Falcon(metaclass=Protocol):
@@ -217,6 +231,14 @@ class Falcon(metaclass=Protocol):
         eps_b = b_share.clone()
         delta_a = a_share.clone()
 
+        if isinstance(z_sh.shares[0], np.ndarray):
+            dtype = str(z_sh.shares[0].dtype)
+            eps_b, delta_a, c_share = (
+                eps_b.to_numpy(dtype),
+                delta_a.to_numpy(dtype),
+                c_share.to_numpy(dtype),
+            )
+
         # prevent re-encoding as the values are encoded.
         # TODO: should be improved.
         for i in range(2):
@@ -369,7 +391,12 @@ class Falcon(metaclass=Protocol):
         )
         # Add PRZS Mask to z  value
         op = ReplicatedSharedTensor.get_op(x.ring_size, "add")
-        share = op(z_value, przs_mask.get_shares()[0])
+        przs_mask = przs_mask.get_shares()[0]
+
+        if isinstance(z_value, np.ndarray):
+            przs_mask = przs_mask.numpy().astype(z_value.dtype)
+
+        share = op(z_value, przs_mask)
 
         return share
 
@@ -451,3 +478,343 @@ class Falcon(metaclass=Protocol):
         z = x + (d * (y - x))
 
         return z
+
+    @staticmethod
+    def _random_prime_group(
+        session: Session, shape: Union[torch.Size, tuple]
+    ) -> MPCTensor:
+        """Computes shares of random number in Zp*.Zp* is the multiplicative group mod p.
+
+        Args:
+            session (Session): session to generate random shares for.
+            shape (Union[torch.Size,tuple]): shape of the random share to generate.
+
+        Returns:
+            share (MPCTensor): Retuns shares of random number in group Zp*.
+
+        Zp* = {1,2..,p-1},where p is a prime number.
+        We use Euler's Theorum for verifying that random share is not zero.
+        It states that:
+        For a general modulus n
+        a^phi(n) = 1(mod n), if a is co prime to n.
+        In our case n=p(prime number), phi(p) = p-1
+        phi(n) = Euler totient function.
+        """
+        while True:
+            ptr_list: List[ReplicatedSharedTensor] = []
+            for session_ptr in session.session_ptrs:
+                ptr = session_ptr.prrs_generate_random_share(
+                    shape=(), ring_size=str(PRIME_NUMBER)
+                ).resolve_pointer_type()
+                ptr = ptr.repeat(shape)
+                ptr_list.append(ptr)
+
+            m = MPCTensor(shares=ptr_list, session=session, shape=shape)
+
+            m_euler = m ** (PRIME_NUMBER - 1)
+
+            if (m_euler.reconstruct(decode=False) == 1).all():
+                return m
+
+    @staticmethod
+    def private_compare(x: List[MPCTensor], r: torch.Tensor) -> MPCTensor:
+        """Falcon Private Compare functionality which computes(x>r).
+
+        Args:
+            x (List[MPCTensor]) : shares of bits of x in Zp.
+            r (torch.Tensor) : Public integer r.
+
+        Returns:
+            result (MPCTensor): Returns shares of bits of the operation.
+
+        (if (x>=r) returns 1 else returns 0)
+        """
+        shape = x[0].shape
+        session = x[0].session
+        ptr_list: List = []
+        for session_ptr in session.session_ptrs:
+            sh_ptr = session_ptr.prrs_generate_random_share(
+                shape=shape, ring_size=str(2)
+            )
+            ptr_list.append(sh_ptr)
+
+        beta_2 = MPCTensor(
+            shares=ptr_list, session=session, shape=shape
+        )  # shares of random bit
+        beta_p = ABY3.bit_injection(
+            beta_2, session, PRIME_NUMBER
+        )  # shares of random bit in Zp.
+        m = Falcon._random_prime_group(session, shape)
+        if isinstance(r, np.ndarray):
+            beta_2.to_numpy("bool_")
+            beta_p.to_numpy("uint8")
+            m.to_numpy("uint8")
+
+        u = [0 for i in range(len(x))]
+        w = [0 for i in range(len(x))]
+        c = [0 for i in range(len(x))]
+        for i in range(len(x) - 1, -1, -1):
+            r_i = r >> i & 1  # bit at ith position
+            u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
+            w[i] = x[i] ^ r_i
+            c[i] = u[i] + 1 + sum(w[i + 1 :])
+
+        d = m * (math.prod(c))
+
+        d_val = d.reconstruct(decode=False)  # plaintext d.
+        d_val[d_val != 0] = 1  # making all non zero values as 1.
+
+        beta_prime = d_val
+
+        return beta_2 + beta_prime
+
+    @staticmethod
+    def wrap2(a: np.ndarray, b: np.ndarray) -> np.ndarray:
+        """Computes wrap on the input numpy array.
+
+        Args:
+            a (np.ndarray): Input numpy array
+            b (np.ndarray): Input numpy array.
+
+        Returns:
+            result (np.ndarray): Boolean array ,True if there is a carry.
+
+        Raises:
+            ValueError: If the input values is not a numpy array.
+            ValueError: If signed numpy array are provided as input.
+
+        wrap2 calucaties the carry bit on addition of two values a+b.
+        """
+        if not isinstance(a, np.ndarray) or not isinstance(b, np.ndarray):
+            raise ValueError("Input value must be a numpy array for wrap2.")
+
+        if a.dtype.kind == "i" or b.dtype.kind == "i":
+            raise ValueError("Wrap2 works only for signed numbers.")
+
+        max_val = np.iinfo(a.dtype).max
+
+        return a > max_val - b
+
+    @staticmethod
+    def wrap3(a: np.ndarray, b: np.ndarray, c: np.ndarray) -> np.ndarray:
+        """Computes wrap on the input numpy array.
+
+        Args:
+            a (np.ndarray): Input numpy array
+            b (np.ndarray): Input numpy array.
+            c (np.ndarray): Input numpy array.
+
+        Returns:
+            result (np.ndarray): Modulo reduction of the exact wrap function.
+
+        Raises:
+            ValueError: If the input values is not a numpy array.
+            ValueError: If signed numpy array are provided as input.
+
+        wrap3 calucaties the carry bit on addition of three values a+b+c(mod 2).
+        """
+        if not isinstance(a, np.ndarray) or not isinstance(b, np.ndarray):
+            raise ValueError("Input value must be a numpy array for wrap3.")
+
+        if a.dtype.kind == "i" or b.dtype.kind == "i" or c.dtype.kind == "i":
+            raise ValueError("Wrap3 works only for signed numbers.")
+
+        return Falcon.wrap2(a, b) ^ Falcon.wrap2(a + b, c)
+
+    @staticmethod
+    def wrap_preprocess(a: MPCTensor, session: Session) -> List:
+        """Generates Preprocess values for wrap function.
+
+        Args:
+            a (MPCTensor): input tensor
+            session (Session) : session the tensors belong to
+
+        Returns:
+            x,x_p,x_wrap (List) : Returns a random shares in session ring, prime ring, wrap of it.
+
+        Raises:
+            ValueError : If the input tensor shape is None.
+        """
+        shape = a.shape
+        if shape is None:
+            raise ValueError("Input MPCTensor for Wrap must have valid shape")
+        tensor_type = session.tensor_type
+        dtype = UNSIGNED_MAP[tensor_type]
+        ring_size = session.ring_size
+
+        ptr_list: List = []
+        for session_ptr in session.session_ptrs:
+            ptr_list.append(
+                session_ptr.prrs_generate_random_share(
+                    shape=shape, ring_size=str(ring_size)
+                )
+            )
+
+        x = MPCTensor(shares=ptr_list, session=session, shape=shape)
+        x_b = ABY3.bit_decomposition_ttp(x, session)  # bit sharing
+        x_p: List = []  # bit sharing in Zp
+
+        for idx in range(len(x_b)):
+            p_sh = ABY3.bit_injection(x_b[idx], session, PRIME_NUMBER)
+            p_sh.to_numpy("uint8")
+            x_p.append(p_sh)
+
+        x.to_numpy(dtype)
+        x1 = x.share_ptrs[0].get_copy().shares[0]
+        x2, x3 = x.share_ptrs[1].get_copy().shares
+
+        x_wrap = Falcon.wrap3(x1, x2, x3)
+
+        # numpy random generator generate by shape only for float types.
+        r1 = torch.empty(size=shape, dtype=torch.bool).random_(generator=gen).numpy()
+        r2 = torch.empty(size=shape, dtype=torch.bool).random_(generator=gen).numpy()
+        r3 = x_wrap ^ r1 ^ r2
+
+        x_wrap_sh: List[np.ndarray] = [r1, r2, r3]
+        share_ptrs = ReplicatedSharedTensor.distribute_shares(x_wrap_sh, session, 2)
+
+        alpha = MPCTensor(shares=share_ptrs, session=session, shape=shape)
+
+        a.to_numpy(dtype)
+
+        return a, x, x_p, alpha
+
+    @staticmethod
+    def wrap(a: MPCTensor) -> MPCTensor:
+        """Falcon Wrap functionality which computes wrap on underlying shares.
+
+        Args:
+            a (MPCTensor) : input tensor to compute wrap.
+
+        Returns:
+            wrap_sh (MPCTensor): bit shares of wrap of the input tensor.
+        """
+        session = a.session
+
+        a, x, x_p, alpha = Falcon.wrap_preprocess(a, session)
+
+        r = x + a
+
+        # TODO : change to get shares by reconstruct,malicious returns all_shares
+        r1 = r.share_ptrs[0].get_copy().shares[0]
+        r2, r3 = r.share_ptrs[1].get_copy().shares
+
+        share_ptrs = []
+        for a_sh, x_sh in zip(a.share_ptrs, x.share_ptrs):
+            share_ptrs.append(a_sh.wrap_rst(x_sh))
+
+        beta = MPCTensor(shares=share_ptrs, session=session, shape=a.shape)
+
+        delta = Falcon.wrap3(r1, r2, r3)
+
+        r_public = r1 + r2 + r3
+
+        eta = Falcon.private_compare(x_p, r_public + 1)
+
+        wrap_sh = beta + delta - eta - alpha
+
+        wrap_sh.from_numpy()
+
+        return wrap_sh
+
+    @staticmethod
+    def drelu(a: MPCTensor) -> MPCTensor:
+        """Computes Derivative of ReLU on input MPCTensor.
+
+        Args:
+            a (MPCTensor): input tensor.
+
+        Returns:
+            result (MPCTensor): DReLU of input tensor.
+
+        Raises:
+            ValueError: If the input tensor does not have a valid shape.
+        """
+        session = a.session
+        shape = a.shape
+        if shape is None:
+            raise ValueError("Input MPCTensor must have valid shape.")
+
+        ring_size = session.ring_size
+        ring_bits = get_nr_bits(ring_size)
+        msb_idx = ring_bits - 1  # index of msb
+
+        share_ptrs_msb: List[ReplicatedSharedTensor] = []
+        share_ptrs_wrap: List[ReplicatedSharedTensor] = []
+
+        for share in a.share_ptrs:
+            share_ptrs_msb.append(share.bit_extraction(msb_idx))
+            share_ptrs_wrap.append(share << 1)
+
+        msb = MPCTensor(shares=share_ptrs_msb, session=session, shape=shape)
+        wrap_lshift = MPCTensor(shares=share_ptrs_wrap, session=session, shape=shape)
+
+        wrap = Falcon.wrap(wrap_lshift)
+
+        result = msb ^ wrap ^ 1
+
+        return result
+
+    @staticmethod
+    def relu(a: MPCTensor) -> MPCTensor:
+        """Computer ReLU on input MPCTensor.
+
+        Args:
+            a (MPCTensor): input MPCTensor.
+
+        Returns:
+            result (MPCTensor): ReLU of input tensor.
+
+        Raises:
+            ValueError: If the input tensor does not have a valid shape.
+        """
+        shape = a.shape
+        tensor_type = a.session.tensor_type
+        if shape is None:
+            raise ValueError("Shape must be provided for ReLU.")
+
+        b = Falcon.drelu(a)
+        b = b ^ 1  # invert drelu bit.
+
+        zero = torch.zeros(shape).type(tensor_type)
+        result = Falcon.select_shares(a, zero, b)
+
+        return result
+
+    @staticmethod
+    def bounding_pow(x: MPCTensor) -> torch.Tensor:
+        """Computer bounding power of 2 on the given input MPCTensor.
+
+        Args:
+            x (MPCTensor): input tensor.
+
+        Returns:
+            alpha (torch.Tensor): Bounding power of 2 of input tensor in clear.
+
+        Raises:
+            ValueError: If the input tensor does not have valid shape.
+        """
+        session = x.session
+        ring_size = session.ring_size
+        ring_bits = get_nr_bits(ring_size)
+        bit_exp = int(math.log2(ring_bits))  # exponent of the ring_bits
+        tensor_type = session.tensor_type
+        shape = x.shape
+
+        if shape is None:
+            raise ValueError("Input MPCTensor should have valid shape")
+
+        alpha = torch.zeros(size=shape, dtype=tensor_type)
+
+        # we do a binary search for finding bounding pow.
+
+        for i in range(bit_exp - 1, -1, -1):
+
+            c = x - (2 ** (2 ** i + alpha))
+
+            c_drelu = Falcon.drelu(c)
+            r_c = c_drelu.reconstruct(decode=False)  # reconstructed value
+
+            alpha[r_c == 1] = alpha[r_c == 1] + 2 ** i
+
+        return alpha

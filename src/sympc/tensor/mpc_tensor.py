@@ -1165,6 +1165,46 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         return self.__apply_op(y, "xor")
 
+    def to_numpy(self, dtype: str) -> "MPCTensor":
+        """Converts the underlying tensor shares to numpy array.
+
+        Args:
+            dtype (str) : The data type to convert the tensor to.
+
+        Raises:
+            ValueError : If invalid share class is provided as input.
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+
+        if dtype is None:
+            raise ValueError("dtype must be provided for numpy conversion.")
+
+        share_class = self.session.protocol.share_class
+
+        if share_class == ReplicatedSharedTensor:
+            # inplace op
+            for idx in range(len(self.share_ptrs)):
+                self.share_ptrs[idx] = self.share_ptrs[idx].to_numpy(dtype)
+        else:
+            raise ValueError(f"Share Class {share_class} not supported for numpy.")
+
+    def from_numpy(self) -> "MPCTensor":
+        """Converts the underlying tensor to torch tensor.
+
+        Raises:
+            ValueError : If invalid share class is provided as input.
+        """
+        from sympc.tensor import ReplicatedSharedTensor
+
+        share_class = self.session.protocol.share_class
+
+        if share_class == ReplicatedSharedTensor:
+            # inplace op
+            for idx in range(len(self.share_ptrs)):
+                self.share_ptrs[idx] = self.share_ptrs[idx].from_numpy()
+        else:
+            raise ValueError(f"Share Class {share_class} not supported for numpy.")
+
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
     __sub__ = wrapper_getattribute(sub)
