@@ -631,7 +631,11 @@ class Falcon(metaclass=Protocol):
 
         wrap3 calucaties the carry bit on addition of three values a+b+c(mod 2).
         """
-        if not isinstance(a, np.ndarray) or not isinstance(b, np.ndarray):
+        if (
+            not isinstance(a, np.ndarray)
+            or not isinstance(b, np.ndarray)
+            or not isinstance(c, np.ndarray)
+        ):
             raise ValueError("Input value must be a numpy array for wrap3.")
 
         if a.dtype.kind == "i" or b.dtype.kind == "i" or c.dtype.kind == "i":
