@@ -487,18 +487,20 @@ class Falcon(metaclass=Protocol):
 
         Args:
             session (Session): session to generate random shares for.
-            shape (Union[torch.Size,tuple]): shape of the random share to generate.
+            shape (Union[torch.Size, tuple]): shape of the random share to generate.
 
         Returns:
-            share (MPCTensor): Retuns shares of random number in group Zp*.
+            share (MPCTensor): Returns shares of random number in group Zp*.
 
         Zp* = {1,2..,p-1},where p is a prime number.
-        We use Euler's Theorum for verifying that random share is not zero.
+        We use Euler's Theorem for verifying that random share is not zero.
         It states that:
         For a general modulus n
         a^phi(n) = 1(mod n), if a is co prime to n.
         In our case n=p(prime number), phi(p) = p-1
         phi(n) = Euler totient function.
+        We effectively try to sample a random number in range [1,p-1],discard the instances where
+        it equals zero.
         """
         while True:
             ptr_list: List[ReplicatedSharedTensor] = []
@@ -517,26 +519,39 @@ class Falcon(metaclass=Protocol):
                 return m
 
     @staticmethod
-    def private_compare(x: List[MPCTensor], r: torch.Tensor) -> MPCTensor:
+    def private_compare(
+        x: List[MPCTensor], r: Union[torch.Tensor, np.ndarray]
+    ) -> MPCTensor:
         """Falcon Private Compare functionality which computes(x>r).
 
         Args:
             x (List[MPCTensor]) : shares of bits of x in Zp.
-            r (torch.Tensor) : Public integer r.
+            r (Union[torch.Tensor,np.ndarray]) : Public value r.
 
         Returns:
             result (MPCTensor): Returns shares of bits of the operation.
 
+        Raises:
+            ValueError: If input shares is not a list.
+            ValueError: If input public value is not a torch tensor or numpy array.
+
         (if (x>=r) returns 1 else returns 0)
         """
+        if not isinstance(x, list):
+            raise ValueError(f"Input shares for Private Compare: {x} must be a list")
+
+        if not isinstance(r, torch.Tensor) and not isinstance(r, np.ndarray):
+            raise ValueError(
+                f"Value r:{r} must be a torch tensor or numpy array for private compare"
+            )
+
         shape = x[0].shape
         session = x[0].session
-        ptr_list: List = []
-        for session_ptr in session.session_ptrs:
-            sh_ptr = session_ptr.prrs_generate_random_share(
-                shape=shape, ring_size=str(2)
-            )
-            ptr_list.append(sh_ptr)
+
+        ptr_list: List[ReplicatedSharedTensor] = [
+            session_ptr.prrs_generate_random_share(shape=shape, ring_size="2")
+            for session_ptr in session.session_ptrs
+        ]
 
         beta_2 = MPCTensor(
             shares=ptr_list, session=session, shape=shape
@@ -545,21 +560,25 @@ class Falcon(metaclass=Protocol):
             beta_2, session, PRIME_NUMBER
         )  # shares of random bit in Zp.
         m = Falcon._random_prime_group(session, shape)
+
         if isinstance(r, np.ndarray):
             beta_2.to_numpy("bool_")
             beta_p.to_numpy("uint8")
             m.to_numpy("uint8")
 
-        u = [0 for i in range(len(x))]
-        w = [0 for i in range(len(x))]
-        c = [0 for i in range(len(x))]
-        for i in range(len(x) - 1, -1, -1):
-            r_i = r >> i & 1  # bit at ith position
-            u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
-            w[i] = x[i] ^ r_i
-            c[i] = u[i] + 1 + sum(w[i + 1 :])
+        nr_shares = len(x)
+        u = [0] * nr_shares
+        c = [0] * nr_shares
 
-        d = m * (math.prod(c))
+        w = 0
+
+        for i in range(len(x) - 1, -1, -1):
+            r_i = (r >> i) & 1  # bit at ith position
+            u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
+            c[i] = u[i] + 1 + w
+            w += x[i] ^ r_i
+
+        d = m * math.prod(c)
 
         d_val = d.reconstruct(decode=False)  # plaintext d.
         d_val[d_val != 0] = 1  # making all non zero values as 1.
@@ -613,7 +632,11 @@ class Falcon(metaclass=Protocol):
 
         wrap3 calucaties the carry bit on addition of three values a+b+c(mod 2).
         """
-        if not isinstance(a, np.ndarray) or not isinstance(b, np.ndarray):
+        if (
+            not isinstance(a, np.ndarray)
+            or not isinstance(b, np.ndarray)
+            or not isinstance(c, np.ndarray)
+        ):
             raise ValueError("Input value must be a numpy array for wrap3.")
 
         if a.dtype.kind == "i" or b.dtype.kind == "i" or c.dtype.kind == "i":
