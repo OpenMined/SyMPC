@@ -4,10 +4,12 @@ Falcon : Honest-Majority Maliciously Secure Framework for Private Deep Learning.
 arXiv:2004.02229 [cs.CR]
 """
 # stdlib
+import math
 from typing import Any
 from typing import Dict
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # third party
 import torch
@@ -20,6 +22,7 @@ from sympc.session import get_session
 from sympc.store import CryptoPrimitiveProvider
 from sympc.store.exceptions import EmptyPrimitiveStore
 from sympc.tensor import MPCTensor
+from sympc.tensor import PRIME_NUMBER
 from sympc.tensor import ReplicatedSharedTensor
 from sympc.tensor.tensor import SyMPCTensor
 from sympc.utils import get_type_from_ring
@@ -451,3 +454,102 @@ class Falcon(metaclass=Protocol):
         z = x + (d * (y - x))
 
         return z
+
+    @staticmethod
+    def _random_prime_group(
+        session: Session, shape: Union[torch.Size, tuple]
+    ) -> MPCTensor:
+        """Computes shares of random number in Zp*.Zp* is the multiplicative group mod p.
+
+        Args:
+            session (Session): session to generate random shares for.
+            shape (Union[torch.Size, tuple]): shape of the random share to generate.
+
+        Returns:
+            share (MPCTensor): Returns shares of random number in group Zp*.
+
+        Zp* = {1,2..,p-1},where p is a prime number.
+        We use Euler's Theorem for verifying that random share is not zero.
+        It states that:
+        For a general modulus n
+        a^phi(n) = 1(mod n), if a is co prime to n.
+        In our case n=p(prime number), phi(p) = p-1
+        phi(n) = Euler totient function.
+        We effectively try to sample a random number in range [1,p-1],discard the instances where
+        it equals zero.
+        """
+        while True:
+            ptr_list: List[ReplicatedSharedTensor] = []
+            for session_ptr in session.session_ptrs:
+                ptr = session_ptr.prrs_generate_random_share(
+                    shape=(), ring_size=str(PRIME_NUMBER)
+                ).resolve_pointer_type()
+                ptr = ptr.repeat(shape)
+                ptr_list.append(ptr)
+
+            m = MPCTensor(shares=ptr_list, session=session, shape=shape)
+
+            m_euler = m ** (PRIME_NUMBER - 1)
+
+            if (m_euler.reconstruct(decode=False) == 1).all():
+                return m
+
+    @staticmethod
+    def private_compare(x: List[MPCTensor], r: torch.Tensor) -> MPCTensor:
+        """Falcon Private Compare functionality which computes(x>r).
+
+        Args:
+            x (List[MPCTensor]) : shares of bits of x in Zp.
+            r (torch.Tensor) : Public value r.
+
+        Returns:
+            result (MPCTensor): Returns shares of bits of the operation.
+
+        Raises:
+            ValueError: If input shares is not a list.
+            ValueError: If input public value is not a tensor.
+
+        (if (x>=r) returns 1 else returns 0)
+        """
+        if not isinstance(x, list):
+            raise ValueError(f"Input shares for Private Compare: {x} must be a list")
+
+        if not isinstance(r, torch.Tensor):
+            raise ValueError(f"Value r:{r} must be a torch tensor for private compare")
+
+        shape = x[0].shape
+        session = x[0].session
+
+        ptr_list: List[ReplicatedSharedTensor] = [
+            session_ptr.prrs_generate_random_share(shape=shape, ring_size="2")
+            for session_ptr in session.session_ptrs
+        ]
+
+        beta_2 = MPCTensor(
+            shares=ptr_list, session=session, shape=shape
+        )  # shares of random bit
+        beta_p = ABY3.bit_injection(
+            beta_2, session, PRIME_NUMBER
+        )  # shares of random bit in Zp.
+        m = Falcon._random_prime_group(session, shape)
+
+        nr_shares = len(x)
+        u = [0] * nr_shares
+        c = [0] * nr_shares
+
+        w = 0
+
+        for i in range(len(x) - 1, -1, -1):
+            r_i = (r >> i) & 1  # bit at ith position
+            u[i] = (1 - 2 * beta_p) * (x[i] - r_i)
+            c[i] = u[i] + 1 + w
+            w += x[i] ^ r_i
+
+        d = m * math.prod(c)
+
+        d_val = d.reconstruct(decode=False)  # plaintext d.
+        d_val[d_val != 0] = 1  # making all non zero values as 1.
+
+        beta_prime = d_val
+
+        return beta_2 + beta_prime
