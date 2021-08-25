@@ -325,8 +325,11 @@ def test_private_compare_exception(get_clients) -> None:
     SessionManager.setup_mpc(session)
     x = MPCTensor(secret=1, session=session)
     r = torch.tensor([1])
+
+    # Expection for not passing input tensor values as list.
     with pytest.raises(ValueError):
         Falcon.private_compare(x, r)
 
+    # Exception for not passing a public value(torch.Tensor).
     with pytest.raises(ValueError):
         Falcon.private_compare([x], x)
