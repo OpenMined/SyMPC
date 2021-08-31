@@ -8,6 +8,7 @@ import itertools
 from typing import Any
 from typing import List
 from typing import Tuple
+from typing import Union
 
 # third party
 import numpy as np
@@ -70,7 +71,7 @@ class ABY3(metaclass=Protocol):
 
     @staticmethod
     def truncation_algorithm1(
-        ptr_list: List[torch.Tensor, np.ndarray],
+        ptr_list: Union[List[torch.Tensor], List[np.ndarray]],
         shape: torch.Size,
         session: Session,
         ring_size: int,
@@ -79,7 +80,7 @@ class ABY3(metaclass=Protocol):
         """Performs the ABY3 truncation algorithm1.
 
         Args:
-            ptr_list (List[torch.Tensor, np.ndarray]): Tensors to truncate
+            ptr_list (Union[List[torch.Tensor], List[np.ndarray]]): Tensors to truncate
             shape (torch.Size) : shape of tensor values
             session (Session) : session the tensor belong to
             ring_size (int): Ring size of the underlying tensors.
