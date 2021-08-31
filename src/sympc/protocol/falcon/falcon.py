@@ -644,7 +644,7 @@ class Falcon(metaclass=Protocol):
         return Falcon.wrap2(a, b) ^ Falcon.wrap2(a + b, c)
 
     @staticmethod
-    def wrap_preprocess(a: MPCTensor, session: Session) -> List:
+    def wrap_preprocess(a: MPCTensor, session: Session) -> List[MPCTensor]:
         """Generates Preprocess values for wrap function.
 
         Args:
@@ -652,7 +652,8 @@ class Falcon(metaclass=Protocol):
             session (Session) : session the tensors belong to
 
         Returns:
-            x,x_p,x_wrap (List) : Returns a random shares in session ring, prime ring, wrap of it.
+            x,x_p,x_wrap (List[MPCTensor]) : Returns a random shares in
+                session ring, prime ring, wrap of it.
 
         Raises:
             ValueError : If the input tensor shape is None.
@@ -664,13 +665,12 @@ class Falcon(metaclass=Protocol):
         dtype = UNSIGNED_MAP[tensor_type]
         ring_size = session.ring_size
 
-        ptr_list: List = []
-        for session_ptr in session.session_ptrs:
-            ptr_list.append(
-                session_ptr.prrs_generate_random_share(
-                    shape=shape, ring_size=str(ring_size)
-                )
+        ptr_list: List[ReplicatedSharedTensor] = [
+            session_ptr.prrs_generate_random_share(
+                shape=shape, ring_size=str(ring_size)
             )
+            for session_ptr in session.session_ptrs
+        ]
 
         x = MPCTensor(shares=ptr_list, session=session, shape=shape)
         x_b = ABY3.bit_decomposition_ttp(x, session)  # bit sharing
@@ -721,9 +721,9 @@ class Falcon(metaclass=Protocol):
         r1 = r.share_ptrs[0].get_copy().shares[0]
         r2, r3 = r.share_ptrs[1].get_copy().shares
 
-        share_ptrs = []
-        for a_sh, x_sh in zip(a.share_ptrs, x.share_ptrs):
-            share_ptrs.append(a_sh.wrap_rst(x_sh))
+        share_ptrs: List[ReplicatedSharedTensor] = [
+            a_sh.wrap_rst(x_sh) for a_sh, x_sh in zip(a.share_ptrs, x.share_ptrs)
+        ]
 
         beta = MPCTensor(shares=share_ptrs, session=session, shape=a.shape)
 

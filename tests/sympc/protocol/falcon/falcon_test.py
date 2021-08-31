@@ -335,9 +335,10 @@ def test_private_compare_exception(get_clients) -> None:
         Falcon.private_compare([x], x)
 
 
-def test_wrap(get_clients) -> None:
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_wrap(get_clients, security) -> None:
     parties = get_clients(3)
-    falcon = Falcon(security_type="semi-honest")
+    falcon = Falcon(security_type=security)
     session = Session(parties=parties, protocol=falcon)
     SessionManager.setup_mpc(session)
 
