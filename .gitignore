@@ -50,5 +50,9 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 
+#Examples downloaded datasets
+examples/housing.data.*
+examples/housing.data
+
 # VSCode
 .vscode/

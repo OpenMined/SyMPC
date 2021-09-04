@@ -377,6 +377,7 @@ class GradDiv(GradFunc):
             y = torch.tensor(y)
 
         ctx["result"] = x / y
+        ctx["y"] = y
 
         return ctx["result"]
 
