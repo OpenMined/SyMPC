@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1629901476811,
+  "lastUpdate": 1630798180406,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1736,6 +1736,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.0055956857920891005",
             "extra": "mean: 703.6298469999963 msec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "kamathhrishi@gmail.com",
+            "name": "Hrishikesh Kamath",
+            "username": "kamathhrishi"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "020cd94b41251f723f0fb7d8c80e36c10215792f",
+          "message": " Encrypted inference-Linear Regression Example (#276)\n\n* Encrypted inference example\r\n\r\n* Change file name\r\n\r\n* Updated notebook\r\n\r\n* Update dataset loading\r\n\r\n* Update git ingore\r\n\r\n* Remove dataset\r\n\r\n* Minor changes\r\n\r\n* remove warnings\r\n\r\n* Added better explanation\r\n\r\n* More details\r\n\r\n* Made small changes\r\n\r\n* Added better description\r\n\r\n* Some changes\r\n\r\n* add context to grad and Send data to clients before inferencee\r\n\r\n* Updated notebook\r\n\r\n* Some changes\r\n\r\n* Rename file",
+          "timestamp": "2021-09-05T00:26:43+01:00",
+          "tree_id": "54f4e4b3a86f78c78f47cbc7793f94b0be72fa93",
+          "url": "https://github.com/OpenMined/SyMPC/commit/020cd94b41251f723f0fb7d8c80e36c10215792f"
+        },
+        "date": 1630798179786,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 0.9505645199072823,
+            "unit": "iter/sec",
+            "range": "stddev: 0.04824972803014174",
+            "extra": "mean: 1.0520064435999985 sec\nrounds: 5"
           }
         ]
       }
