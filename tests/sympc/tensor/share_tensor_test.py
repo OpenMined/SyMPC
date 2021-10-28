@@ -236,3 +236,10 @@ def test_share_tensor_resolve_pointer(get_clients) -> None:
     share_pt_name = type(resolved_share_pt0).__name__
 
     assert share_pt_name == "ShareTensorPointer"
+
+
+def test_share_tensor_numpy() -> None:
+    x = torch.Tensor([5.0])
+    x_share = ShareTensor(data=x)
+    x_share = x_share.numpy()
+    assert isinstance(x_share.tensor, np.ndarray)
