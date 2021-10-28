@@ -561,6 +561,15 @@ class ShareTensor(metaclass=SyMPCTensor):
 
         return share_ptrs
 
+    def numpy(self) -> "ShareTensor":
+        """Converts a ShareTensor into a Numpy ndarray.
+
+        Returns:
+            A ShareTensor
+        """
+        self.tensor = self.tensor.numpy()
+        return self
+
     __add__ = add
     __radd__ = add
     __sub__ = sub
