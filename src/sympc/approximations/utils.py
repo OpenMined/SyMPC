@@ -1,5 +1,7 @@
 """Utility functions for approximation functions."""
 
+from sympc.sympc import ffi
+
 
 def sign(data):
     """Calculate sign of given tensor.
@@ -24,3 +26,7 @@ def modulus(data):
 
     """
     return sign(data) * data
+
+
+def _as_f64_array(np_double_array):
+    return ffi.cast("double *", np_double_array.ctypes.data)
