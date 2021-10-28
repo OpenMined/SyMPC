@@ -163,6 +163,10 @@ share_tensor_attrs = [
         "sympc.tensor.share_tensor.ShareTensor.flatten",
         "sympc.tensor.share_tensor.ShareTensor",
     ),
+    (
+        "sympc.tensor.share_tensor.ShareTensor.numpy",
+        "sympc.tensor.share_tensor.ShareTensor",
+    ),
 ]
 
 replicated_shared_tensor_attrs = [
