@@ -811,5 +811,5 @@ def test_mpc_tensor_numpy(get_clients) -> None:
     x = MPCTensor(secret=x_secret, session=session)
     np_x = x.numpy()
     print(np_x.share_ptrs)
-    print(x.reconstruct())
+    print(x.reconstruct(get_shares=True))
     # print(np_x.reconstruct())
