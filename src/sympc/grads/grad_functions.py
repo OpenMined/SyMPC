@@ -554,6 +554,18 @@ class GradConv2d(GradFunc):
         out_channels = grad.shape[1]
         min_batch = x.shape[0]
 
+        if type(stride) == int:
+            stride = (stride, stride)
+
+        if type(padding == int):
+            padding = (padding, padding)
+
+        if type(dilation) == int:
+            dilation = (dilation, dilation)
+
+        if type(groups) == int:
+            groups = (groups, groups)
+
         output_padding = torch.nn.grad._grad_input_padding(
             grad_output=torch.empty(grad.shape),
             input_size=x.shape,
