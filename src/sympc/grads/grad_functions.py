@@ -557,10 +557,10 @@ class GradConv2d(GradFunc):
         output_padding = torch.nn.grad._grad_input_padding(
             grad_output=torch.empty(grad.shape),
             input_size=x.shape,
-            stride=(stride, stride),
-            padding=(padding, padding),
+            stride=stride,
+            padding=padding,
             kernel_size=weight_size,
-            dilation=(dilation, dilation),
+            dilation=dilation,
         )
 
         input_grad = grad.conv_transpose2d(
