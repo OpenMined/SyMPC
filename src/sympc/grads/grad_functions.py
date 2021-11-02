@@ -563,9 +563,6 @@ class GradConv2d(GradFunc):
         if type(dilation) == int:
             dilation = (dilation, dilation)
 
-        if type(groups) == int:
-            groups = (groups, groups)
-
         output_padding = torch.nn.grad._grad_input_padding(
             grad_output=torch.empty(grad.shape),
             input_size=x.shape,
