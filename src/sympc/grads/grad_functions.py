@@ -557,11 +557,13 @@ class GradConv2d(GradFunc):
         if type(stride) == int:
             stride = (stride, stride)
 
-        if type(padding == int):
+        if type(padding) == int:
             padding = (padding, padding)
 
         if type(dilation) == int:
             dilation = (dilation, dilation)
+
+        print("PADDING: ", padding)
 
         output_padding = torch.nn.grad._grad_input_padding(
             grad_output=torch.empty(grad.shape),
