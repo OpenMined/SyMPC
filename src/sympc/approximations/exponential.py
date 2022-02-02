@@ -1,7 +1,7 @@
 """function used to calculate exp of a given tensor."""
 
 
-def exp(value, iterations=8):
+def exp(value: "MPCTensor", iterations: int=8) -> "MPCTensor":
     r"""Approximates the exponential function using a limit approximation.
 
     exp(x) = \lim_{n -> infty} (1 + x / n) ^ n
@@ -9,7 +9,7 @@ def exp(value, iterations=8):
     iterations. We then compute (1 + x / n) once and square `d` times.
 
     Args:
-        value: tensor whose exp is to be calculated
+        value (MPCTensor): tensor whose exp is to be calculated
         iterations (int): number of iterations for limit approximation
 
     Ref: https://github.com/LaRiffle/approximate-models
