@@ -1,5 +1,10 @@
 """Utility functions for approximation functions."""
-from sympc.tensor import MPCTensor
+
+# stdlib
+from typing import TypeVar
+
+MPCTensor = TypeVar("MPCTensor")
+
 
 def sign(data: MPCTensor) -> MPCTensor:
     """Calculate sign of given tensor.

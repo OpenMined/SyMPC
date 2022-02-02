@@ -1,7 +1,12 @@
 """function used to calculate exp of a given tensor."""
 
+# stdlib
+from typing import TypeVar
 
-def exp(value: "MPCTensor", iterations: int=8) -> "MPCTensor":
+MPCTensor = TypeVar("MPCTensor")
+
+
+def exp(value: MPCTensor, iterations: int = 8) -> MPCTensor:
     r"""Approximates the exponential function using a limit approximation.
 
     exp(x) = \lim_{n -> infty} (1 + x / n) ^ n

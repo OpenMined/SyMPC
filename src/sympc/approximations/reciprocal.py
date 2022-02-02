@@ -1,12 +1,19 @@
 """function used to calculate reciprocal of a given tensor."""
 
+# stdlib
+from typing import TypeVar
+
 from sympc.approximations.exponential import exp
 from sympc.approximations.log import log
 from sympc.approximations.utils import modulus
 from sympc.approximations.utils import sign
 
+MPCTensor = TypeVar("MPCTensor")
 
-def reciprocal(self: "MPCTensor", method: str = "NR", nr_iters: int = 10) -> "MPCTensor":
+
+def reciprocal(
+    self: "MPCTensor", method: str = "NR", nr_iters: int = 10
+) -> "MPCTensor":
     r"""Calculate the reciprocal using the algorithm specified in the method args.
 
     Ref: https://github.com/facebookresearch/CrypTen
