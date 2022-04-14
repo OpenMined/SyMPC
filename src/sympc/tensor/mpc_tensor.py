@@ -16,14 +16,16 @@ from typing import Union
 import torch
 import torchcsprng as csprng  # type: ignore
 
-from sympc.approximations import APPROXIMATIONS
 from sympc.config import Config
 from sympc.encoder import FixedPointEncoder
 from sympc.session import Session
+from sympc.tensor import RegisterApproximation
 from sympc.tensor import ShareTensor
 from sympc.utils import ispointer
 
 from .tensor import SyMPCTensor
+
+APPROXIMATIONS = RegisterApproximation.approx_dict
 
 PROPERTIES_FORWARD_ALL_SHARES = {"T"}
 METHODS_FORWARD_ALL_SHARES = {

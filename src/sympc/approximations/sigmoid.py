@@ -1,7 +1,6 @@
 """function used to calculate sigmoid of a given tensor."""
 
 # stdlib
-from typing import TypeVar
 
 # third party
 import torch
@@ -9,11 +8,14 @@ import torch
 from sympc.approximations.exponential import exp
 from sympc.approximations.reciprocal import reciprocal
 from sympc.approximations.utils import sign
+from sympc.tensor import MPCTensor
+from sympc.tensor import RegisterApproximation
 
-MPCTensor = TypeVar("MPCTensor")
+# from typing import TypeVar
 
 
-def sigmoid(tensor: "MPCTensor", method: str = "exp") -> "MPCTensor":
+@RegisterApproximation("sigmoid")
+def sigmoid(tensor: MPCTensor, method: str = "exp") -> MPCTensor:
     """Approximates the sigmoid function using a given method.
 
     Args:

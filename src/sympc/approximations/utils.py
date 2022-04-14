@@ -1,11 +1,10 @@
 """Utility functions for approximation functions."""
 
-# stdlib
-from typing import TypeVar
-
-MPCTensor = TypeVar("MPCTensor")
+from sympc.tensor import MPCTensor
+from sympc.tensor import RegisterApproximation
 
 
+@RegisterApproximation("sign")
 def sign(data: MPCTensor) -> MPCTensor:
     """Calculate sign of given tensor.
 
@@ -18,6 +17,7 @@ def sign(data: MPCTensor) -> MPCTensor:
     return (data > 0) + (data < 0) * (-1)
 
 
+@RegisterApproximation("modulus")
 def modulus(data: MPCTensor) -> MPCTensor:
     """Calculation of modulus for a given tensor.
 

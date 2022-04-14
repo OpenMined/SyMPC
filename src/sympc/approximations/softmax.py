@@ -7,8 +7,10 @@ from sympc.approximations.exponential import exp
 from sympc.approximations.log import log
 from sympc.approximations.reciprocal import reciprocal
 from sympc.tensor import MPCTensor
+from sympc.tensor import RegisterApproximation
 
 
+@RegisterApproximation("softmax")
 def softmax(tensor: MPCTensor, dim: Optional[int] = None) -> MPCTensor:
     """Calculates tanh of given tensor's elements along the given dimension.
 
@@ -36,6 +38,7 @@ def softmax(tensor: MPCTensor, dim: Optional[int] = None) -> MPCTensor:
     return numerator * reciprocal(denominator)
 
 
+@RegisterApproximation("log_softmax")
 def log_softmax(tensor: MPCTensor, dim: Optional[int] = None) -> MPCTensor:
     """Applies a softmax followed by a logarithm.
 

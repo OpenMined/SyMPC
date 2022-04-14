@@ -1,11 +1,10 @@
 """function used to calculate exp of a given tensor."""
 
-# stdlib
-from typing import TypeVar
-
-MPCTensor = TypeVar("MPCTensor")
+from sympc.tensor import MPCTensor
+from sympc.tensor.register_approximation import register_approximation
 
 
+@register_approximation("exp")
 def exp(value: MPCTensor, iterations: int = 8) -> MPCTensor:
     r"""Approximates the exponential function using a limit approximation.
 

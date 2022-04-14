@@ -12,6 +12,7 @@ from torch import Tensor
 from sympc.approximations.sigmoid import sigmoid
 from sympc.module.nn import relu
 from sympc.tensor import MPCTensor
+from sympc.tensor import RegisterApproximation
 from sympc.tensor.static import stack
 
 
@@ -27,6 +28,7 @@ def _tanh_sigmoid(tensor: MPCTensor) -> MPCTensor:
     return 2 * sigmoid(2 * tensor) - 1
 
 
+@RegisterApproximation("tanh")
 def tanh(tensor: MPCTensor, method: str = "sigmoid") -> MPCTensor:
     """Calculates tanh of given tensor.
 
