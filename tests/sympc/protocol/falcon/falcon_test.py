@@ -333,3 +333,23 @@ def test_private_compare_exception(get_clients) -> None:
     # Exception for not passing a public value(torch.Tensor).
     with pytest.raises(ValueError):
         Falcon.private_compare([x], x)
+
+
+@pytest.mark.parametrize("security", ["semi-honest", "malicious"])
+def test_wrap(get_clients, security) -> None:
+    parties = get_clients(3)
+    falcon = Falcon(security_type=security)
+    session = Session(parties=parties, protocol=falcon)
+    SessionManager.setup_mpc(session)
+
+    secret = torch.tensor([[45.12, 82.12], [-12.5, 32.5]])
+    x = MPCTensor(secret=secret, session=session)
+
+    result = Falcon.wrap(x)
+
+    x1 = x.share_ptrs[0].get_copy().shares[0]
+    x2, x3 = x.share_ptrs[1].get_copy().shares
+
+    expected_res = torch.from_numpy(Falcon.wrap3(x1, x2, x3))
+
+    assert (result.reconstruct(decode=False) == expected_res).all()

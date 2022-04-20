@@ -262,6 +262,18 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.repeat",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.to_numpy",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.from_numpy",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.wrap_rst",
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
 ]
 
 allowed_external_attrs = [
@@ -284,6 +296,10 @@ allowed_external_attrs = [
     (
         "sympc.protocol.falcon.falcon.Falcon.triple_verification",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
+    ),
+    (
+        "sympc.protocol.falcon.falcon.Falcon.wrap2",
+        "numpy.ndarray",
     ),
     ("sympc.protocol.aby3.aby3.ABY3.local_decomposition", "syft.lib.python.List"),
     (
