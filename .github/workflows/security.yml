@@ -40,8 +40,8 @@ jobs:
       - name: Install dependencies
         run: |
           hash -r
-          pip install -r requirements.dev.txt
           pip install -e .
+          pip install -e .[dev]
 
       - id: file_changes  # get changed files.
         uses: trilom/file-changes-action@v1.2.3

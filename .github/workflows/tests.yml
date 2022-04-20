@@ -119,8 +119,8 @@ jobs:
       - name: Install dependencies
         run: |
           hash -r
-          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
           pip install -e .
+          pip install -e .[dev] -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
       
 
@@ -176,8 +176,8 @@ jobs:
       - name: Install dependencies
         run: |
           hash -r
-          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
           pip install -e .
+          pip install -e .[dev] -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
       - id: file_changes # get changed files.
         uses: jitterbit/get-changed-files@v1
@@ -236,8 +236,8 @@ jobs:
       - name: Install dependencies
         run: |
           hash -r
-          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
           pip install -e .
+          pip install -e .[dev] -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
 
       - name: Run tests
@@ -293,8 +293,8 @@ jobs:
       - name: Install dependencies
         run: |
           hash -r
-          pip install -r requirements.dev.txt -f https://download.pytorch.org/whl/torch_stable.html
           pip install -e .
+          pip install -e .[dev] -f https://download.pytorch.org/whl/torch_stable.html
         shell: bash
 
       - name: Run tests

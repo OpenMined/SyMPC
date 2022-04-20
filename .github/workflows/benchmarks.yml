@@ -40,8 +40,8 @@ jobs:
       - name: Install dependencies
         run: |
           hash -r
-          pip install -r requirements.dev.txt
           pip install -e .
+          pip install -e .[dev]
 
       - name: Run benchmarks
         run: |
