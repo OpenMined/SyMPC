@@ -163,6 +163,29 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             config (Dict): returns config of the tensor as dict.
         """
         return dataclasses.asdict(self.config)
+    
+    def __str__(self) -> str:
+        """Representation.
+
+        Returns:
+            str: Return the string representation of ReplicatedSharedTensor.
+        """
+        type_name = type(self).__name__
+        out = f"[{type_name}]"
+        out = f"{out}\n\t| Session UUID: {self.session_uuid}"
+        out = f"{out}\n\t| {self.fp_encoder}"
+        out = f"{out}\n\t| Ring Size: {self.ring_size}"
+        out = f"{out}\n\t| Data: {self.shares}"
+
+        return out
+
+    def __repr__(self) -> str:
+        """Representation.
+
+        Returns:
+            String representation.
+        """
+        return self.__str__()
 
     @staticmethod
     def addmodprime(x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
