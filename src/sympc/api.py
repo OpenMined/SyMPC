@@ -262,6 +262,10 @@ replicated_shared_tensor_attrs = [
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor.repeat",
         "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor",
     ),
+    (
+        "sympc.tensor.static.cat_replicatedShare_tensor", 
+        "sympc.tensor.replicatedshare_tensor.ReplicatedSharedTensor"
+    ),
 ]
 
 allowed_external_attrs = [
