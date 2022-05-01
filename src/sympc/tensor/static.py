@@ -15,12 +15,12 @@ from uuid import UUID
 import numpy as np
 import torch
 
+import sympc.protocol as protocol
 from sympc.session import get_session
 from sympc.tensor.mpc_tensor import MPCTensor
-from sympc.tensor.share_tensor import ShareTensor
 from sympc.tensor.replicatedshare_tensor import ReplicatedSharedTensor
+from sympc.tensor.share_tensor import ShareTensor
 from sympc.utils import parallel_execution
-import sympc.protocol as protocol
 
 
 def stack(tensors: List, dim: int = 0) -> MPCTensor:
@@ -95,7 +95,9 @@ def cat(tensors: List, dim: int = 0) -> MPCTensor:
     if isinstance(session.protocol, protocol.FSS):
         stack_shares = parallel_execution(cat_share_tensor, session.parties)(args)
     elif isinstance(session.protocol, protocol.Falcon):
-        stack_shares = parallel_execution(cat_replicatedShare_tensor, session.parties)(args)
+        stack_shares = parallel_execution(cat_replicatedShare_tensor, session.parties)(
+            args
+        )
 
     expected_shape = torch.cat(
         [torch.empty(each_tensor.shape) for each_tensor in tensors], dim=dim
@@ -121,27 +123,34 @@ def cat_share_tensor(session_uuid_str: str, *shares: Tuple[ShareTensor]) -> Shar
     result.tensor = torch.cat([share.tensor for share in shares])
     return result
 
-def cat_replicatedShare_tensor(session_uuid_str: str, *shares: Tuple[ReplicatedSharedTensor]) -> ReplicatedSharedTensor:
+
+def cat_replicatedShare_tensor(
+    session_uuid_str: str, *shares: Tuple[ReplicatedSharedTensor]
+) -> ReplicatedSharedTensor:
     """Helper method that performs torch.cat on the replicated shares of the Tensors.
 
     Args:
         session_uuid_str (str): UUID to identify the session on each party side.
-        shares (Tuple[ShareTensor]): Replicated shares of the tensors to be concatenated.
+        shares (Tuple[ReplicatedSharedTensor]): Replicated shares of the tensors to be concatenated.
 
     Returns:
         ReplicatedSharedTensor: Respective replicated shares after concatenation
     """
-    
     session = get_session(session_uuid_str)
-    result = ReplicatedSharedTensor(session_uuid=UUID(session_uuid_str), config=session.config)
-    
-    cat_result = [torch.tensor([]).type(torch.LongTensor) for _ in range(len(shares[0].shares))]
+    result = ReplicatedSharedTensor(
+        session_uuid=UUID(session_uuid_str), config=session.config
+    )
+
+    num_shares = len(shares[0].shares)
+
+    cat_result = [torch.tensor([]).type(torch.LongTensor) for _ in range(num_shares)]
     for share in shares:
-      for i in range(len(shares[0].shares)):
-        cat_result[i] = torch.cat([cat_result[i],share.shares[i]])
+        for i in range(num_shares):
+            cat_result[i] = torch.cat([cat_result[i], share.shares[i]])
 
     result.shares = cat_result
     return result
+
 
 def helper_argmax(
     x: MPCTensor,
