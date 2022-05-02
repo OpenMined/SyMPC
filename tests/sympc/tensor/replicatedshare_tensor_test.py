@@ -72,7 +72,7 @@ def test_replicatedshare_print() -> None:
 
     encoded_x = rst.fp_encoder.encode(x)
     encoded_y = rst.fp_encoder.encode(y)
-    
+
     expected = "[ReplicatedSharedTensor]"
     expected = f"{expected}\n\t| Session UUID: None"
     expected = f"{expected}\n\t| {rst.fp_encoder}"
@@ -91,7 +91,7 @@ def test_replicatedshare_repr() -> None:
 
     encoded_x = rst.fp_encoder.encode(x)
     encoded_y = rst.fp_encoder.encode(y)
-    
+
     expected = "[ReplicatedSharedTensor]"
     expected = f"{expected}\n\t| Session UUID: None"
     expected = f"{expected}\n\t| {rst.fp_encoder}"

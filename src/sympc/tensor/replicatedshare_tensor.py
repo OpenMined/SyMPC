@@ -163,7 +163,7 @@ class ReplicatedSharedTensor(metaclass=SyMPCTensor):
             config (Dict): returns config of the tensor as dict.
         """
         return dataclasses.asdict(self.config)
-    
+
     def __str__(self) -> str:
         """Representation.
 
