@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1630798180406,
+  "lastUpdate": 1652623866527,
   "repoUrl": "https://github.com/OpenMined/SyMPC",
   "entries": {
     "Pytest-benchmarks": [
@@ -1767,6 +1767,37 @@ window.BENCHMARK_DATA = {
             "unit": "iter/sec",
             "range": "stddev: 0.04824972803014174",
             "extra": "mean: 1.0520064435999985 sec\nrounds: 5"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "37281330+Timo9Madrid7@users.noreply.github.com",
+            "name": "Timo",
+            "username": "Timo9Madrid7"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "91cf991d64bd5be8e3757e1f41ac7c3d57312817",
+          "message": "`cat` concatenates `ReplicatedSharedTensor` (#326)\n\n* `cat` concatenates `ReplicatedSharedTensor`\r\n\r\n- refer to issue #324\r\n- `cat` can concatenates `ShareTensor`s, but it is not workable for `ReplicatedSharedTensor`.\r\n- added `cat_replicatedShare_tensor` in *apy.py* and *static.py* for the concatenation of `ReplicatedSharedTensor`.\r\n\r\n* Saving a variable and formatting\r\n\r\nFormat\r\nThe following commands have been run:\r\n- `python -m black tensor/static.py`\r\n- `python -m black api.py`\r\n- `isort tensor/static.py`\r\n\r\nSave number of replicated shares as a variable\r\n- Q: Could you save the len(shares[0].shares) in a variable and then use it here and on line 140? [x]*done*\r\n\r\nAmended docstring\r\n- `shares` is a tuple of `ReplicatedSharedTensor`s\r\n- the empty blank is deleted in `cat_replicatedShare_tensor`\r\n\r\n* For Python3.7 that doesn't support `math.prod`\r\n\r\n- python 3.7 cannot support `math.prod`, only python 3.8+ can.\r\n\r\n* Remove python3.7\r\n\r\n* Remove tutorial python3.7\r\n\r\nCo-authored-by: George Muraru <murarugeorgec@gmail.com>",
+          "timestamp": "2022-05-15T15:08:21+01:00",
+          "tree_id": "1233e626d49a4c731228f594809c3fe539b74170",
+          "url": "https://github.com/OpenMined/SyMPC/commit/91cf991d64bd5be8e3757e1f41ac7c3d57312817"
+        },
+        "date": 1652623865596,
+        "tool": "pytest",
+        "benches": [
+          {
+            "name": "benchmarks/module/module_benchmark_test.py::test_run_inference_conv_model",
+            "value": 1.4967514484112308,
+            "unit": "iter/sec",
+            "range": "stddev: 0.008665578894747296",
+            "extra": "mean: 668.1136010000046 msec\nrounds: 5"
           }
         ]
       }
