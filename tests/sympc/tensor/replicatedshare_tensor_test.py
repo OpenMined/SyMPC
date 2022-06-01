@@ -63,6 +63,44 @@ def test_different_config() -> None:
     assert x_share != y_share
 
 
+def test_replicatedshare_print() -> None:
+    x = torch.tensor([5.0])
+    y = torch.tensor([2.5])
+    shares = [x, y]
+
+    rst = ReplicatedSharedTensor(shares=shares, ring_size=2 ** 64)
+
+    encoded_x = rst.fp_encoder.encode(x)
+    encoded_y = rst.fp_encoder.encode(y)
+
+    expected = "[ReplicatedSharedTensor]"
+    expected = f"{expected}\n\t| Session UUID: None"
+    expected = f"{expected}\n\t| {rst.fp_encoder}"
+    expected = f"{expected}\n\t| Ring Size: {rst.ring_size}"
+    expected = f"{expected}\n\t| Data: {[encoded_x, encoded_y]}"
+
+    assert expected == rst.__str__()
+
+
+def test_replicatedshare_repr() -> None:
+    x = torch.tensor([5.0])
+    y = torch.tensor([2.5])
+    shares = [x, y]
+
+    rst = ReplicatedSharedTensor(shares=shares, ring_size=2 ** 64)
+
+    encoded_x = rst.fp_encoder.encode(x)
+    encoded_y = rst.fp_encoder.encode(y)
+
+    expected = "[ReplicatedSharedTensor]"
+    expected = f"{expected}\n\t| Session UUID: None"
+    expected = f"{expected}\n\t| {rst.fp_encoder}"
+    expected = f"{expected}\n\t| Ring Size: {rst.ring_size}"
+    expected = f"{expected}\n\t| Data: {[encoded_x, encoded_y]}"
+
+    assert expected == rst.__str__() == rst.__repr__()
+
+
 def test_different_ring_size() -> None:
     x = torch.tensor([1])
     shares = [x, x]
