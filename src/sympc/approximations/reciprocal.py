@@ -1,20 +1,26 @@
 """function used to calculate reciprocal of a given tensor."""
 
+# stdlib
+# from typing import TypeVar
+
 from sympc.approximations.exponential import exp
 from sympc.approximations.log import log
 from sympc.approximations.utils import modulus
 from sympc.approximations.utils import sign
+from sympc.tensor import MPCTensor
+from sympc.tensor import RegisterApproximation
 
 
-def reciprocal(self, method: str = "NR", nr_iters: int = 10):
+@RegisterApproximation("reciprocal")
+def reciprocal(self: MPCTensor, method: str = "NR", nr_iters: int = 10) -> MPCTensor:
     r"""Calculate the reciprocal using the algorithm specified in the method args.
 
     Ref: https://github.com/facebookresearch/CrypTen
 
     Args:
-        self: input data
-        nr_iters: Number of iterations for Newton-Raphson
-        method: 'NR' - `Newton-Raphson`_ method computes the reciprocal using iterations
+        self (MPCTensor): input data
+        nr_iters (int): Number of iterations for Newton-Raphson
+        method (str): 'NR' - `Newton-Raphson`_ method computes the reciprocal using iterations
                 of :math:`x_{i+1} = (2x_i - self * x_i^2)` and uses
                 :math:`3*exp(-(x-.5)) + 0.003` as an initial guess by default
 
@@ -22,7 +28,7 @@ def reciprocal(self, method: str = "NR", nr_iters: int = 10):
                         :math:`x^{-1} = exp(-log(x))`
 
     Returns:
-        Reciprocal of `self`
+        MPCTensor : Reciprocal of `self`
 
     Raises:
         ValueError: if the given method is not supported

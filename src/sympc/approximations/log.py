@@ -1,9 +1,16 @@
 """fucntion used to calculate log of given tensor."""
 
+# stdlib
+# from typing import TypeVar
+# MPCTensor = TypeVar("MPCTensor")
+
 from sympc.approximations.exponential import exp
+from sympc.tensor import MPCTensor
+from sympc.tensor import RegisterApproximation
 
 
-def log(self, iterations=2, exp_iterations=8):
+@RegisterApproximation("log")
+def log(self: MPCTensor, iterations: int = 2, exp_iterations: int = 8) -> MPCTensor:
     """Approximates the natural logarithm using 8th order modified Householder iterations.
 
         Recall that Householder method is an algorithm to solve a non linear equation f(x) = 0.
@@ -14,7 +21,7 @@ def log(self, iterations=2, exp_iterations=8):
             y_{n+1} = y_n - h * (1 + h / 2 + h^2 / 3 + h^3 / 6 + h^4 / 5 + h^5 / 7)
 
     Args:
-        self: tensor whose log has to be calculated
+        self (MPCTensor): tensor whose log has to be calculated
         iterations (int): number of iterations for 6th order modified
             Householder approximation.
         exp_iterations (int): number of iterations for limit approximation of exp
