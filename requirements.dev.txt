@@ -20,3 +20,4 @@ pytest-cov==2.10.1
 pytest-order==1.0.0
 pytest-xdist[psutil]
 safety
+mistune>=2.0.3 # not directly required, pinned by Snyk to avoid a vulnerability
