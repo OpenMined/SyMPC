@@ -1,0 +1,16 @@
+[package]
+name = "sympc"
+version = "0.5.0"
+authors = ["arturo <arturomf94@gmail.com>"]
+edition = "2018"
+
+[package.metadata.maturin]
+classifier      = ["Programming Language :: Python", "Programming Language :: Rust"]
+requires-python = ">=3.6"
+
+[lib]
+name       = "sympc"
+crate-type = ["cdylib"]
+
+
+[dependencies]

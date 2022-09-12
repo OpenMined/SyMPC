@@ -236,3 +236,28 @@ def test_share_tensor_resolve_pointer(get_clients) -> None:
     share_pt_name = type(resolved_share_pt0).__name__
 
     assert share_pt_name == "ShareTensorPointer"
+
+
+def test_share_tensor_numpy() -> None:
+    x = torch.Tensor([5.0])
+    x_share = ShareTensor(data=x)
+    x_share = x_share.numpy()
+    assert isinstance(x_share.tensor, np.ndarray)
+    x_share = x_share.from_numpy()
+    assert isinstance(x_share.tensor, torch.Tensor)
+
+
+def test_share_tensor_numpy_sum() -> None:
+    base = 2
+    precision = 16
+    x = torch.Tensor([5.0])
+    y = torch.Tensor([5.0])
+    x_share = ShareTensor(data=x)
+    x_share = x_share.numpy()
+    y_share = ShareTensor(data=y)
+    y_share = y_share.numpy()
+    res = x_share + y_share
+    expected_res = x + y
+    res.from_numpy()
+    tensor_decoded = res.fp_encoder.decode(res.tensor)
+    assert np.allclose(tensor_decoded, expected_res, rtol=base ** -precision)

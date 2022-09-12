@@ -801,3 +801,15 @@ def test_reciprocal(get_clients):
     mpc_result = 1 / (x)
 
     assert np.allclose(mpc_result.reconstruct(), expected_res, rtol=1e-3)
+
+
+def test_mpc_tensor_numpy(get_clients) -> None:
+    clients = get_clients(2)
+    session = Session(parties=clients)
+    SessionManager.setup_mpc(session)
+    x_secret = torch.tensor([5.0])
+    x = MPCTensor(secret=x_secret, session=session)
+    np_x = x.numpy()
+    print(np_x.share_ptrs)
+    print(x.reconstruct(get_shares=True))
+    # print(np_x.reconstruct())

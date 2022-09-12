@@ -1165,6 +1165,16 @@ class MPCTensor(metaclass=SyMPCTensor):
         """
         return self.__apply_op(y, "xor")
 
+    def numpy(self) -> "MPCTensor":
+        """Converts a MPCTensor's shares into a Numpy ndarray using ShareTensor's `numpy` method.
+
+        Returns:
+            A MPCTensor
+        """
+        for share in self.share_ptrs:
+            share = share.numpy()
+        return self
+
     __add__ = wrapper_getattribute(add)
     __radd__ = wrapper_getattribute(add)
     __sub__ = wrapper_getattribute(sub)

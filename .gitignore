@@ -56,3 +56,6 @@ examples/housing.data
 
 # VSCode
 .vscode/
+
+# Cargo
+src/target/**
