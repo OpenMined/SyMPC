@@ -2,3 +2,4 @@ sycret
 syft @ git+https://github.com/OpenMined/PySyft@sympc-dev#egg=syft&subdirectory=packages/syft
 torch>=1.6,<=1.8.1
 torchcsprng<=0.2.1
+protobuf>=3.19.5 # not directly required, pinned by Snyk to avoid a vulnerability
