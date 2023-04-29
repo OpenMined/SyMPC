@@ -335,6 +335,47 @@ def test_grad_conv2d_forward(get_clients) -> None:
     assert np.allclose(res, expected, rtol=1e-3)
 
 
+def test_grad_conv2d_backward_tuple_params(get_clients) -> None:
+    parties = get_clients(4)
+
+    grad = torch.Tensor([[[[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]]]])
+
+    input = torch.Tensor(
+        [
+            [
+                [
+                    [-2.1805, -1.3338, -0.9718, -0.1335],
+                    [-0.5632, 1.2667, 0.9994, -0.0627],
+                    [-0.9563, 0.5861, -1.4422, -0.4825],
+                    [0.2732, -1.1900, -0.6624, -0.7513],
+                ]
+            ]
+        ]
+    )
+
+    weight = torch.Tensor([[[[0.3257, -0.7538], [-0.5773, -0.7619]]]])
+
+    x_mpc = input.share(parties=parties)
+    y_mpc = weight.share(parties=parties)
+    grad_mpc = grad.share(parties=parties)
+
+    ctx = {
+        "x": x_mpc,
+        "weight": y_mpc,
+        "stride": (1, 1),
+        "padding": (0, 0),
+        "dilation": (1, 1),
+        "groups": 1,
+    }
+
+    res_mpc_input, res_mpc_weight = GradConv2d.backward(ctx, grad_mpc)
+    expected_input = torch.nn.functional.grad.conv2d_input(input.size(), weight, grad)
+    expected_weight = torch.nn.functional.grad.conv2d_weight(input, weight.size(), grad)
+
+    assert np.allclose(res_mpc_input.reconstruct(), expected_input, rtol=1e-3)
+    assert np.allclose(res_mpc_weight.reconstruct(), expected_weight, rtol=1e-3)
+
+
 def test_grad_conv2d_backward(get_clients) -> None:
     parties = get_clients(4)
 
