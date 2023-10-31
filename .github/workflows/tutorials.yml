@@ -16,6 +16,10 @@ on:
       - "**.ipynb"
       - "requirements*.txt"
 
+concurrency: 
+  group: ${{ github.job }}
+  cancel-in-progress: true
+
 jobs:
   tutorial-tests:
     runs-on: ubuntu-latest
