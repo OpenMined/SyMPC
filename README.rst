@@ -15,7 +15,7 @@
     <a href=""><img src="https://github.com/OpenMined/SyMPC/actions/workflows/tests.yml/badge.svg" /></a>
     <a href="https://openmined.slack.com/messages/support"><img src="https://img.shields.io/badge/chat-on%20slack-7A5979.svg" /></a>
     <a href="https://codecov.io/gh/OpenMined/SyMPC"><img src="https://codecov.io/gh/OpenMined/SyMPC/branch/main/graph/badge.svg?token=TS2rZyJRlo" /></a>
-
+    <a href="https://openmined.github.io/SyMPC/dev/bench/"><img src="https://img.shields.io/badge/benchmarks-view-blue" /></a>
 
 SyMPC **/ˈsɪmpəθi/** is a library which extends `PySyft <https://github.com/OpenMined/PySyft>`_ ≥0.3 with SMPC support. It allows computing over encrypted data, and to train and evaluate neural networks.
 
@@ -82,6 +82,12 @@ SyMPC supports the following protocols.
 
 We can see other interesting information about the supported operations and Neural
 Network layers in `Supported operations and Neural Network layers <SUPPORTED_OPS.rst>`_.
+
+Benchmarks
+##########
+
+We track the performance of our cryptographic protocols.  You can check the latest benchmarks on our
+`benchmark page <https://openmined.github.io/SyMPC/dev/bench/>`_.
 
 
 Contributing
