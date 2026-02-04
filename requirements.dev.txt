@@ -20,3 +20,5 @@ pytest-cov==2.10.1
 pytest-order==1.0.0
 pytest-xdist[psutil]
 safety
+nbconvert>=7.17.0 # not directly required, pinned by Snyk to avoid a vulnerability
+zipp>=3.19.1 # not directly required, pinned by Snyk to avoid a vulnerability
